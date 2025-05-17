@@ -335,7 +335,6 @@ private fun MainLayout(// 添加默认参数以便于预览
         },
         contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
-        val context = LocalContext.current
         LazyColumn(
             contentPadding = PaddingValues(
                 16.dp,
@@ -357,194 +356,230 @@ private fun MainLayout(// 添加默认参数以便于预览
 
             ) {
             item("states") {
-                //var isOwner by remember { mutableStateOf(false) }
-                var openDialog by remember { mutableStateOf(false) }
-                CardWidget(
-                    title = {
-                        Text(
-                            when (uiState) {
-                                is MainState.Uninstalled -> "未安装"
-                                is MainState.NeverOpened -> "未创建数据目录"
-                                is MainState.Ungranted -> "未授权"
-                                is MainState.Granted -> "已授权"
-                            }
-                        )
-                    },
-                    icon = {
-                        Icon(
-                            when(uiState) {
-                                MainState.Granted -> Icons.Outlined.CheckCircle
-                                MainState.Uninstalled -> Icons.Default.Block
-                                else -> Icons.Default.Error
-                            },
-                            contentDescription = null
-                        )
-                    },
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (uiState is MainState.Granted) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else MaterialTheme.colorScheme.errorContainer
-                    ),
-                    iconColors = IconButtonDefaults.iconButtonColors(
-                        containerColor = Color.Transparent,
-                        contentColor = if (uiState is MainState.Granted) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    text = {
-                        Text(
-                            when (uiState) {
-                                is MainState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
-                                is MainState.NeverOpened -> "点击此处打开SFS"
-                                is MainState.Ungranted -> "点击此处前往授权"
-                                is MainState.Granted -> "当前游戏版本：${sfsVersionName}"
-                            }
-                        )
-                    },
-                    onClick = {
-                        when (uiState) {
-                            is MainState.NeverOpened -> openSfs()
-                            is MainState.Ungranted -> openDialog = true
-                            else -> {}
-                        }
-                    }
+                StatusCard(
+                    uiState = uiState,
+                    permissionDialogOnClick = permissionDialogOnClick,
+                    openSfs = openSfs,
+                    sfsVersionName = sfsVersionName
                 )
-                if (openDialog) {
-                    AlertDialog(
-                        onDismissRequest = { openDialog = false },
-                        title = { Text("确定前往授权？") },
-                        text = {
-                            Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。\n但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用，使其不可访问 Android/data 及其子目录。\n因此，你必须通过 SAF（Storage Access Framework） 授予 SFS汉化安装器 访问 内部储存/${Constants.SFS_DATA_DIRECTORY} 目录的权限后才可以安装汉化。\n\n请在接下来的页面中，勿进行其他操作，直接点击底部的“使用此文件夹”按钮以完成授权。\n如果你无法完成授权，请尝试前往设置使用高级权限授权！")
-                        },
-                        confirmButton = {
-                            TextButton(onClick = {
-                                openDialog = false
-                                permissionDialogOnClick()
-                            }) {
-                                Text("确定")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { openDialog = false }) {
-                                Text("取消")
-                            }
-                        }
-                    )
-                }
             }
             if (false) {
                 item("update") {
-                    CardWidget(
-                        {
-                            Text("有新的版本可更新！")
-                        }, {
-                            Icon(
-                                Icons.Default.Update,
-                                contentDescription = null
-                            )
-                        }, text = {
-                            Text("新版本：9.9.9 (99)")
-                        }, iconColors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color.Transparent
-                        ), colors = CardDefaults.elevatedCardColors(
-                            containerColor = MaterialTheme.colorScheme.outlineVariant
-                        )
-                    )
+                    UpdateCard()
                 }
             }
             item("install") {
-                var openChooseDialog by remember { mutableStateOf(false) }
-                if (openChooseDialog) {
-                    AlertDialog(
-                        onDismissRequest = { openChooseDialog = false },
-                        title = { Text("选择要安装的汉化") },
-                        text = {
-                            Text("")
-                        },
-                        confirmButton = {
-                            TextButton(onClick = { openChooseDialog = false }) {
-                                Text("确定")
-                            }
-                        },
-                        dismissButton = {
-                            TextButton(onClick = { openChooseDialog = false }) {
-                                Text("取消")
-                            }
-                        }
-                    )
-                }
-                CardWidget({
-                    Text("安装汉化")
-                }, {
-                    Icon(
-                        Icons.Default.Archive,
-                        contentDescription = null
-                    )
-                }) {
-                    Column {
-                        Text("当前选择：")
-                        Text(
-                            "SFS简体中文语言包 (简体中文)"
-                        )
-                        Spacer(Modifier.height(12.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.HelpOutline,
-                                contentDescription = null
-                            )
-                            Spacer(Modifier.width(16.dp))
-                            Text("请先确保您已正确完成授权等操作，且设备能够正常连接至互联网。")
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(modifier = Modifier.weight(1f)) {
-                                TextButton(onClick = {
-                                    openChooseDialog = true
-                                }) {
-                                    Icon(
-                                        Icons.Outlined.Settings,
-                                        null,
-                                        modifier = Modifier.size(ButtonDefaults.IconSize)
-                                    )
-                                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                                    Text("选择汉化")
-                                }
-                            }
-                            TextButton(onClick = {}) {
-                                Text("保存到")
-                            }
-                            Spacer(Modifier.width(6.dp))
-                            Button(
-                                onClick = {
-                                    btnInstallOnClick()
-                                },
-                                enabled = enableInstallButton
-                            ) {
-                                Text("安装")
-                            }
-                        }
-                    }
-                }
+                InstallCard(
+                    btnInstallOnClick = btnInstallOnClick,
+                    enableInstallButton = enableInstallButton
+                )
             }
             item("donate") {
-                CardWidget({
-                    Text("支持开发")
-                }, {
-                    Icon(
-                        Icons.Default.AttachMoney,
-                        contentDescription = null
-                    )
-                }, text = {
-                    Text("SFS汉化安装器 将保持免费开源，向开发者捐赠以表示支持。")
-                }, onClick = {
-                    context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer#%E6%8D%90%E8%B5%A0")
-                })
+                DonateCard()
             }
         }
     }
+}
+
+@Composable
+private fun LazyItemScope.StatusCard(
+    uiState: MainState,
+    permissionDialogOnClick: () -> Unit,
+    openSfs: () -> Unit,
+    sfsVersionName: String
+) {
+    var openDialog by remember { mutableStateOf(false) }
+    CardWidget(
+        title = {
+            Text(
+                when (uiState) {
+                    is MainState.Uninstalled -> "未安装"
+                    is MainState.NeverOpened -> "未创建数据目录"
+                    is MainState.Ungranted -> "未授权"
+                    is MainState.Granted -> "已授权"
+                }
+            )
+        },
+        icon = {
+            Icon(
+                when (uiState) {
+                    MainState.Granted -> Icons.Outlined.CheckCircle
+                    MainState.Uninstalled -> Icons.Default.Block
+                    else -> Icons.Default.Error
+                },
+                contentDescription = null
+            )
+        },
+        colors = CardDefaults.cardColors(
+            containerColor = if (uiState is MainState.Granted) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else MaterialTheme.colorScheme.errorContainer
+        ),
+        iconColors = IconButtonDefaults.iconButtonColors(
+            containerColor = Color.Transparent,
+            contentColor = if (uiState is MainState.Granted) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else MaterialTheme.colorScheme.onErrorContainer
+        ),
+        text = {
+            Text(
+                when (uiState) {
+                    is MainState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
+                    is MainState.NeverOpened -> "点击此处打开SFS"
+                    is MainState.Ungranted -> "点击此处前往授权"
+                    is MainState.Granted -> "当前游戏版本：${sfsVersionName}"
+                }
+            )
+        },
+        onClick = {
+            when (uiState) {
+                is MainState.NeverOpened -> openSfs()
+                is MainState.Ungranted -> openDialog = true
+                else -> {}
+            }
+        }
+    )
+    if (openDialog) {
+        AlertDialog(
+            onDismissRequest = { openDialog = false },
+            title = { Text("确定前往授权？") },
+            text = {
+                Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。\n但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用，使其不可访问 Android/data 及其子目录。\n因此，你必须通过 SAF（Storage Access Framework） 授予 SFS汉化安装器 访问 内部储存/${Constants.SFS_DATA_DIRECTORY} 目录的权限后才可以安装汉化。\n\n请在接下来的页面中，勿进行其他操作，直接点击底部的“使用此文件夹”按钮以完成授权。\n如果你无法完成授权，请尝试前往设置使用高级权限授权！")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    openDialog = false
+                    permissionDialogOnClick()
+                }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { openDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun LazyItemScope.UpdateCard() {
+    CardWidget(
+        {
+            Text("有新的版本可更新！")
+        }, {
+            Icon(
+                Icons.Default.Update,
+                contentDescription = null
+            )
+        }, text = {
+            Text("新版本：9.9.9 (99)")
+        }, iconColors = IconButtonDefaults.iconButtonColors(
+            containerColor = Color.Transparent
+        ), colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.outlineVariant
+        )
+    )
+}
+
+@Composable
+private fun LazyItemScope.InstallCard(
+    btnInstallOnClick: () -> Unit,
+    enableInstallButton: Boolean
+) {
+    var openChooseDialog by remember { mutableStateOf(false) }
+    if (openChooseDialog) {
+        AlertDialog(
+            onDismissRequest = { openChooseDialog = false },
+            title = { Text("选择要安装的汉化") },
+            text = {
+                Text("")
+            },
+            confirmButton = {
+                TextButton(onClick = { openChooseDialog = false }) {
+                    Text("确定")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { openChooseDialog = false }) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+    CardWidget({
+        Text("安装汉化")
+    }, {
+        Icon(
+            Icons.Default.Archive,
+            contentDescription = null
+        )
+    }) {
+        Column {
+            Text("当前选择：")
+            Text(
+                "SFS简体中文语言包 (简体中文)"
+            )
+            Spacer(Modifier.height(12.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.AutoMirrored.Filled.HelpOutline,
+                    contentDescription = null
+                )
+                Spacer(Modifier.width(16.dp))
+                Text("请先确保您已正确完成授权等操作，且设备能够正常连接至互联网。")
+            }
+            Spacer(Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    TextButton(onClick = {
+                        openChooseDialog = true
+                    }) {
+                        Icon(
+                            Icons.Outlined.Settings,
+                            null,
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Text("选择汉化")
+                    }
+                }
+                TextButton(onClick = {}) {
+                    Text("保存到")
+                }
+                Spacer(Modifier.width(6.dp))
+                Button(
+                    onClick = {
+                        btnInstallOnClick()
+                    },
+                    enabled = enableInstallButton
+                ) {
+                    Text("安装")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LazyItemScope.DonateCard() {
+    val context = LocalContext.current
+    CardWidget({
+        Text("支持开发")
+    }, {
+        Icon(
+            Icons.Default.AttachMoney,
+            contentDescription = null
+        )
+    }, text = {
+        Text("SFS汉化安装器 将保持免费开源，向开发者捐赠以表示支持。")
+    }, onClick = {
+        context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer#%E6%8D%90%E8%B5%A0")
+    })
 }
 
 
