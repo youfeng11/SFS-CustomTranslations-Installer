@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Update
 import androidx.compose.material.icons.outlined.CheckCircle
@@ -371,7 +372,11 @@ private fun MainLayout(// 添加默认参数以便于预览
                     },
                     icon = {
                         Icon(
-                            if (uiState is MainState.Granted) Icons.Outlined.CheckCircle else Icons.Default.Error,
+                            when(uiState) {
+                                MainState.Granted -> Icons.Outlined.CheckCircle
+                                MainState.Uninstalled -> Icons.Default.Block
+                                else -> Icons.Default.Error
+                            },
                             contentDescription = null
                         )
                     },
