@@ -8,6 +8,10 @@ android {
     compileSdk = 35
     resourcePrefix = "ss_"
 
+    defaultConfig {
+        minSdk = 23
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
