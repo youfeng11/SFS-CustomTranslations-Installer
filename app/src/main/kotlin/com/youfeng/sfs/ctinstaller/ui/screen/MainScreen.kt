@@ -608,3 +608,9 @@ private fun LazyItemScope.CardWidget(
 private fun MainLayoutPreview() {
     MainLayout()
 }
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun MainLayoutPreview2() {
+    MainLayout(uiState = MainState.Granted)
+}
