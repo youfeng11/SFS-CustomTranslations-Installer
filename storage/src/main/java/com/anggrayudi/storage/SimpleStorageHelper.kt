@@ -25,6 +25,7 @@ import com.anggrayudi.storage.permission.PermissionCallback
 import com.anggrayudi.storage.permission.PermissionReport
 import com.anggrayudi.storage.permission.PermissionRequest
 import com.anggrayudi.storage.permission.PermissionResult
+import androidx.core.net.toUri
 
 /**
  * Helper class to ease you using file & folder picker.
@@ -399,7 +400,11 @@ class SimpleStorageHelper {
 
         @JvmStatic
         fun redirectToSystemSettings(context: Context) {
-
+            val intentSetting = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                "package:${context.packageName}".toUri())
+                .addCategory(Intent.CATEGORY_DEFAULT)
+                .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intentSetting)
         }
     }
 }

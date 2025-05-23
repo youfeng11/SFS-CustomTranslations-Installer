@@ -9,9 +9,11 @@ import com.anggrayudi.storage.SimpleStorageHelper
 import com.anggrayudi.storage.permission.ActivityPermissionRequest
 import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
 import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 
 @Composable
 fun MainNavigation(
+    viewModel: MainViewModel,
     storageHelper: SimpleStorageHelper,
     permissionRequest: ActivityPermissionRequest,
     navController: NavHostController = rememberNavController()
@@ -20,6 +22,7 @@ fun MainNavigation(
     NavHost(navController = navController, startDestination = "main") {
         composable("main") {
             MainScreen(
+                viewModel = viewModel,
                 onNavigatorToDetails = { navController.navigate("settings") },
                 storageHelper = storageHelper,
                 permissionRequest = permissionRequest
