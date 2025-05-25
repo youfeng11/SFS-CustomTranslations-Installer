@@ -1,10 +1,10 @@
 # SFS汉化安装器
 
-> [!WARNING]\
-> 该项目目前处于早期开发阶段，许多功能尚未完成！
+> [!WARNING]
+> 该项目目前处于早期开发阶段，许多功能尚未完成！  
 > 开发者正在努力开发中，敬请关注
 
-用于 Spaceflight Simulator 的自定义翻译（Custom Translations）安装器。
+用于 Spaceflight Simulator 的**自定义翻译（Custom Translations）**安装器。
 
 > ~~*由于开发者水平有限，本项目在代码质量与项目架构上可能存在一些问题。*~~
 > 
