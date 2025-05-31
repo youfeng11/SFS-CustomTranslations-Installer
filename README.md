@@ -1,7 +1,7 @@
 # SFS汉化安装器
 
-> [!WARNING]
-> 该项目目前处于早期开发阶段，许多功能尚未完成！  
+> [!IMPORTANT]
+> 该项目目前处于Alpha内部测试阶段，许多功能尚未完成！  
 > 开发者正在努力开发中，敬请关注
 
 用于 Spaceflight Simulator 的 **自定义翻译（Custom Translations）** 安装器。

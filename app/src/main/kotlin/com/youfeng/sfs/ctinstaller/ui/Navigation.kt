@@ -40,7 +40,7 @@ fun MainNavigation(
             composable("settings") { SettingsScreen() }
         }
         Text(
-            "开发版本：${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})，仅供演示，不代表最终效果",
+            "内测版本：${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})，仅供演示，不代表最终效果",
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier
                 .padding(vertical = 2.dp)
