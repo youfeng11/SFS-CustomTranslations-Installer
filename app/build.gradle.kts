@@ -28,7 +28,7 @@ android {
 
     defaultConfig {
         applicationId = "com.youfeng.sfs.ctinstaller"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 35
         versionCode = 2
         versionName = "dev02"
