@@ -12,11 +12,16 @@
 
 *喜欢请点个 Star :)*
 
+### 下载
+
+> 目前只提供 CI版本
+- [GitHub Actions](https://github.com/youfeng11/SFS-CustomTranslations-Installer/actions/workflows/android.yml)
+
 ## 计划
 
 - [ ] 更高的兼容性
-- [ ] 使用ROOT权限授权
-- [ ] 使用Shizuku权限授权
+  - [ ] 使用ROOT权限授权
+  - [ ] 使用Shizuku权限授权
 - [ ] 安装自定义汉化
 - [ ] 设置
 - [ ] 其他功能
