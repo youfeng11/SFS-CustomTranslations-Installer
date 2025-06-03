@@ -55,7 +55,6 @@ android {
             this.keyPassword = keyPassword
             this.storeFile = storeFile
             this.storePassword = storePassword
-            enableV1Signing = true
             enableV2Signing = true
             enableV3Signing = true
         }
