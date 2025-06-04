@@ -27,7 +27,6 @@ jobs:
       - name: Install Android NDK
         run: |
           echo "y" | sdkmanager "ndk;27.1.12297006"
-          echo "ndk.dir=$ANDROID_HOME/ndk/27.1.12297006" >> local.properties
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
