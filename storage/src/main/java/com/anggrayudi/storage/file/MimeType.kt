@@ -2,6 +2,8 @@ package com.anggrayudi.storage.file
 
 import android.webkit.MimeTypeMap
 import com.anggrayudi.storage.extension.normalizeFileName
+import com.anggrayudi.storage.file.MimeType.getExtensionFromMimeType
+import com.anggrayudi.storage.file.MimeType.getExtensionFromMimeTypeOrFileName
 
 /**
  * See [mime type list](https://www.freeformatter.com/mime-types-list.html)

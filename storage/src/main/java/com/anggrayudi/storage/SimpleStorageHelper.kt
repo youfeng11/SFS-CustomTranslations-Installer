@@ -10,13 +10,13 @@ import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.callback.CreateFileCallback
 import com.anggrayudi.storage.callback.FilePickerCallback
 import com.anggrayudi.storage.callback.FileReceiverCallback
 import com.anggrayudi.storage.callback.FolderPickerCallback
 import com.anggrayudi.storage.callback.StorageAccessCallback
-import com.anggrayudi.storage.extension.getStorageId
 import com.anggrayudi.storage.file.FileFullPath
 import com.anggrayudi.storage.file.StorageType
 import com.anggrayudi.storage.file.getAbsolutePath
@@ -25,7 +25,6 @@ import com.anggrayudi.storage.permission.PermissionCallback
 import com.anggrayudi.storage.permission.PermissionReport
 import com.anggrayudi.storage.permission.PermissionRequest
 import com.anggrayudi.storage.permission.PermissionResult
-import androidx.core.net.toUri
 
 /**
  * Helper class to ease you using file & folder picker.
@@ -400,8 +399,10 @@ class SimpleStorageHelper {
 
         @JvmStatic
         fun redirectToSystemSettings(context: Context) {
-            val intentSetting = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                "package:${context.packageName}".toUri())
+            val intentSetting = Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                "package:${context.packageName}".toUri()
+            )
                 .addCategory(Intent.CATEGORY_DEFAULT)
                 .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intentSetting)

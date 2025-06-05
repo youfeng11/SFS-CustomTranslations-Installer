@@ -10,7 +10,7 @@ import android.os.StatFs
 import android.system.Os
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
-import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.FileWrapper
 import com.anggrayudi.storage.SimpleStorage
@@ -25,6 +25,11 @@ import com.anggrayudi.storage.extension.isRawFile
 import com.anggrayudi.storage.extension.isTreeDocumentFile
 import com.anggrayudi.storage.extension.replaceCompletely
 import com.anggrayudi.storage.extension.trimFileSeparator
+import com.anggrayudi.storage.file.DocumentFileCompat.buildAbsolutePath
+import com.anggrayudi.storage.file.DocumentFileCompat.buildSimplePath
+import com.anggrayudi.storage.file.DocumentFileCompat.getAccessibleAbsolutePaths
+import com.anggrayudi.storage.file.DocumentFileCompat.getAccessibleUris
+import com.anggrayudi.storage.file.DocumentFileCompat.getRootRawFile
 import com.anggrayudi.storage.file.StorageId.DATA
 import com.anggrayudi.storage.file.StorageId.HOME
 import com.anggrayudi.storage.file.StorageId.PRIMARY
@@ -481,7 +486,7 @@ object DocumentFileCompat {
     @JvmOverloads
     @JvmStatic
     fun createDocumentUri(storageId: String, basePath: String = ""): Uri =
-        Uri.parse("content://$EXTERNAL_STORAGE_AUTHORITY/tree/" + Uri.encode("$storageId:$basePath"))
+        ("content://$EXTERNAL_STORAGE_AUTHORITY/tree/" + Uri.encode("$storageId:$basePath")).toUri()
 
     @JvmStatic
     fun isAccessGranted(context: Context, storageId: String): Boolean {
@@ -511,49 +516,16 @@ object DocumentFileCompat {
 
     @JvmStatic
     fun isDownloadsUriPermissionGranted(context: Context) =
-        isUriPermissionGranted(context, Uri.parse(DOWNLOADS_TREE_URI))
+        isUriPermissionGranted(context, DOWNLOADS_TREE_URI.toUri())
 
     @JvmStatic
     fun isDocumentsUriPermissionGranted(context: Context) =
-        isUriPermissionGranted(context, Uri.parse(DOCUMENTS_TREE_URI))
+        isUriPermissionGranted(context, DOCUMENTS_TREE_URI.toUri())
 
     private fun isUriPermissionGranted(context: Context, uri: Uri) =
         context.contentResolver.persistedUriPermissions.any {
             it.isReadPermission && it.isWritePermission && it.uri == uri
         }
-
-    /**
-     * Get all storage IDs on this device. The first index is primary storage.
-     * Prior to API 28, retrieving storage ID for SD card only applicable if URI permission is granted for read & write access.
-     */
-    @JvmStatic
-    fun getStorageIds(context: Context): List<String> {
-        val externalStoragePath = SimpleStorage.externalStoragePath
-        val storageIds = ContextCompat.getExternalFilesDirs(context, null).filterNotNull().map {
-            val path = it.path
-            if (path.startsWith(externalStoragePath)) {
-                // Path -> /storage/emulated/0/Android/data/com.anggrayudi.storage.sample/files
-                PRIMARY
-            } else {
-                // Path -> /storage/131D-261A/Android/data/com.anggrayudi.storage.sample/files
-                path.substringAfter("/storage/").substringBefore('/')
-            }
-        }
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            storageIds
-        } else {
-            val persistedStorageIds = context.contentResolver.persistedUriPermissions
-                .filter { it.isReadPermission && it.isWritePermission && it.uri.isExternalStorageDocument }
-                .mapNotNull { it.uri.path?.run { substringBefore(':').substringAfterLast('/') } }
-            storageIds.toMutableList().run {
-                addAll(persistedStorageIds)
-                distinct()
-            }
-        }
-    }
-
-    @JvmStatic
-    fun getSdCardIds(context: Context) = getStorageIds(context).filter { it != PRIMARY }
 
     /**
      * The key of the map is storage ID, and the values are granted absolute paths.
@@ -790,7 +762,7 @@ object DocumentFileCompat {
             val directory = mkdirsParentDirectory(context, storageId, basePath, considerRawFile)
             val filename = getFileNameFromPath(basePath).removeForbiddenCharsFromFilename()
             if (filename.isEmpty()) null else directory?.makeFile(context, filename, mimeType)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -844,7 +816,7 @@ object DocumentFileCompat {
     private fun create(file: File): Boolean {
         return try {
             file.isFile && file.length() == 0L || file.createNewFile()
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             false
         }
     }
@@ -885,7 +857,7 @@ object DocumentFileCompat {
                     requiresWriteAccess,
                     considerRawFile
                 )?.child(context, basePath)
-                    ?: context.fromTreeUri(Uri.parse(DOCUMENTS_TREE_URI))
+                    ?: context.fromTreeUri(DOCUMENTS_TREE_URI.toUri())
                         ?.child(context, basePath.substringAfter(Environment.DIRECTORY_DOCUMENTS))
                     ?: return null
             } else if (Build.VERSION.SDK_INT < 30) {
@@ -907,7 +879,7 @@ object DocumentFileCompat {
                     try {
                         grantedFile = context.fromTreeUri(createDocumentUri(storageId, folderTree))
                         if (grantedFile?.canRead() == true) break
-                    } catch (e: SecurityException) {
+                    } catch (_: SecurityException) {
                         // ignore
                     }
                 }
@@ -915,7 +887,7 @@ object DocumentFileCompat {
                     grantedFile
                 } else {
                     val fileTree = directorySequence.joinToString(prefix = "/", separator = "/")
-                    context.fromTreeUri(Uri.parse(grantedFile.uri.toString() + Uri.encode(fileTree)))
+                    context.fromTreeUri((grantedFile.uri.toString() + Uri.encode(fileTree)).toUri())
                 }
             }
         return file?.takeIf {
@@ -1021,7 +993,7 @@ object DocumentFileCompat {
                     stats.f_bavail * stats.f_frsize
                 } ?: 0
             }
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             0
         }
     }
@@ -1038,7 +1010,7 @@ object DocumentFileCompat {
                     stats.f_blocks * stats.f_frsize - stats.f_bavail * stats.f_frsize
                 } ?: 0
             }
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             0
         }
     }
@@ -1055,7 +1027,7 @@ object DocumentFileCompat {
                     stats.f_blocks * stats.f_frsize
                 } ?: 0
             }
-        } catch (e: Throwable) {
+        } catch (_: Throwable) {
             0
         }
     }
@@ -1091,7 +1063,7 @@ object DocumentFileCompat {
     fun getFileNameFromUrl(url: String): String {
         return try {
             URLDecoder.decode(url, "UTF-8").substringAfterLast('/')
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             url
         }
     }

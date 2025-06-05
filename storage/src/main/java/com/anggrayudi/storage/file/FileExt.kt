@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Environment
 import androidx.annotation.RestrictTo
 import androidx.annotation.WorkerThread
-import androidx.core.content.ContextCompat
 import androidx.documentfile.provider.DocumentFile
 import com.anggrayudi.storage.SimpleStorage
 import com.anggrayudi.storage.callback.SingleFileConflictCallback
@@ -68,7 +67,7 @@ fun File.child(path: String) = File(this, path)
  * @see [Context.getFilesDir]
  */
 val Context.dataDirectory: File
-    get() = if (Build.VERSION.SDK_INT > 23) dataDir else filesDir.parentFile!!
+    get() = dataDir
 
 fun File.getBasePath(context: Context): String {
     val externalStoragePath = SimpleStorage.externalStoragePath
@@ -137,7 +136,7 @@ fun File.checkRequirements(
 
 fun File.createNewFileIfPossible(): Boolean = try {
     isFile || createNewFile()
-} catch (e: IOException) {
+} catch (_: IOException) {
     false
 }
 
@@ -153,7 +152,7 @@ fun File.isWritable(context: Context) = canWrite() && (isFile || isExternalStora
  */
 fun File.isExternalStorageManager(context: Context) =
     Build.VERSION.SDK_INT > Build.VERSION_CODES.Q && Environment.isExternalStorageManager(this)
-            || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && path.startsWith(SimpleStorage.externalStoragePath) && SimpleStorage.hasStoragePermission(
+            || path.startsWith(SimpleStorage.externalStoragePath) && SimpleStorage.hasStoragePermission(
         context
     )
             || context.writableDirs.any { path.startsWith(it.path) }
@@ -164,8 +163,8 @@ fun File.isExternalStorageManager(context: Context) =
 val Context.writableDirs: Set<File>
     get() {
         val dirs = mutableSetOf(dataDirectory)
-        dirs.addAll(ContextCompat.getObbDirs(this).filterNotNull())
-        dirs.addAll(ContextCompat.getExternalFilesDirs(this, null).mapNotNull { it?.parentFile })
+        dirs.addAll(obbDirs.filterNotNull())
+        dirs.addAll(getExternalFilesDirs(null).mapNotNull { it?.parentFile })
         return dirs
     }
 
@@ -224,7 +223,7 @@ fun File.makeFile(
             parent,
             autoIncrementFileName(fullFileName)
         ).let { if (it.createNewFile()) it else null }
-    } catch (e: IOException) {
+    } catch (_: IOException) {
         null
     }
 }
@@ -313,7 +312,7 @@ fun File.recreateFile(): Boolean {
 
 fun File.tryCreateNewFile() = try {
     createNewFile()
-} catch (e: IOException) {
+} catch (_: IOException) {
     false
 }
 

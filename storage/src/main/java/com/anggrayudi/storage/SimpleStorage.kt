@@ -20,6 +20,7 @@ import androidx.annotation.RequiresPermission
 import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.documentfile.provider.DocumentFile
+import com.anggrayudi.storage.SimpleStorage.Companion.hasStoragePermission
 import com.anggrayudi.storage.callback.CreateFileCallback
 import com.anggrayudi.storage.callback.FilePickerCallback
 import com.anggrayudi.storage.callback.FileReceiverCallback
@@ -118,7 +119,6 @@ class SimpleStorage private constructor(private val wrapper: ComponentWrapper) {
      */
     @Suppress("DEPRECATION")
     private val sdCardRootAccessIntent: Intent
-        @RequiresApi(api = Build.VERSION_CODES.N)
         get() {
             val sm = context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
             return sm.storageVolumes.firstOrNull { it.isRemovable }?.let {
@@ -140,7 +140,6 @@ class SimpleStorage private constructor(private val wrapper: ComponentWrapper) {
      *
      * @param storageId Use [PRIMARY] for external storage. Or use SD Card storage ID.
      * @return `true` if storage permissions and URI permissions are granted for read and write access.
-     * @see [DocumentFileCompat.getStorageIds]
      */
     fun isStorageAccessGranted(storageId: String) =
         DocumentFileCompat.isAccessGranted(context, storageId)
@@ -186,7 +185,7 @@ class SimpleStorage private constructor(private val wrapper: ComponentWrapper) {
 
         val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             externalStorageRootAccessIntent.also { addInitialPathToIntent(it, initialPath) }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && expectedStorageType == StorageType.SD_CARD) {
+        } else if (expectedStorageType == StorageType.SD_CARD) {
             sdCardRootAccessIntent
         } else {
             externalStorageRootAccessIntent
@@ -401,7 +400,7 @@ class SimpleStorage private constructor(private val wrapper: ComponentWrapper) {
                     expectedStorageTypeForAccessRequest
                 )
             } else {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
                     val sm = context.getSystemService(Context.STORAGE_SERVICE) as StorageManager
                     sm.storageVolumes.firstOrNull { !it.isPrimary }?.createAccessIntent(null)?.let {
                         if (!wrapper.startActivityForResult(it, requestCode)) {
@@ -433,13 +432,12 @@ class SimpleStorage private constructor(private val wrapper: ComponentWrapper) {
         if (uri.toString()
                 .let { it == DocumentFileCompat.DOWNLOADS_TREE_URI || it == DocumentFileCompat.DOCUMENTS_TREE_URI }
             || DocumentFileCompat.isRootUri(uri)
-            && (Build.VERSION.SDK_INT < Build.VERSION_CODES.N && storageType == StorageType.SD_CARD || Build.VERSION.SDK_INT == Build.VERSION_CODES.Q)
             && !DocumentFileCompat.isStorageUriPermissionGranted(context, storageId)
         ) {
             saveUriPermission(uri)
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && storageType == StorageType.EXTERNAL
-            || Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && saveUriPermission(uri)
+            || true && saveUriPermission(uri)
             || folder.canModify(context) && (uri.isDocumentsDocument || !uri.isExternalStorageDocument)
             || DocumentFileCompat.isStorageUriPermissionGranted(context, storageId)
         ) {
@@ -615,7 +613,7 @@ class SimpleStorage private constructor(private val wrapper: ComponentWrapper) {
         context.contentResolver.takePersistableUriPermission(root, writeFlags)
         thread { cleanupRedundantUriPermissions(context.applicationContext) }
         true
-    } catch (e: SecurityException) {
+    } catch (_: SecurityException) {
         false
     }
 

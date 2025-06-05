@@ -27,7 +27,6 @@ import com.anggrayudi.storage.extension.replaceCompletely
 import com.anggrayudi.storage.extension.sendAll
 import com.anggrayudi.storage.extension.sendAndClose
 import com.anggrayudi.storage.extension.startCoroutineTimer
-import com.anggrayudi.storage.extension.toDocumentFile
 import com.anggrayudi.storage.extension.toInt
 import com.anggrayudi.storage.extension.trimFileSeparator
 import com.anggrayudi.storage.file.CheckFileSize
@@ -40,16 +39,12 @@ import com.anggrayudi.storage.file.child
 import com.anggrayudi.storage.file.copyFileTo
 import com.anggrayudi.storage.file.defaultFileSizeChecker
 import com.anggrayudi.storage.file.forceDelete
-import com.anggrayudi.storage.file.fullName
 import com.anggrayudi.storage.file.getBasePath
 import com.anggrayudi.storage.file.getStorageId
-import com.anggrayudi.storage.file.isEmpty
 import com.anggrayudi.storage.file.makeFile
 import com.anggrayudi.storage.file.makeFolder
-import com.anggrayudi.storage.file.mimeType
 import com.anggrayudi.storage.file.moveFileTo
 import com.anggrayudi.storage.file.openOutputStream
-import com.anggrayudi.storage.file.toDocumentFile
 import com.anggrayudi.storage.file.toFileCallbackErrorCode
 import com.anggrayudi.storage.result.SingleFileErrorCode
 import com.anggrayudi.storage.result.SingleFileResult

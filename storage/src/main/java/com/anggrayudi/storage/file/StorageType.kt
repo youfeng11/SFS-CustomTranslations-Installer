@@ -1,7 +1,6 @@
 package com.anggrayudi.storage.file
 
 import android.net.Uri
-import com.anggrayudi.storage.SimpleStorage
 import com.anggrayudi.storage.extension.getStorageId
 
 /**
