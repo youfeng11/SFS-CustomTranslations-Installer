@@ -148,8 +148,7 @@ fun DocumentFile.isEmpty(context: Context): Boolean {
                 null,
                 null,
                 null
-            )?.use { it.count == 0 }
-                ?: true
+            )?.use { it.count == 0 } != false
         } catch (e: Exception) {
             true
         }
@@ -1019,7 +1018,7 @@ fun DocumentFile.toWritableDownloadsDocumentFile(context: Context): DocumentFile
                             // If comes from findFile() or fromPublicFolder(),
                             // e.g. content://com.android.providers.downloads.documents/tree/downloads/document/msd%3A271
                             || path.matches(Regex("/tree/downloads/document/ms[f,d]:\\d+")))
-                    || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q && (
+                    || true && (
                     // If comes from SAF folder picker ACTION_OPEN_DOCUMENT_TREE,
                     // e.g. content://com.android.providers.downloads.documents/tree/raw%3A%2Fstorage%2Femulated%2F0%2FDownload%2FDenai/document/raw%3A%2Fstorage%2Femulated%2F0%2FDownload%2FDenai
                     path.startsWith("/tree/raw:")
@@ -1111,7 +1110,7 @@ fun DocumentFile.search(
                     sequence.filter { it.isDirectory }
             }
             if (hasMimeTypeFilter) {
-                sequence = sequence.filter { it.matchesMimeTypes(mimeTypes!!) }
+                sequence = sequence.filter { it.matchesMimeTypes(mimeTypes) }
             }
             if (name.isNotEmpty()) {
                 sequence = sequence.filter { it.name == name }
@@ -2265,7 +2264,7 @@ private fun DocumentFile.tryMoveFolderByRenamingPath(
         }
 
         try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !isRawFile && writableTargetParentFolder.isTreeDocumentFile) {
+            if (!isRawFile && writableTargetParentFolder.isTreeDocumentFile) {
                 val movedFileUri = parentFile?.uri?.let {
                     DocumentsContract.moveDocument(
                         context.contentResolver,
@@ -2406,6 +2405,8 @@ private fun DocumentFile.copyFolderTo(
     if (isClosedForSend) {
         return@callbackFlow
     }
+
+    send(SingleFolderResult.Starting(filesToCopy, totalFilesToCopy))
 
     if (deleteSourceWhenComplete) {
         when (val result = tryMoveFolderByRenamingPath(
@@ -2796,15 +2797,15 @@ fun DocumentFile.copyFileTo(
         )
     } else {
         val targetDirectory =
-            targetFolder.makeFolder(context, fileDescription?.subFolder.orEmpty(), CreateMode.REUSE)
+            targetFolder.makeFolder(context, fileDescription.subFolder, CreateMode.REUSE)
         if (targetDirectory == null) {
             send(SingleFileResult.Error(SingleFileErrorCode.CANNOT_CREATE_FILE_IN_TARGET))
         } else {
             copyFileTo(
                 context,
                 targetDirectory,
-                fileDescription?.name,
-                fileDescription?.mimeType,
+                fileDescription.name,
+                fileDescription.mimeType,
                 updateInterval,
                 this,
                 isFileSizeAllowed,
@@ -3062,15 +3063,15 @@ fun DocumentFile.moveFileTo(
         )
     } else {
         val targetDirectory =
-            targetFolder.makeFolder(context, fileDescription?.subFolder.orEmpty(), CreateMode.REUSE)
+            targetFolder.makeFolder(context, fileDescription.subFolder, CreateMode.REUSE)
         if (targetDirectory == null) {
             send(SingleFileResult.Error(SingleFileErrorCode.CANNOT_CREATE_FILE_IN_TARGET))
         } else {
             moveFileTo(
                 context,
                 targetDirectory,
-                fileDescription?.name,
-                fileDescription?.mimeType,
+                fileDescription.name,
+                fileDescription.mimeType,
                 updateInterval,
                 this,
                 isFileSizeAllowed,
@@ -3137,7 +3138,7 @@ private fun DocumentFile.moveFileTo(
     }
 
     try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !isRawFile && writableTargetFolder.isTreeDocumentFile && getStorageId(
+        if (!isRawFile && writableTargetFolder.isTreeDocumentFile && getStorageId(
                 context
             ) == targetStorageId
         ) {

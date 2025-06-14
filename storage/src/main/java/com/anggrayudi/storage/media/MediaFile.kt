@@ -1,7 +1,6 @@
 package com.anggrayudi.storage.media
 
 import android.annotation.SuppressLint
-import android.annotation.TargetApi
 import android.app.RecoverableSecurityException
 import android.content.ContentValues
 import android.content.Context
@@ -158,7 +157,7 @@ class MediaFile(context: Context, val uri: Uri) {
     val presentsInSafDatabase: Boolean
         get() = context.contentResolver.query(uri, null, null, null, null)?.use {
             it.count > 0
-        } ?: false
+        } == true
 
     /**
      * @see isEmpty
@@ -406,7 +405,7 @@ class MediaFile(context: Context, val uri: Uri) {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.Q)
+    @RequiresApi(Build.VERSION_CODES.Q)
     fun moveTo(relativePath: String): Boolean {
         val contentValues =
             ContentValues(1).apply { put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath) }
@@ -457,7 +456,7 @@ class MediaFile(context: Context, val uri: Uri) {
         } else {
             val directory = targetFolder.makeFolder(
                 context,
-                fileDescription?.subFolder.orEmpty(),
+                fileDescription.subFolder,
                 CreateMode.REUSE
             )
             if (directory == null) {
@@ -539,7 +538,7 @@ class MediaFile(context: Context, val uri: Uri) {
         } else {
             val directory = targetFolder.makeFolder(
                 context,
-                fileDescription?.subFolder.orEmpty(),
+                fileDescription.subFolder,
                 CreateMode.REUSE
             )
             if (directory == null) {

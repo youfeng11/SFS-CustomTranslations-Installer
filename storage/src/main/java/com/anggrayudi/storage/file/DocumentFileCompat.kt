@@ -177,7 +177,7 @@ object DocumentFileCompat {
             )
             if (file == null && storageId == PRIMARY && basePath.hasParent(Environment.DIRECTORY_DOWNLOADS)) {
                 val downloads =
-                    context.fromTreeUri(Uri.parse(DOWNLOADS_TREE_URI))?.takeIf { it.canRead() }
+                    context.fromTreeUri(DOWNLOADS_TREE_URI.toUri())?.takeIf { it.canRead() }
                         ?: return null
                 downloads.child(context, basePath.substringAfter('/', ""))?.takeIf {
                     documentType == DocumentFileType.ANY
@@ -292,7 +292,7 @@ object DocumentFileCompat {
         }
 
         val fileFromUriOrAbsolutePath: (String) -> DocumentFile? = { treeRootUri ->
-            val downloadFolder = context.fromTreeUri(Uri.parse(treeRootUri))
+            val downloadFolder = context.fromTreeUri(treeRootUri.toUri())
             if (downloadFolder?.canRead() == true) {
                 downloadFolder.child(context, subFile, requiresWriteAccess)
             } else {
@@ -396,11 +396,11 @@ object DocumentFileCompat {
                 .forEach {
                     if (Build.VERSION.SDK_INT < 30) {
                         if (it.uri.isDownloadsDocument && fullPath.hasParent(PublicDirectory.DOWNLOADS.absolutePath)) {
-                            return context.fromTreeUri(Uri.parse(DOWNLOADS_TREE_URI))
+                            return context.fromTreeUri(DOWNLOADS_TREE_URI.toUri())
                         }
 
                         if (it.uri.isDocumentsDocument && fullPath.hasParent(PublicDirectory.DOCUMENTS.absolutePath)) {
-                            return context.fromTreeUri(Uri.parse(DOCUMENTS_TREE_URI))
+                            return context.fromTreeUri(DOCUMENTS_TREE_URI.toUri())
                         }
                     }
 
@@ -874,7 +874,7 @@ object DocumentFileCompat {
                 // Find granted file tree.
                 // For example, /storage/emulated/0/Music may not granted, but /storage/emulated/0/Music/Pop is granted by user.
                 while (directorySequence.isNotEmpty()) {
-                    parentTree.add(directorySequence.removeFirst())
+                    parentTree.add(directorySequence.removeAt(0))
                     val folderTree = parentTree.joinToString(separator = "/")
                     try {
                         grantedFile = context.fromTreeUri(createDocumentUri(storageId, folderTree))

@@ -10,7 +10,7 @@ import com.anggrayudi.storage.extension.getStorageId
 enum class StorageType {
     /**
      * Equals to primary storage.
-     * @see [SimpleStorage.externalStoragePath]
+     * @see [com.anggrayudi.storage.SimpleStorage.externalStoragePath]
      */
     EXTERNAL,
     DATA,
