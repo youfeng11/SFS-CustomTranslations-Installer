@@ -11,10 +11,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anggrayudi.storage.SimpleStorage
 import com.anggrayudi.storage.SimpleStorageHelper
+import com.anggrayudi.storage.callback.SingleFileConflictCallback
 import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.FileFullPath
 import com.anggrayudi.storage.file.StorageType
+import com.anggrayudi.storage.file.copyFileTo
+import com.anggrayudi.storage.media.FileDescription
 import com.anggrayudi.storage.permission.PermissionResult
+import com.anggrayudi.storage.result.SingleFileResult
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
@@ -26,6 +30,8 @@ import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okio.FileSystem
 import okio.Path.Companion.toPath
@@ -136,7 +143,7 @@ class MainViewModel @Inject constructor(
                     val fileSystem = FileSystem.SYSTEM
                     fileSystem.createDirectories(target.toPath())
                     fileSystem.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
-                    updateInstallationProgress("复制成功", true)
+                    updateInstallationProgress("复制成功")
                 } else {
                     // Android 11+ 处理
                     val targetFolder = if (ExploitFileUtil.isExploitable) {
@@ -144,20 +151,43 @@ class MainViewModel @Inject constructor(
                     } else {
                         target
                     }
-                    _uiEvent.send(UiEvent.Install(file, targetFolder))
-                }
-            } catch (_: CancellationException) {
-                // 协程被取消，不进行错误提示
-                _uiState.update {
-                    it.copy(
-                        installationProgressText = "汉化安装中止",
-                        isInstallComplete = true
-                    )
+                    //_uiEvent.send(UiEvent.Install(file, targetFolder))
+                    withContext(Dispatchers.IO) {
+                        file.copyFileTo(
+                            context,
+                            targetFolder,
+                            fileDescription = FileDescription("简体中文.txt"),
+                            onConflict = object : SingleFileConflictCallback<DocumentFile>(
+                                CoroutineScope(Dispatchers.Main)
+                            ) {
+                                override fun onFileConflict(
+                                    destinationFile: DocumentFile,
+                                    action: FileConflictAction
+                                ) {
+                                    action.confirmResolution(ConflictResolution.REPLACE)
+                                }
+                            }
+                        ).collect {
+                            updateInstallationProgress(
+                                when (it) {
+                                    is SingleFileResult.Validating -> "验证中..."
+                                    is SingleFileResult.Preparing -> "准备中..."
+                                    is SingleFileResult.CountingFiles -> "正在计算文件..."
+                                    is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
+                                    is SingleFileResult.Starting -> "开始中..."
+                                    is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
+                                    is SingleFileResult.Completed -> "复制成功"
+                                    is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
+                                }
+                            )
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 val err = e.message ?: "未知错误"
-                updateInstallationProgress("错误：$err", true)
+                updateInstallationProgress("错误：$err")
             }
+            updateInstallationProgress("安装结束", true)
         }
     }
 
@@ -203,20 +233,27 @@ class MainViewModel @Inject constructor(
     /**
      * 请求 SAF 权限或跳转到系统设置。
      */
-    fun onRequestPermissionsClicked() {
+    fun onRequestPermissionsClicked(selectedOption: GrantedType) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (ExploitFileUtil.isExploitable) {
-                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                    data = ("package:" + context.packageName).toUri()
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            when (selectedOption) {
+                is GrantedType.Bug -> {
+                    val intent =
+                        Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
+                            data = ("package:" + context.packageName).toUri()
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                    context.startActivity(intent)
                 }
-                context.startActivity(intent)
-            } else {
-                // 发送事件请求 SAF 权限
-                val fileFullPath =
-                    FileFullPath(context, StorageType.EXTERNAL, Constants.SFS_DATA_DIRECTORY)
-                val expectedBasePath = Constants.SFS_DATA_DIRECTORY
-                _uiEvent.trySend(UiEvent.RequestSafPermissions(fileFullPath, expectedBasePath))
+
+                is GrantedType.Saf -> {
+                    // 发送事件请求 SAF 权限
+                    val fileFullPath =
+                        FileFullPath(context, StorageType.EXTERNAL, Constants.SFS_DATA_DIRECTORY)
+                    val expectedBasePath = Constants.SFS_DATA_DIRECTORY
+                    _uiEvent.trySend(UiEvent.RequestSafPermissions(fileFullPath, expectedBasePath))
+                }
+
+                else -> {}
             }
         }
     }
@@ -258,7 +295,11 @@ class MainViewModel @Inject constructor(
             val newAppState = when {
                 !isInstalled -> AppState.Uninstalled
                 !dataPath.toPath().isDirectoryExists() -> AppState.NeverOpened
-                hasStorageAccess(dataPath) -> AppState.Granted
+                hasStorageAccess(dataPath).first -> {
+                    _uiState.update { it.copy(grantedType = hasStorageAccess(dataPath).second) }
+                    AppState.Granted
+                }
+
                 else -> AppState.Ungranted
             }
             currentState.copy(appState = newAppState)
@@ -315,22 +356,25 @@ class MainViewModel @Inject constructor(
      * @param dataPath 应用程序数据目录的路径。
      * @return 如果有权限，则为 true；否则为 false。
      */
-    private fun hasStorageAccess(dataPath: String): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (Environment.isExternalStorageManager()) {
-                if (ExploitFileUtil.isExploitable) {
-                    true
-                } else {
-                    val accessiblePaths =
-                        DocumentFileCompat.getAccessibleAbsolutePaths(context).values.flatten()
-                            .toSet()
-                    accessiblePaths.contains("${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}")
-                }
-            } else {
-                SimpleStorage.hasStorageAccess(context, dataPath)
+    private fun hasStorageAccess(dataPath: String): Pair<Boolean, GrantedType> {
+        return when {
+            Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> SimpleStorage.hasStoragePermission(
+                context
+            ) to GrantedType.Old
+
+            !Environment.isExternalStorageManager() -> SimpleStorage.hasStorageAccess(
+                context,
+                dataPath
+            ) to GrantedType.Saf
+
+            ExploitFileUtil.isExploitable -> true to GrantedType.Bug
+
+            else -> {
+                val accessiblePaths =
+                    DocumentFileCompat.getAccessibleAbsolutePaths(context).values.flatten()
+                        .toSet()
+                accessiblePaths.contains("${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}") to GrantedType.Saf
             }
-        } else {
-            SimpleStorage.hasStoragePermission(context)
         }
     }
 }
@@ -344,7 +388,8 @@ data class MainUiState(
     val showGoToSettingsDialog: Boolean = false,
     val installationProgressText: String = "",
     val isInstallComplete: Boolean = false,
-    val isSavingComplete: Boolean = true
+    val isSavingComplete: Boolean = true,
+    val grantedType: GrantedType = GrantedType.Saf
 )
 
 /**
@@ -371,6 +416,13 @@ sealed class UiEvent {
     ) : UiEvent()
 
     data class SaveTo(val content: String) : UiEvent()
-    data class Install(val file: DocumentFile, val targetFolder: String) : UiEvent()
     data object PermissionRequestCheck : UiEvent()
+}
+
+sealed class GrantedType {
+    data object Saf : GrantedType()
+    data object Old : GrantedType()
+    data object Bug : GrantedType()
+    data object Shizuku : GrantedType()
+    data object Su : GrantedType()
 }

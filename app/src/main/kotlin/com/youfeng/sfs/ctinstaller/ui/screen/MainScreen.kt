@@ -5,9 +5,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +27,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -48,11 +47,13 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -74,33 +75,29 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.documentfile.provider.DocumentFile
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.anggrayudi.storage.SimpleStorageHelper
-import com.anggrayudi.storage.callback.SingleFileConflictCallback
-import com.anggrayudi.storage.file.copyFileTo
-import com.anggrayudi.storage.media.FileDescription
 import com.anggrayudi.storage.permission.ActivityPermissionRequest
-import com.anggrayudi.storage.result.SingleFileResult
 import com.youfeng.sfs.ctinstaller.R
-import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.AppState
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
+import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 @Composable
@@ -125,7 +122,8 @@ fun MainScreen(
             onInstallButtonClick = viewModel::onInstallButtonClick,
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
             sfsVersionName = viewModel.sfsVersionName,
-            snackbarHostState = snackbarHostState
+            snackbarHostState = snackbarHostState,
+            grantedType = uiState.grantedType
         ) {
             // 在 MainLayout 首次组合时检查权限，或在需要时手动触发
             permissionRequest.check()
@@ -148,7 +146,7 @@ fun MainScreen(
         AlertDialog(
             onDismissRequest = { viewModel.setGoToSettingsDialogVisible(false) },
             title = { Text("要前往设置授权吗？") },
-            text = { Text("由于您不再允许 SFS汉化安装器 请求 存储 权限申请。\n而安装汉化需要 存储 权限，因此您必须在授予 SFS汉化安装器 的 存储 权限后才能安装汉化。\n\n请在接下来的页面中，进入权限页面，并授予 SFS汉化安装器 存储 权限，完成后返") },
+            text = { Text("由于您不再允许 SFS汉化安装器 请求 存储 权限申请。\n而安装汉化需要 存储 权限，因此您必须在授予 SFS汉化安装器 的 存储 权限后才能安装汉化。\n\n请在接下来的页面中，进入权限页面，并授予 SFS汉化安装器 存储 权限，完成后返回") },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.setGoToSettingsDialogVisible(false)
@@ -174,14 +172,12 @@ fun MainScreen(
             },
             title = { Text(if (uiState.isInstallComplete) "安装结束" else "安装汉化中") },
             text = {
-                Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    AnimatedContent(
-                        targetState = uiState.installationProgressText,
-                        transitionSpec = { fadeIn() togetherWith fadeOut() },
-                        label = "installationProgressTextAnimation"
-                    ) {
-                        Text(it)
-                    }
+                Box(
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .animateContentSize()
+                ) {
+                    Text(uiState.installationProgressText)
                 }
             },
             confirmButton = {
@@ -253,46 +249,6 @@ fun UiEventAwareHandler(
                     permissionRequest.check()
                 }
 
-                is UiEvent.Install -> {
-                    // 在独立的 IO 协程中执行文件复制操作
-                    CoroutineScope(Dispatchers.IO + SupervisorJob()).launch {
-                        try {
-                            event.file.copyFileTo(
-                                context,
-                                event.targetFolder,
-                                fileDescription = FileDescription("简体中文.txt"),
-                                onConflict = object : SingleFileConflictCallback<DocumentFile>(
-                                    CoroutineScope(Dispatchers.Main)
-                                ) {
-                                    override fun onFileConflict(
-                                        destinationFile: DocumentFile,
-                                        action: FileConflictAction
-                                    ) {
-                                        action.confirmResolution(ConflictResolution.REPLACE)
-                                    }
-                                }
-                            ).collect { result ->
-                                viewModel.updateInstallationProgress(
-                                    when (result) {
-                                        is SingleFileResult.Validating -> "验证中..."
-                                        is SingleFileResult.Preparing -> "准备中..."
-                                        is SingleFileResult.CountingFiles -> "正在计算文件..."
-                                        is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
-                                        is SingleFileResult.Starting -> "开始中..."
-                                        is SingleFileResult.InProgress -> "进度：${result.progress.toInt()}%"
-                                        is SingleFileResult.Completed -> "复制成功"
-                                        is SingleFileResult.Error -> "发生错误：${result.errorCode.name}"
-                                    }
-                                )
-                            }
-                        } catch (e: Exception) {
-                            val err = e.message ?: "未知错误"
-                            viewModel.updateInstallationProgress("错误：$err")
-                        }
-                        viewModel.updateInstallationProgress("安装结束", true)
-                    }
-                }
-
                 is UiEvent.SaveTo -> {
                     text = event.content
                     coroutineScope.launch {
@@ -327,20 +283,29 @@ fun UiEventAwareHandler(
 @Composable
 private fun MainLayout(// 添加默认参数以便于预览
     onNavigatorToDetails: () -> Unit = {},
-    onRequestPermissionsClicked: () -> Unit = {},
+    onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit = {},
     uiState: AppState = AppState.Uninstalled, // 更改为 AppState
     openSfs: () -> Unit = {},
     onInstallButtonClick: () -> Unit = {},
     onSaveToButtonClick: () -> Unit = {},
     sfsVersionName: String = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
+    grantedType: GrantedType = GrantedType.Saf,
     permissionRequestCheck: () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = {
+            SnackbarHost(
+                snackbarHostState,
+                modifier = Modifier.padding(
+                    bottom = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+                        .asPaddingValues().calculateBottomPadding()
+                )
+            )
+        },
         topBar = {
             TopAppBar(
                 windowInsets = WindowInsets.safeDrawing.only(
@@ -379,10 +344,11 @@ private fun MainLayout(// 添加默认参数以便于预览
                     onRequestPermissionsClicked = onRequestPermissionsClicked,
                     openSfs = openSfs,
                     sfsVersionName = sfsVersionName,
-                    permissionRequestCheck = permissionRequestCheck
+                    permissionRequestCheck = permissionRequestCheck,
+                    grantedType = grantedType
                 )
             }
-            if (false) { // 这个条件始终为 false，可以考虑移除
+            if (false) {
                 item("update") {
                     UpdateCard()
                 }
@@ -401,15 +367,40 @@ private fun MainLayout(// 添加默认参数以便于预览
     }
 }
 
+data class RadioOption(val id: GrantedType, val text: String, val disableInfo: String? = null)
+
 @Composable
 private fun LazyItemScope.StatusCard(
     appState: AppState, // 更改为 AppState
-    onRequestPermissionsClicked: () -> Unit,
+    onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit,
     openSfs: () -> Unit,
     sfsVersionName: String,
-    permissionRequestCheck: () -> Unit
+    permissionRequestCheck: () -> Unit,
+    grantedType: GrantedType
 ) {
     var openDialog by remember { mutableStateOf(false) } // 仅用于 SAF 权限说明的对话框
+    val options = listOf(
+        RadioOption(
+            GrantedType.Saf,
+            "SAF授权（推荐）"
+        ),
+        RadioOption(
+            GrantedType.Bug,
+            "漏洞授权",
+            if (!ExploitFileUtil.isExploitable) "您的设备不支持此方式" else null
+        ),
+        RadioOption(
+            GrantedType.Shizuku,
+            "Shizuku授权",
+            "待开发的功能"
+        ),
+        RadioOption(
+            GrantedType.Su,
+            "ROOT授权",
+            "待开发的功能"
+        )
+    )
+    var selectedOption by remember { mutableStateOf(options[0]) }
     CardWidget(
         title = {
             Text(
@@ -448,7 +439,16 @@ private fun LazyItemScope.StatusCard(
                     is AppState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
                     is AppState.NeverOpened -> "点击此处打开SFS"
                     is AppState.Ungranted -> "点击此处前往授权"
-                    is AppState.Granted -> "当前游戏版本：${sfsVersionName}"
+                    is AppState.Granted -> {
+                        val type = when (grantedType) {
+                            is GrantedType.Saf -> "SAF授权"
+                            is GrantedType.Old -> "存储权限授权"
+                            is GrantedType.Bug -> "漏洞授权"
+                            is GrantedType.Shizuku -> "Shizuku授权"
+                            is GrantedType.Su -> "ROOT授权"
+                        }
+                        "$type | $sfsVersionName"
+                    }
                 }
             )
         },
@@ -456,10 +456,11 @@ private fun LazyItemScope.StatusCard(
             when (appState) {
                 is AppState.NeverOpened -> openSfs()
                 is AppState.Ungranted -> {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                        openDialog = true // 仅在 Android 11+ 且未授权时显示 SAF 说明对话框
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        selectedOption = options[0]
+                        openDialog = true
                     } else {
-                        permissionRequestCheck() // Android 10- 直接请求权限
+                        permissionRequestCheck()
                     }
                 }
 
@@ -467,21 +468,66 @@ private fun LazyItemScope.StatusCard(
             }
         }
     )
+
     if (openDialog) {
         AlertDialog(
             onDismissRequest = { openDialog = false },
-            title = { Text("确定前往授权？") },
+            title = { Text("请选择授权方式") },
             text = {
-                Box(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。\n但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用，使其不可访问 Android/data 及其子目录。\n因此，你必须通过 SAF（Storage Access Framework） 授予 SFS汉化安装器 访问 内部储存/${Constants.SFS_DATA_DIRECTORY} 目录的权限后才可以安装汉化。\n\n请在接下来的页面中，勿进行其他操作，直接点击底部的“使用此文件夹”按钮以完成授权。\n如果你无法完成授权，请尝试前往设置使用高级权限授权！")
+                Column(
+                    Modifier
+                        .selectableGroup()
+                        .verticalScroll(rememberScrollState())
+                ) { // selectableGroup 用于辅助无障碍功能
+                    Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。\n因此，您必须通过以下方式授权 SFS汉化安装器 后才能安装汉化。")
+                    HorizontalDivider(
+                        modifier = Modifier.padding(
+                            top = 10.dp,
+                            start = 4.dp,
+                            end = 4.dp
+                        )
+                    )
+                    options.forEach { option ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .selectable(
+                                    selected = (option == selectedOption),
+                                    onClick = { selectedOption = option },
+                                    role = Role.RadioButton,
+                                    enabled = option.disableInfo == null
+                                )
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (option == selectedOption),
+                                onClick = null, // RadioButton的点击事件由Row的selectable处理
+                                enabled = option.disableInfo == null
+                            )
+                            Column(modifier = Modifier.padding(start = 16.dp)) {
+                                Text(
+                                    text = option.text,
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                option.disableInfo?.let {
+                                    Text(
+                                        text = it,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     openDialog = false
-                    onRequestPermissionsClicked()
+                    onRequestPermissionsClicked(selectedOption.id)
                 }) {
                     Text("确定")
                 }
@@ -500,16 +546,20 @@ private fun LazyItemScope.UpdateCard() {
     CardWidget(
         {
             Text("有新的版本可更新！")
-        }, {
+        },
+        {
             Icon(
                 Icons.Default.Update,
                 contentDescription = null
             )
-        }, text = {
+        },
+        text = {
             Text("新版本：9.9.9 (99)")
-        }, iconColors = IconButtonDefaults.iconButtonColors(
+        },
+        iconColors = IconButtonDefaults.iconButtonColors(
             containerColor = Color.Transparent
-        ), colors = CardDefaults.elevatedCardColors(
+        ),
+        colors = CardDefaults.elevatedCardColors(
             containerColor = MaterialTheme.colorScheme.outlineVariant
         )
     )

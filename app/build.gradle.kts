@@ -84,7 +84,7 @@ android {
             val randomSuffix = UUID.randomUUID().toString().take(6)
             val dateFormat = SimpleDateFormat("yyMMdd")
             val currentDateTime = dateFormat.format(Date())
-            versionNameSuffix = ".build$currentDateTime-$randomSuffix" // 使用UTC时间
+            versionNameSuffix = ".$currentDateTime.$randomSuffix" // 使用UTC时间
         }
     }
 

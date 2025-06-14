@@ -15,6 +15,7 @@ import com.anggrayudi.storage.permission.PermissionCallback
 import com.anggrayudi.storage.permission.PermissionReport
 import com.anggrayudi.storage.permission.PermissionResult
 import com.youfeng.sfs.ctinstaller.ui.theme.MainTheme
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -61,7 +62,7 @@ class MainActivity : ComponentActivity() {
 
         storageHelper.onExpectedStorageNotSelectedEvent = {
             viewModel.showSnackbar("授权失败", "重试") {
-                viewModel.onRequestPermissionsClicked()
+                viewModel.onRequestPermissionsClicked(GrantedType.Saf)
             }
         }
         storageHelper.onStorageAccessGranted = { requestCode, root ->
