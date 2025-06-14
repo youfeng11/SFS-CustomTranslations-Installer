@@ -91,12 +91,7 @@ class MainViewModel @Inject constructor(
      */
     fun cancelCurrentTask() {
         installSaveJob?.cancel()
-        _uiState.update {
-            it.copy(
-                installationProgressText = "任务已取消",
-                isInstallComplete = true
-            )
-        }
+        _uiState.update { it.copy(isInstallComplete = true) }
     }
 
     /**
@@ -146,12 +141,11 @@ class MainViewModel @Inject constructor(
                     updateInstallationProgress("复制成功")
                 } else {
                     // Android 11+ 处理
-                    val targetFolder = if (ExploitFileUtil.isExploitable) {
+                    val targetFolder = if (uiState.value.grantedType is GrantedType.Bug) {
                         target.toPathWithZwsp().toString()
                     } else {
                         target
                     }
-                    //_uiEvent.send(UiEvent.Install(file, targetFolder))
                     withContext(Dispatchers.IO) {
                         file.copyFileTo(
                             context,
