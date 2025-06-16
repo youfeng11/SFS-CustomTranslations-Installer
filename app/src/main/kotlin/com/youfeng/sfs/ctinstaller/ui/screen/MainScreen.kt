@@ -193,12 +193,12 @@ fun MainScreen(
 // 封装可复用的生命周期观察器
 @Composable
 fun LifecycleAwareHandler(
-    onStart: () -> Unit
+    onResume: () -> Unit
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) onStart()
+            if (event == Lifecycle.Event.ON_RESUME) onResume()
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
