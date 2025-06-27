@@ -278,6 +278,21 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    private val isSfsDataDirectoryExists: Boolean
+        get() {
+            val dataPath = "${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}"
+            return when {
+                dataPath.toPath().isDirectoryExists() -> true
+
+                ExploitFileUtil.isExploitable -> dataPath.toPathWithZwsp()
+                    .isDirectoryExists()
+
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM -> true
+
+                else -> false
+            }
+        }
+
     /**
      * 更新主界面的状态。
      */
@@ -288,7 +303,9 @@ class MainViewModel @Inject constructor(
         _uiState.update { currentState ->
             val newAppState = when {
                 !isInstalled -> AppState.Uninstalled
-                !dataPath.toPath().isDirectoryExists() -> AppState.NeverOpened
+
+                !isSfsDataDirectoryExists -> AppState.NeverOpened
+
                 hasStorageAccess(dataPath).first -> {
                     _uiState.update { it.copy(grantedType = hasStorageAccess(dataPath).second) }
                     AppState.Granted
