@@ -25,7 +25,10 @@ import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
 import com.youfeng.sfs.ctinstaller.utils.isDirectoryExists
+import com.youfeng.sfs.ctinstaller.utils.isUrl
+import com.youfeng.sfs.ctinstaller.utils.isValidJson
 import com.youfeng.sfs.ctinstaller.utils.openApp
+import com.youfeng.sfs.ctinstaller.utils.sha256
 import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -113,7 +116,7 @@ class MainViewModel @Inject constructor(
                 updateInstallationProgress("正在获取API…")
                 val result = networkRepository.fetchContentFromUrl(url)
                 updateInstallationProgress("正在解析API…")
-                val customTranslationInfo = if (isValidJson(result)) {
+                val customTranslationInfo = if (result.isValidJson()) {
                     Json.decodeFromString<CustomTranslationInfo>(result)
                 } else throw IllegalArgumentException("无法解析API！")
 
@@ -127,6 +130,14 @@ class MainViewModel @Inject constructor(
 
                 updateInstallationProgress("正在下载汉化…")
                 val textCachePath = networkRepository.downloadFileToCache(customTranslationInfo.url)
+                customTranslationInfo.sha256.apply {
+                    if (!isNullOrBlank()) {
+                        updateInstallationProgress("正在检查完整性…")
+                        val sha256 = if (isUrl()) networkRepository.fetchContentFromUrl(this) else this
+                        if (sha256 != textCachePath.toPath().sha256())
+                            throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
+                    }
+                }
                 updateInstallationProgress("正在安装汉化…")
 
                 val file = DocumentFile.fromFile(File(textCachePath))
@@ -200,7 +211,7 @@ class MainViewModel @Inject constructor(
         installSaveJob = viewModelScope.launch {
             try {
                 val result = networkRepository.fetchContentFromUrl(url)
-                val customTranslationInfo = if (isValidJson(result)) {
+                val customTranslationInfo = if (result.isValidJson()) {
                     Json.decodeFromString<CustomTranslationInfo>(result)
                 } else throw IllegalArgumentException("无法解析API！")
 
@@ -348,18 +359,6 @@ class MainViewModel @Inject constructor(
      */
     fun redirectToSystemSettings() {
         SimpleStorageHelper.redirectToSystemSettings(context)
-    }
-
-    /**
-     * 检查 JSON 字符串是否有效。
-     * @param jsonStr 要检查的 JSON 字符串。
-     * @return 如果是有效 JSON，则为 true；否则为 false。
-     */
-    private fun isValidJson(jsonStr: String): Boolean = try {
-        Json.parseToJsonElement(jsonStr)
-        true
-    } catch (_: Exception) {
-        false
     }
 
     /**
