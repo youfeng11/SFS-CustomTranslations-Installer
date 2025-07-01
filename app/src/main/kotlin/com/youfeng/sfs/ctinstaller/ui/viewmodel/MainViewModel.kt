@@ -27,6 +27,7 @@ import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
 import com.youfeng.sfs.ctinstaller.utils.isDirectoryExists
 import com.youfeng.sfs.ctinstaller.utils.isUrl
 import com.youfeng.sfs.ctinstaller.utils.isValidJson
+import com.youfeng.sfs.ctinstaller.utils.md5
 import com.youfeng.sfs.ctinstaller.utils.openApp
 import com.youfeng.sfs.ctinstaller.utils.sha256
 import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
@@ -127,16 +128,33 @@ class MainViewModel @Inject constructor(
                 ) {
                     throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
-
-                updateInstallationProgress("正在下载汉化…")
-                val textCachePath = networkRepository.downloadFileToCache(customTranslationInfo.url)
-                customTranslationInfo.sha256.apply {
-                    if (!isNullOrBlank()) {
-                        updateInstallationProgress("正在检查完整性…")
-                        val sha256 = if (isUrl()) networkRepository.fetchContentFromUrl(this) else this
-                        if (sha256 != textCachePath.toPath().sha256())
-                            throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
+                val sha256: String? =
+                    customTranslationInfo.sha256?.let {
+                        if (it.isUrl()) networkRepository.fetchContentFromUrl(
+                            it
+                        ) else it
                     }
+
+                val fileSystem = FileSystem.SYSTEM
+                var textCachePath = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
+                updateInstallationProgress("正在获取是否存在缓存…")
+                val canUseCache =
+                    fileSystem.exists(textCachePath.toPath()) && sha256 == textCachePath.toPath().sha256()
+
+                if (!canUseCache) {
+                    updateInstallationProgress("正在下载汉化…")
+                    textCachePath = networkRepository.downloadFileToCache(customTranslationInfo.url)
+                    customTranslationInfo.sha256.apply {
+                        if (!isNullOrBlank()) {
+                            updateInstallationProgress("正在检查完整性…")
+                            val sha256 =
+                                if (isUrl()) networkRepository.fetchContentFromUrl(this) else this
+                            if (sha256 != textCachePath.toPath().sha256())
+                                throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
+                        }
+                    }
+                } else {
+                    updateInstallationProgress("存在缓存，跳过下载")
                 }
                 updateInstallationProgress("正在安装汉化…")
 
@@ -146,7 +164,6 @@ class MainViewModel @Inject constructor(
 
                 if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
                     // Android 10 特殊处理
-                    val fileSystem = FileSystem.SYSTEM
                     fileSystem.createDirectories(target.toPath())
                     fileSystem.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
                     updateInstallationProgress("复制成功")
