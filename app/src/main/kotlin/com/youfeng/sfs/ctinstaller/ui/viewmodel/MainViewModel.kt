@@ -345,6 +345,24 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun updateStateFromRemote() {
+        viewModelScope.launch {
+            try {
+                val result = networkRepository.fetchContentFromUrl(Constants.API_URL)
+                val customTranslationInfo = if (result.isValidJson()) {
+                    Json.decodeFromString<CustomTranslationInfo>(result)
+                } else throw IllegalArgumentException("无法解析API！")
+
+                // 检查必要字段
+                if (customTranslationInfo.compatibleVersion.isNullOrBlank())
+                    throw IllegalArgumentException("目标API数据不完整或非法！")
+                _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion) }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(forGameVersion = "获取失败") }
+            }
+        }
+    }
+
     /**
      * 显示 Snackbar。
      * @param text 要显示的消息。
@@ -416,7 +434,8 @@ data class MainUiState(
     val installationProgressText: String = "",
     val isInstallComplete: Boolean = false,
     val isSavingComplete: Boolean = true,
-    val grantedType: GrantedType = GrantedType.Saf
+    val grantedType: GrantedType = GrantedType.Saf,
+    val forGameVersion: String = "加载中..."
 )
 
 /**

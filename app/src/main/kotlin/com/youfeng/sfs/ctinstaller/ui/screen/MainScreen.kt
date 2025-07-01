@@ -84,7 +84,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Lifecycle.Event.ON_RESUME
+import androidx.lifecycle.Lifecycle.Event.ON_START
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.anggrayudi.storage.SimpleStorageHelper
@@ -123,6 +124,7 @@ fun MainScreen(
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
             sfsVersionName = viewModel.sfsVersionName,
             snackbarHostState = snackbarHostState,
+            forGameVersion = uiState.forGameVersion,
             grantedType = uiState.grantedType
         ) {
             // 在 MainLayout 首次组合时检查权限，或在需要时手动触发
@@ -131,7 +133,7 @@ fun MainScreen(
     }
 
     // 处理生命周期事件，更新 ViewModel 状态
-    LifecycleAwareHandler(viewModel::updateMainState)
+    LifecycleAwareHandler(viewModel::updateMainState, viewModel::updateStateFromRemote)
 
     // 处理一次性 UI 事件，例如显示 Snackbar，启动文件选择器等
     UiEventAwareHandler(
@@ -200,12 +202,17 @@ fun MainScreen(
 // 封装可复用的生命周期观察器
 @Composable
 fun LifecycleAwareHandler(
-    onResume: () -> Unit
+    onResume: () -> Unit,
+    onStart: () -> Unit
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) onResume()
+            when (event) {
+                ON_RESUME -> onResume()
+                ON_START -> onStart()
+                else -> {}
+            }
         }
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
@@ -298,6 +305,7 @@ private fun MainLayout(// 添加默认参数以便于预览
     sfsVersionName: String = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
+    forGameVersion: String = "",
     permissionRequestCheck: () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -364,7 +372,8 @@ private fun MainLayout(// 添加默认参数以便于预览
                 InstallCard(
                     onInstallButtonClick = onInstallButtonClick,
                     onSaveToButtonClick = onSaveToButtonClick,
-                    enableInstallButton = uiState is AppState.Granted // 根据 AppState 判断是否启用
+                    enableInstallButton = uiState is AppState.Granted, // 根据 AppState 判断是否启用
+                    forGameVersion = forGameVersion
                 )
             }
             item("donate") {
@@ -576,7 +585,9 @@ private fun LazyItemScope.UpdateCard() {
 private fun LazyItemScope.InstallCard(
     onInstallButtonClick: () -> Unit,
     onSaveToButtonClick: () -> Unit,
-    enableInstallButton: Boolean
+    enableInstallButton: Boolean,
+    forGameVersion: String
+
 ) {
     var openChooseDialog by remember { mutableStateOf(false) }
     if (openChooseDialog) {
@@ -608,6 +619,7 @@ private fun LazyItemScope.InstallCard(
     }) {
         Column {
             Text("当前选择：简体中文")
+            Text("适用版本：$forGameVersion")
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
