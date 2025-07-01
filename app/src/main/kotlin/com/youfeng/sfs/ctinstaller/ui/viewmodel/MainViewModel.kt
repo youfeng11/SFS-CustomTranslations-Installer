@@ -48,7 +48,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
+    @param:ApplicationContext private val context: Context,
     private val networkRepository: NetworkRepository
 ) : ViewModel() {
 
