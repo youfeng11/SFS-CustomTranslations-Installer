@@ -170,7 +170,14 @@ fun MainScreen(
                     false
                 )
             },
-            title = { Text(if (uiState.isInstallComplete) "安装结束" else "安装汉化中") },
+            title = {
+                AnimatedContent(
+                    targetState = uiState.isInstallComplete,
+                    label = "DialogTitleAnimation" // 可选的标签，用于调试
+                ) { isComplete ->
+                    Text(if (isComplete) "安装结束" else "安装汉化中")
+                }
+            },
             text = {
                 Box(
                     modifier = Modifier
