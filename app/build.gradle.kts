@@ -134,6 +134,9 @@ dependencies {
     implementation(libs.okio)
     implementation(libs.okhttp)
 
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
+
     implementation(libs.documentfile)
     implementation(project(":storage"))
 }
