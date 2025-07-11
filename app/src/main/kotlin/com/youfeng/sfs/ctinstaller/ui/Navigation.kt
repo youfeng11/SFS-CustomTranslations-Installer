@@ -1,7 +1,12 @@
 package com.youfeng.sfs.ctinstaller.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,11 +46,16 @@ fun MainNavigation(
         }
         Text(
             "内测版本：${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})，仅供演示，不代表最终效果",
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.titleSmall,
             modifier = Modifier
-                .padding(vertical = 2.dp)
+                .padding(
+                    start = 2.dp,
+                    end = 2.dp,
+                    bottom = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+                        .asPaddingValues().calculateBottomPadding()
+                )
                 .align(Alignment.BottomCenter),
-            color = MaterialTheme.colorScheme.error,
+            color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
             textAlign = TextAlign.Center
         )
     }
