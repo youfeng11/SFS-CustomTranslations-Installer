@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -53,7 +52,6 @@ import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -75,28 +73,26 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle.Event.ON_RESUME
-import androidx.lifecycle.Lifecycle.Event.ON_START
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.anggrayudi.storage.SimpleStorageHelper
 import com.anggrayudi.storage.permission.ActivityPermissionRequest
 import com.youfeng.sfs.ctinstaller.R
+import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
+import com.youfeng.sfs.ctinstaller.ui.component.RadioOptionItem
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.AppState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
-import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -125,7 +121,8 @@ fun MainScreen(
             sfsVersionName = viewModel.sfsVersionName,
             snackbarHostState = snackbarHostState,
             forGameVersion = uiState.forGameVersion,
-            grantedType = uiState.grantedType
+            grantedType = uiState.grantedType,
+            options = uiState.options
         ) {
             // 在 MainLayout 首次组合时检查权限，或在需要时手动触发
             permissionRequest.check()
@@ -133,7 +130,12 @@ fun MainScreen(
     }
 
     // 处理生命周期事件，更新 ViewModel 状态
-    LifecycleAwareHandler(viewModel::updateMainState, viewModel::updateStateFromRemote)
+    LifecycleAwareHandler(
+        onCreate = viewModel::addShizukuListener,
+        onResume = viewModel::updateMainState,
+        onStart = viewModel::updateStateFromRemote,
+        onDestroy = viewModel::removeShizukuListener
+    )
 
     // 处理一次性 UI 事件，例如显示 Snackbar，启动文件选择器等
     UiEventAwareHandler(
@@ -202,15 +204,19 @@ fun MainScreen(
 // 封装可复用的生命周期观察器
 @Composable
 fun LifecycleAwareHandler(
+    onCreate: () -> Unit,
     onResume: () -> Unit,
-    onStart: () -> Unit
+    onStart: () -> Unit,
+    onDestroy: () -> Unit
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                ON_RESUME -> onResume()
-                ON_START -> onStart()
+                Lifecycle.Event.ON_CREATE -> onCreate()
+                Lifecycle.Event.ON_RESUME -> onResume()
+                Lifecycle.Event.ON_START -> onStart()
+                Lifecycle.Event.ON_DESTROY -> onDestroy()
                 else -> {}
             }
         }
@@ -306,6 +312,7 @@ private fun MainLayout(// 添加默认参数以便于预览
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
     forGameVersion: String = "",
+    options: List<RadioOption> = emptyList(),
     permissionRequestCheck: () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -360,7 +367,8 @@ private fun MainLayout(// 添加默认参数以便于预览
                     openSfs = openSfs,
                     sfsVersionName = sfsVersionName,
                     permissionRequestCheck = permissionRequestCheck,
-                    grantedType = grantedType
+                    grantedType = grantedType,
+                    options = options
                 )
             }
             if (false) {
@@ -383,8 +391,6 @@ private fun MainLayout(// 添加默认参数以便于预览
     }
 }
 
-data class RadioOption(val id: GrantedType, val text: String, val disableInfo: String? = null)
-
 @Composable
 private fun LazyItemScope.StatusCard(
     appState: AppState, // 更改为 AppState
@@ -392,30 +398,10 @@ private fun LazyItemScope.StatusCard(
     openSfs: () -> Unit,
     sfsVersionName: String,
     permissionRequestCheck: () -> Unit,
-    grantedType: GrantedType
+    grantedType: GrantedType,
+    options: List<RadioOption>
 ) {
     var openDialog by remember { mutableStateOf(false) } // 仅用于 SAF 权限说明的对话框
-    val options = listOf(
-        RadioOption(
-            GrantedType.Saf,
-            "SAF授权（推荐）"
-        ),
-        RadioOption(
-            GrantedType.Bug,
-            "漏洞授权",
-            if (!ExploitFileUtil.isExploitable) "您的设备不支持此方式" else null
-        ),
-        RadioOption(
-            GrantedType.Shizuku,
-            "Shizuku授权",
-            "待开发的功能"
-        ),
-        RadioOption(
-            GrantedType.Su,
-            "ROOT授权",
-            "待开发的功能"
-        )
-    )
     var selectedOption by remember { mutableStateOf(options[0]) }
     CardWidget(
         title = {
@@ -504,39 +490,12 @@ private fun LazyItemScope.StatusCard(
                         )
                     )
                     options.forEach { option ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .selectable(
-                                    selected = (option == selectedOption),
-                                    onClick = { selectedOption = option },
-                                    role = Role.RadioButton,
-                                    enabled = option.disableInfo == null
-                                )
-                                .padding(horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = (option == selectedOption),
-                                onClick = null, // RadioButton的点击事件由Row的selectable处理
-                                enabled = option.disableInfo == null
-                            )
-                            Column(modifier = Modifier.padding(start = 16.dp)) {
-                                Text(
-                                    text = option.text,
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                option.disableInfo?.let {
-                                    Text(
-                                        text = it,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-                            }
-                        }
+                        RadioOptionItem(
+                            title = if (options[0].id == option.id) "${option.text}（推荐）" else option.text,
+                            summary = option.disableInfo,
+                            selected = option == selectedOption,
+                            onClick = { selectedOption = option }
+                        )
                     }
                 }
             },

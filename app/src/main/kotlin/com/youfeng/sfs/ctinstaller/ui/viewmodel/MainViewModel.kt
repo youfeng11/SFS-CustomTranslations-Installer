@@ -2,6 +2,7 @@ package com.youfeng.sfs.ctinstaller.ui.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
@@ -21,6 +22,7 @@ import com.anggrayudi.storage.permission.PermissionResult
 import com.anggrayudi.storage.result.SingleFileResult
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
+import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
@@ -47,14 +49,24 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import rikka.shizuku.Shizuku
+import rikka.shizuku.Shizuku.OnBinderDeadListener
+import rikka.shizuku.Shizuku.OnBinderReceivedListener
+import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.File
 import javax.inject.Inject
+
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val networkRepository: NetworkRepository
 ) : ViewModel() {
+
+    init {
+        Shizuku.addBinderReceivedListener { shizukuBinder = true }
+        Shizuku.addBinderDeadListener { shizukuBinder = false }
+    }
 
     // UI 事件，用于触发一次性操作，如显示 Snackbar、启动 Activity 等
     private val _uiEvent = Channel<UiEvent>()
@@ -66,6 +78,64 @@ class MainViewModel @Inject constructor(
 
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
+
+    private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
+        if (grantResult == PackageManager.PERMISSION_GRANTED) updateMainState() else
+            showSnackbar("授权失败")
+        // Do stuff based on the result and the request code
+    }
+
+    private val requestPermissionResultListener =
+        OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
+            this.onRequestPermissionsResult(
+                requestCode,
+                grantResult
+            )
+        }
+
+    private val binderReceivedListener = OnBinderReceivedListener {
+        shizukuBinder = !Shizuku.isPreV11()
+    }
+    private val binderDeadListener = OnBinderDeadListener { shizukuBinder = false }
+
+    fun addShizukuListener() {
+        Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
+        Shizuku.addBinderDeadListener(binderDeadListener)
+        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
+    }
+
+    fun removeShizukuListener() {
+        Shizuku.removeBinderReceivedListener(binderReceivedListener)
+        Shizuku.removeBinderDeadListener(binderDeadListener)
+        Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
+    }
+
+    private fun checkPermission(): Boolean {
+        when {
+            Shizuku.isPreV11() -> {
+                // Pre-v11 is unsupported
+                return false
+            }
+
+            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
+                // Granted
+                return true
+            }
+
+            Shizuku.shouldShowRequestPermissionRationale() -> {
+                // Users choose "Deny and don't ask again"
+                return false
+            }
+
+            else -> {
+                // Request the permission
+                Shizuku.requestPermission((Int.MIN_VALUE..Int.MAX_VALUE).random())
+                return false
+            }
+        }
+    }
+
+    private var shizukuBinder: Boolean = false
 
     // SFS 版本名称的计算属性
     val sfsVersionName: String
@@ -139,7 +209,8 @@ class MainViewModel @Inject constructor(
                 var textCachePath = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
                 updateInstallationProgress("正在获取是否存在缓存…")
                 val canUseCache =
-                    fileSystem.exists(textCachePath.toPath()) && sha256 == textCachePath.toPath().sha256()
+                    fileSystem.exists(textCachePath.toPath()) && sha256 == textCachePath.toPath()
+                        .sha256()
 
                 if (!canUseCache) {
                     updateInstallationProgress("正在下载汉化…")
@@ -275,6 +346,10 @@ class MainViewModel @Inject constructor(
                     _uiEvent.trySend(UiEvent.RequestSafPermissions(fileFullPath, expectedBasePath))
                 }
 
+                is GrantedType.Shizuku -> {
+                    checkPermission()
+                }
+
                 else -> {}
             }
         }
@@ -325,6 +400,32 @@ class MainViewModel @Inject constructor(
      * 更新主界面的状态。
      */
     fun updateMainState() {
+        val optionList = listOf(
+            RadioOption(
+                GrantedType.Shizuku,
+                "Shizuku授权",
+                when {
+                    !shizukuBinder -> "Shizuku不可用"
+                    else -> null
+                }
+            ),
+            RadioOption(
+                GrantedType.Su,
+                "ROOT授权",
+                "待开发的功能"
+            ),
+            RadioOption(
+                GrantedType.Bug,
+                "漏洞授权",
+                if (!ExploitFileUtil.isExploitable) "您的设备不支持此方式" else null
+            ),
+            RadioOption(
+                GrantedType.Saf,
+                "SAF授权",
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) "您的设备不支持此方式" else null
+            )
+        )
+        val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
         val isInstalled = context.isAppInstalled(Constants.SFS_PACKAGE_NAME)
         val dataPath = "${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}"
 
@@ -341,7 +442,7 @@ class MainViewModel @Inject constructor(
 
                 else -> AppState.Ungranted
             }
-            currentState.copy(appState = newAppState)
+            currentState.copy(appState = newAppState, options = options)
         }
     }
 
@@ -407,6 +508,8 @@ class MainViewModel @Inject constructor(
                 context
             ) to GrantedType.Old
 
+            (!Shizuku.isPreV11()) && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> true to GrantedType.Shizuku
+
             !Environment.isExternalStorageManager() -> SimpleStorage.hasStorageAccess(
                 context,
                 dataPath
@@ -435,7 +538,26 @@ data class MainUiState(
     val isInstallComplete: Boolean = false,
     val isSavingComplete: Boolean = true,
     val grantedType: GrantedType = GrantedType.Saf,
-    val forGameVersion: String = "加载中..."
+    val forGameVersion: String = "加载中...",
+    val options: List<RadioOption> = listOf(
+        RadioOption(
+            GrantedType.Shizuku,
+            "Shizuku授权"
+        ),
+        RadioOption(
+            GrantedType.Su,
+            "ROOT授权",
+            "待开发的功能"
+        ),
+        RadioOption(
+            GrantedType.Bug,
+            "漏洞授权"
+        ),
+        RadioOption(
+            GrantedType.Saf,
+            "SAF授权"
+        )
+    )
 )
 
 /**
