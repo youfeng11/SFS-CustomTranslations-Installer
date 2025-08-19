@@ -117,7 +117,7 @@ class MainViewModel @Inject constructor(
                 return false
             }
 
-            Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
+            shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
                 // Granted
                 return true
             }
@@ -404,10 +404,11 @@ class MainViewModel @Inject constructor(
             RadioOption(
                 GrantedType.Shizuku,
                 "Shizuku授权",
-                when {
+                "待开发的功能"
+                /*when {
                     !shizukuBinder -> "Shizuku不可用"
                     else -> null
-                }
+                }*/
             ),
             RadioOption(
                 GrantedType.Su,
@@ -508,7 +509,7 @@ class MainViewModel @Inject constructor(
                 context
             ) to GrantedType.Old
 
-            (!Shizuku.isPreV11()) && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> true to GrantedType.Shizuku
+            shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> true to GrantedType.Shizuku
 
             !Environment.isExternalStorageManager() -> SimpleStorage.hasStorageAccess(
                 context,
@@ -546,8 +547,7 @@ data class MainUiState(
         ),
         RadioOption(
             GrantedType.Su,
-            "ROOT授权",
-            "待开发的功能"
+            "ROOT授权"
         ),
         RadioOption(
             GrantedType.Bug,
