@@ -24,7 +24,7 @@ for (name in arrayOf("release.properties")) {
 
 android {
     namespace = "com.youfeng.sfs.ctinstaller"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.1.12297006"
 
     defaultConfig {
