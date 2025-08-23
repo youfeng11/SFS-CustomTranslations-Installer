@@ -110,7 +110,7 @@ class MainViewModel @Inject constructor(
         Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
-    private fun checkPermission(): Boolean {
+    private fun checkShizukuPermission(): Boolean {
         when {
             Shizuku.isPreV11() -> {
                 // Pre-v11 is unsupported
@@ -347,7 +347,7 @@ class MainViewModel @Inject constructor(
                 }
 
                 is GrantedType.Shizuku -> {
-                    checkPermission()
+                    checkShizukuPermission()
                 }
 
                 else -> {}
