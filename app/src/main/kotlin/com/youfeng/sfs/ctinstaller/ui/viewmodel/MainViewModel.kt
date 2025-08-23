@@ -3,15 +3,15 @@ package com.youfeng.sfs.ctinstaller.ui.viewmodel
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.anggrayudi.storage.SimpleStorage
-import com.anggrayudi.storage.SimpleStorageHelper
 import com.anggrayudi.storage.callback.SingleFileConflictCallback
 import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.FileFullPath
@@ -23,8 +23,11 @@ import com.anggrayudi.storage.result.SingleFileResult
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
+import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
+import com.youfeng.sfs.ctinstaller.utils.DocumentUriUtil
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
+import com.youfeng.sfs.ctinstaller.utils.checkStoragePermission
 import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
 import com.youfeng.sfs.ctinstaller.utils.isDirectoryExists
 import com.youfeng.sfs.ctinstaller.utils.isUrl
@@ -56,17 +59,12 @@ import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.File
 import javax.inject.Inject
 
-
 @HiltViewModel
 class MainViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
-    private val networkRepository: NetworkRepository
+    private val networkRepository: NetworkRepository,
+    private val folderRepository: FolderRepository
 ) : ViewModel() {
-
-    init {
-        Shizuku.addBinderReceivedListener { shizukuBinder = true }
-        Shizuku.addBinderDeadListener { shizukuBinder = false }
-    }
 
     // UI 事件，用于触发一次性操作，如显示 Snackbar、启动 Activity 等
     private val _uiEvent = Channel<UiEvent>()
@@ -79,18 +77,39 @@ class MainViewModel @Inject constructor(
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
 
+    fun onFolderSelected(uri: Uri?) {
+        viewModelScope.launch {
+            Log.d("SFSCTI", uri.toString())
+            Log.d("SFSCTI", sfsDataUri.toString())
+            if (uri != null && uri == DocumentUriUtil.buildAndroidData(Constants.SFS_PACKAGE_NAME)) {
+                showSnackbar("授权成功")
+                updateMainState()
+                folderRepository.persistFolderUri(uri)
+            } else {
+                showSnackbar("授权失败", "重试") {
+                    onRequestPermissionsClicked(GrantedType.Saf)
+                }
+            }
+        }
+    }
+
+    val sfsDataUri: Uri?
+        get() =
+            DocumentUriUtil.buildAndroidDataInit(Constants.SFS_PACKAGE_NAME)
+
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
         if (grantResult == PackageManager.PERMISSION_GRANTED) updateMainState() else
             showSnackbar("授权失败")
         // Do stuff based on the result and the request code
     }
 
-    private val requestPermissionResultListener =
+    private val requestPermissionResultListener: OnRequestPermissionResultListener =
         OnRequestPermissionResultListener { requestCode: Int, grantResult: Int ->
-            this.onRequestPermissionsResult(
+            onRequestPermissionsResult(
                 requestCode,
                 grantResult
             )
+            Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
         }
 
     private val binderReceivedListener = OnBinderReceivedListener {
@@ -101,13 +120,11 @@ class MainViewModel @Inject constructor(
     fun addShizukuListener() {
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
-        Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
     }
 
     fun removeShizukuListener() {
         Shizuku.removeBinderReceivedListener(binderReceivedListener)
         Shizuku.removeBinderDeadListener(binderDeadListener)
-        Shizuku.removeRequestPermissionResultListener(requestPermissionResultListener)
     }
 
     private fun checkShizukuPermission(): Boolean {
@@ -129,6 +146,7 @@ class MainViewModel @Inject constructor(
 
             else -> {
                 // Request the permission
+                Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
                 Shizuku.requestPermission((Int.MIN_VALUE..Int.MAX_VALUE).random())
                 return false
             }
@@ -231,7 +249,7 @@ class MainViewModel @Inject constructor(
 
                 val file = DocumentFile.fromFile(File(textCachePath))
                 val target =
-                    "${SimpleStorage.externalStoragePath}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
+                    "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
 
                 if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
                     // Android 10 特殊处理
@@ -383,7 +401,7 @@ class MainViewModel @Inject constructor(
 
     private val isSfsDataDirectoryExists: Boolean
         get() {
-            val dataPath = "${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}"
+            val dataPath = "${Constants.externalStorage}/${Constants.SFS_DATA_DIRECTORY}"
             return when {
                 dataPath.toPath().isDirectoryExists() -> true
 
@@ -400,50 +418,50 @@ class MainViewModel @Inject constructor(
      * 更新主界面的状态。
      */
     fun updateMainState() {
-        val optionList = listOf(
-            RadioOption(
-                GrantedType.Shizuku,
-                "Shizuku授权",
-                "待开发的功能"
-                /*when {
-                    !shizukuBinder -> "Shizuku不可用"
-                    else -> null
-                }*/
-            ),
-            RadioOption(
-                GrantedType.Su,
-                "ROOT授权",
-                "待开发的功能"
-            ),
-            RadioOption(
-                GrantedType.Bug,
-                "漏洞授权",
-                if (!ExploitFileUtil.isExploitable) "您的设备不支持此方式" else null
-            ),
-            RadioOption(
-                GrantedType.Saf,
-                "SAF授权",
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) "您的设备不支持此方式" else null
+        viewModelScope.launch {
+            val optionList = listOf(
+                RadioOption(
+                    GrantedType.Shizuku,
+                    "Shizuku授权",
+                    //"待开发的功能"
+                    if (!shizukuBinder)
+                        "Shizuku不可用"
+                    else null
+                ),
+                RadioOption(
+                    GrantedType.Su,
+                    "ROOT授权",
+                    "待开发的功能"
+                ),
+                RadioOption(
+                    GrantedType.Bug,
+                    "漏洞授权",
+                    if (!ExploitFileUtil.isExploitable) "您的设备不支持此方式" else null
+                ),
+                RadioOption(
+                    GrantedType.Saf,
+                    "SAF授权",
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) "您的设备不支持此方式" else null
+                )
             )
-        )
-        val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
-        val isInstalled = context.isAppInstalled(Constants.SFS_PACKAGE_NAME)
-        val dataPath = "${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}"
+            val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
+            val isInstalled = context.isAppInstalled(Constants.SFS_PACKAGE_NAME)
 
-        _uiState.update { currentState ->
-            val newAppState = when {
-                !isInstalled -> AppState.Uninstalled
+            _uiState.update { currentState ->
+                val newAppState = when {
+                    !isInstalled -> AppState.Uninstalled
 
-                !isSfsDataDirectoryExists -> AppState.NeverOpened
+                    !isSfsDataDirectoryExists -> AppState.NeverOpened
 
-                hasStorageAccess(dataPath).first -> {
-                    _uiState.update { it.copy(grantedType = hasStorageAccess(dataPath).second) }
-                    AppState.Granted
+                    hasStorageAccess().first -> {
+                        _uiState.update { it.copy(grantedType = hasStorageAccess().second) }
+                        AppState.Granted
+                    }
+
+                    else -> AppState.Ungranted
                 }
-
-                else -> AppState.Ungranted
+                currentState.copy(appState = newAppState, options = options)
             }
-            currentState.copy(appState = newAppState, options = options)
         }
     }
 
@@ -495,26 +513,24 @@ class MainViewModel @Inject constructor(
      * 重定向到系统设置。
      */
     fun redirectToSystemSettings() {
-        SimpleStorageHelper.redirectToSystemSettings(context)
+        val intentSetting = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            "package:${context.packageName}".toUri()
+        )
+        context.startActivity(intentSetting)
     }
 
     /**
      * 检查是否有存储访问权限。
-     * @param dataPath 应用程序数据目录的路径。
      * @return 如果有权限，则为 true；否则为 false。
      */
-    private fun hasStorageAccess(dataPath: String): Pair<Boolean, GrantedType> {
+    private suspend fun hasStorageAccess(): Pair<Boolean, GrantedType> {
         return when {
-            Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> SimpleStorage.hasStoragePermission(
-                context
-            ) to GrantedType.Old
+            Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> checkStoragePermission(context) to GrantedType.Old
 
             shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> true to GrantedType.Shizuku
 
-            !Environment.isExternalStorageManager() -> SimpleStorage.hasStorageAccess(
-                context,
-                dataPath
-            ) to GrantedType.Saf
+            !Environment.isExternalStorageManager() -> (folderRepository.getPersistedFolderUri() != null) to GrantedType.Saf
 
             ExploitFileUtil.isExploitable -> true to GrantedType.Bug
 
@@ -522,7 +538,7 @@ class MainViewModel @Inject constructor(
                 val accessiblePaths =
                     DocumentFileCompat.getAccessibleAbsolutePaths(context).values.flatten()
                         .toSet()
-                accessiblePaths.contains("${SimpleStorage.externalStoragePath}/${Constants.SFS_DATA_DIRECTORY}") to GrantedType.Saf
+                accessiblePaths.contains("${Constants.externalStorage}/${Constants.SFS_DATA_DIRECTORY}") to GrantedType.Saf
             }
         }
     }

@@ -1,6 +1,10 @@
 package com.youfeng.sfs.ctinstaller.core
 
+import android.os.Environment
+
 object Constants {
+    val externalStorage: String =
+        Environment.getExternalStorageDirectory().absolutePath
 
     const val ANDROID_DATA_DIRECTORY = "Android/data"
 

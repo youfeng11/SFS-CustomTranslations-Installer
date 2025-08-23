@@ -18,7 +18,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.anggrayudi.storage.SimpleStorageHelper
 import com.anggrayudi.storage.permission.ActivityPermissionRequest
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
@@ -28,7 +27,6 @@ import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 @Composable
 fun MainNavigation(
     viewModel: MainViewModel,
-    storageHelper: SimpleStorageHelper,
     permissionRequest: ActivityPermissionRequest,
     navController: NavHostController = rememberNavController()
 ) {
@@ -38,7 +36,6 @@ fun MainNavigation(
                 MainScreen(
                     viewModel = viewModel,
                     onNavigatorToDetails = { navController.navigate("settings") },
-                    storageHelper = storageHelper,
                     permissionRequest = permissionRequest
                 )
             }

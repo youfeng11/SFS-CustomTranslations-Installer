@@ -83,7 +83,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.anggrayudi.storage.SimpleStorageHelper
 import com.anggrayudi.storage.permission.ActivityPermissionRequest
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
@@ -101,7 +100,6 @@ import kotlinx.coroutines.launch
 fun MainScreen(
     onNavigatorToDetails: () -> Unit,
     viewModel: MainViewModel = hiltViewModel(),
-    storageHelper: SimpleStorageHelper,
     permissionRequest: ActivityPermissionRequest
 ) {
     // 收集 UI 状态
@@ -140,7 +138,6 @@ fun MainScreen(
     // 处理一次性 UI 事件，例如显示 Snackbar，启动文件选择器等
     UiEventAwareHandler(
         viewModel,
-        storageHelper,
         coroutineScope,
         snackbarHostState,
         permissionRequest
@@ -228,7 +225,6 @@ fun LifecycleAwareHandler(
 @Composable
 fun UiEventAwareHandler(
     viewModel: MainViewModel,
-    storageHelper: SimpleStorageHelper,
     coroutineScope: CoroutineScope,
     snackbarHostState: SnackbarHostState,
     permissionRequest: ActivityPermissionRequest
@@ -254,15 +250,17 @@ fun UiEventAwareHandler(
             }
         }
     }
+    val safLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) {
+        viewModel.onFolderSelected(it)
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is UiEvent.RequestSafPermissions -> {
-                    storageHelper.requestStorageAccess(
-                        initialPath = event.fileFullPath,
-                        expectedBasePath = event.expectedBasePath
-                    )
+                    safLauncher.launch(viewModel.sfsDataUri)
                 }
 
                 is UiEvent.PermissionRequestCheck -> {

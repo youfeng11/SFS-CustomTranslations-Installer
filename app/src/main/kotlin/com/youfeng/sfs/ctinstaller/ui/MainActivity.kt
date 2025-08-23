@@ -9,13 +9,11 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import com.anggrayudi.storage.SimpleStorageHelper
 import com.anggrayudi.storage.permission.ActivityPermissionRequest
 import com.anggrayudi.storage.permission.PermissionCallback
 import com.anggrayudi.storage.permission.PermissionReport
 import com.anggrayudi.storage.permission.PermissionResult
 import com.youfeng.sfs.ctinstaller.ui.theme.MainTheme
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -43,8 +41,6 @@ class MainActivity : ComponentActivity() {
         })
         .build()
 
-    private val storageHelper = SimpleStorageHelper(this)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -56,18 +52,8 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MainTheme {
-                MainNavigation(viewModel, storageHelper, permissionRequest)
+                MainNavigation(viewModel, permissionRequest)
             }
-        }
-
-        storageHelper.onExpectedStorageNotSelectedEvent = {
-            viewModel.showSnackbar("授权失败", "重试") {
-                viewModel.onRequestPermissionsClicked(GrantedType.Saf)
-            }
-        }
-        storageHelper.onStorageAccessGranted = { requestCode, root ->
-            viewModel.updateMainState()
-            viewModel.showSnackbar("授权成功")
         }
     }
 }
