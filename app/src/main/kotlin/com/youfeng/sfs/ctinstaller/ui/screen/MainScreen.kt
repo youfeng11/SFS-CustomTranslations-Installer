@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -401,6 +402,12 @@ private fun LazyItemScope.StatusCard(
 ) {
     var openDialog by remember { mutableStateOf(false) } // 仅用于 SAF 权限说明的对话框
     var selectedOption by remember { mutableStateOf(options[0]) }
+    val color by animateColorAsState(
+        targetValue = if (appState is AppState.Granted)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            MaterialTheme.colorScheme.errorContainer
+    )
     CardWidget(
         title = {
             Text(
@@ -423,9 +430,7 @@ private fun LazyItemScope.StatusCard(
             )
         },
         colors = CardDefaults.cardColors(
-            containerColor = if (appState is AppState.Granted) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else MaterialTheme.colorScheme.errorContainer
+            containerColor = color
         ),
         iconColors = IconButtonDefaults.iconButtonColors(
             containerColor = Color.Transparent,
@@ -656,7 +661,8 @@ private fun LazyItemScope.CardWidget(
 ) {
     ElevatedCard(
         modifier = modifier.animateItem(),
-        colors = colors, onClick = onClick
+        colors = colors,
+        onClick = onClick
     ) {
         Column(
             modifier = Modifier
