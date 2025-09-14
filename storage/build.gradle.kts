@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.anggrayudi.storage"
-    compileSdk = 35
+    compileSdk = 36
     resourcePrefix = "ss_"
 
     defaultConfig {
