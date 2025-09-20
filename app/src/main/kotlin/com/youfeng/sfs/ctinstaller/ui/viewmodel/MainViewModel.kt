@@ -25,6 +25,7 @@ import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
+import com.youfeng.sfs.ctinstaller.data.repository.ShizukuRepository
 import com.youfeng.sfs.ctinstaller.utils.DocumentUriUtil
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.checkStoragePermission
@@ -63,7 +64,8 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val networkRepository: NetworkRepository,
-    private val folderRepository: FolderRepository
+    private val folderRepository: FolderRepository,
+    private val shizukuRepository: ShizukuRepository
 ) : ViewModel() {
 
     // UI 事件，用于触发一次性操作，如显示 Snackbar、启动 Activity 等
@@ -98,8 +100,10 @@ class MainViewModel @Inject constructor(
             DocumentUriUtil.buildAndroidDataInit(Constants.SFS_PACKAGE_NAME)
 
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        if (grantResult == PackageManager.PERMISSION_GRANTED) updateMainState() else
-            showSnackbar("授权失败")
+        if (grantResult == PackageManager.PERMISSION_GRANTED) {
+            updateMainState()
+            shizukuRepository.startUserService()
+        } else showSnackbar("授权失败")
         // Do stuff based on the result and the request code
     }
 
@@ -131,16 +135,19 @@ class MainViewModel @Inject constructor(
         when {
             Shizuku.isPreV11() -> {
                 // Pre-v11 is unsupported
+                showSnackbar("请更新Shizuku/Sui至最新版本")
                 return false
             }
 
             shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
                 // Granted
+                shizukuRepository.startUserService()
                 return true
             }
 
             Shizuku.shouldShowRequestPermissionRationale() -> {
                 // Users choose "Deny and don't ask again"
+                showSnackbar("已被永久拒绝")
                 return false
             }
 
@@ -258,44 +265,81 @@ class MainViewModel @Inject constructor(
                     updateInstallationProgress("复制成功")
                 } else {
                     // Android 11+ 处理
-                    val targetFolder = if (uiState.value.grantedType is GrantedType.Bug) {
-                        target.toPathWithZwsp().toString()
-                    } else {
-                        target
-                    }
                     withContext(Dispatchers.IO) {
-                        file.copyFileTo(
-                            context,
-                            targetFolder,
-                            fileDescription = FileDescription("简体中文.txt"),
-                            onConflict = object : SingleFileConflictCallback<DocumentFile>(
-                                CoroutineScope(Dispatchers.Main)
-                            ) {
-                                override fun onFileConflict(
-                                    destinationFile: DocumentFile,
-                                    action: FileConflictAction
-                                ) {
-                                    action.confirmResolution(ConflictResolution.REPLACE)
+                        when (uiState.value.grantedType) {
+                            GrantedType.Shizuku -> {
+                                shizukuRepository.mkdirs(target)
+                                shizukuRepository.copyFile(textCachePath, "${target}/简体中文.txt")
+                                updateInstallationProgress("复制成功")
+                            }
+
+                            GrantedType.Bug -> {
+                                file.copyFileTo(
+                                    context,
+                                    target.toPathWithZwsp().toString(),
+                                    fileDescription = FileDescription("简体中文.txt"),
+                                    onConflict = object : SingleFileConflictCallback<DocumentFile>(
+                                        CoroutineScope(Dispatchers.Main)
+                                    ) {
+                                        override fun onFileConflict(
+                                            destinationFile: DocumentFile,
+                                            action: FileConflictAction
+                                        ) {
+                                            action.confirmResolution(ConflictResolution.REPLACE)
+                                        }
+                                    }
+                                ).collect {
+                                    updateInstallationProgress(
+                                        when (it) {
+                                            is SingleFileResult.Validating -> "验证中..."
+                                            is SingleFileResult.Preparing -> "准备中..."
+                                            is SingleFileResult.CountingFiles -> "正在计算文件..."
+                                            is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
+                                            is SingleFileResult.Starting -> "开始中..."
+                                            is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
+                                            is SingleFileResult.Completed -> "复制成功"
+                                            is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
+                                        }
+                                    )
                                 }
                             }
-                        ).collect {
-                            updateInstallationProgress(
-                                when (it) {
-                                    is SingleFileResult.Validating -> "验证中..."
-                                    is SingleFileResult.Preparing -> "准备中..."
-                                    is SingleFileResult.CountingFiles -> "正在计算文件..."
-                                    is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
-                                    is SingleFileResult.Starting -> "开始中..."
-                                    is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
-                                    is SingleFileResult.Completed -> "复制成功"
-                                    is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
+
+                            else -> {
+                                file.copyFileTo(
+                                    context,
+                                    target,
+                                    fileDescription = FileDescription("简体中文.txt"),
+                                    onConflict = object : SingleFileConflictCallback<DocumentFile>(
+                                        CoroutineScope(Dispatchers.Main)
+                                    ) {
+                                        override fun onFileConflict(
+                                            destinationFile: DocumentFile,
+                                            action: FileConflictAction
+                                        ) {
+                                            action.confirmResolution(ConflictResolution.REPLACE)
+                                        }
+                                    }
+                                ).collect {
+                                    updateInstallationProgress(
+                                        when (it) {
+                                            is SingleFileResult.Validating -> "验证中..."
+                                            is SingleFileResult.Preparing -> "准备中..."
+                                            is SingleFileResult.CountingFiles -> "正在计算文件..."
+                                            is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
+                                            is SingleFileResult.Starting -> "开始中..."
+                                            is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
+                                            is SingleFileResult.Completed -> "复制成功"
+                                            is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
                     }
                 }
             } catch (e: Exception) {
                 val err = e.message ?: "未知错误"
+                e.printStackTrace()
                 updateInstallationProgress("错误：$err")
             }
             updateInstallationProgress("安装结束", true)
@@ -483,6 +527,11 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    override fun onCleared() {
+        super.onCleared()
+        shizukuRepository.cleanup()
+    }
+
     /**
      * 显示 Snackbar。
      * @param text 要显示的消息。
@@ -528,7 +577,10 @@ class MainViewModel @Inject constructor(
         return when {
             Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> checkStoragePermission(context) to GrantedType.Old
 
-            shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> true to GrantedType.Shizuku
+            shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
+                shizukuRepository.startUserService()
+                true to GrantedType.Shizuku
+            }
 
             !Environment.isExternalStorageManager() -> (folderRepository.getPersistedFolderUri() != null) to GrantedType.Saf
 
