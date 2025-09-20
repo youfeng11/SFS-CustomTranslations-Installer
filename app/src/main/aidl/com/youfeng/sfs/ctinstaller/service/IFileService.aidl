@@ -2,7 +2,7 @@ package com.youfeng.sfs.ctinstaller.service;
 
 interface IFileService {
 
-    void destroy(); // Destroy method defined by Shizuku server
+    void destroy() = 16777114; // Destroy method defined by Shizuku server
 
     void exit(); // Exit method defined by user
 
