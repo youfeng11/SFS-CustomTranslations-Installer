@@ -466,10 +466,10 @@ class MainViewModel @Inject constructor(
             val optionList = listOf(
                 RadioOption(
                     GrantedType.Shizuku,
-                    "Shizuku授权",
+                    "Shizuku/Sui授权",
                     //"待开发的功能"
                     if (!shizukuBinder)
-                        "Shizuku不可用"
+                        "Shizuku/Sui不可用"
                     else null
                 ),
                 RadioOption(
@@ -610,20 +610,8 @@ data class MainUiState(
     val forGameVersion: String = "加载中...",
     val options: List<RadioOption> = listOf(
         RadioOption(
-            GrantedType.Shizuku,
-            "Shizuku授权"
-        ),
-        RadioOption(
-            GrantedType.Su,
-            "ROOT授权"
-        ),
-        RadioOption(
-            GrantedType.Bug,
-            "漏洞授权"
-        ),
-        RadioOption(
-            GrantedType.Saf,
-            "SAF授权"
+            id = GrantedType.Old,
+            text = "加载中..."
         )
     )
 )

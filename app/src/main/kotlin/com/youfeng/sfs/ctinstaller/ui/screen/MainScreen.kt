@@ -449,7 +449,7 @@ private fun LazyItemScope.StatusCard(
                             is GrantedType.Saf -> "SAF授权"
                             is GrantedType.Old -> "存储权限授权"
                             is GrantedType.Bug -> "漏洞授权"
-                            is GrantedType.Shizuku -> "Shizuku授权"
+                            is GrantedType.Shizuku -> "Shizuku/Sui授权"
                             is GrantedType.Su -> "ROOT授权"
                         }
                         "$type | $sfsVersionName"
