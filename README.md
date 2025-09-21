@@ -4,7 +4,7 @@
 > 该项目目前处于Alpha阶段，许多功能尚未完成且可能存在严重BUG！  
 > 开发者正在努力开发中，敬请关注
 
-用于 Spaceflight Simulator 的 **自定义翻译（Custom Translations）** 安装器。
+用于 [Spaceflight Simulator](https://spaceflightsimulator.com/) 的 **自定义翻译（Custom Translations）** 安装器。
 
 旨在简化SFS汉化过程，降低安装门槛。
 
@@ -21,14 +21,17 @@
 
 ## 计划
 
-- [ ] 更高的兼容性
-  - [x] 使用SAF授权
-  - [x] 使用漏洞授权
-  - [ ] 使用Shizuku权限授权
-  - [ ] 使用ROOT权限授权
+- [ ] 常见授权方式
+  - Android 10-
+    - [x] 存储权限授权
+  - Android 11+
+    - [x] 使用SAF授权
+    - [x] 使用漏洞授权
+    - [x] 使用Shizuku/Sui权限授权
+    - [ ] 使用ROOT权限授权
 - [ ] 安装自定义汉化
-- [ ] 设置
-- [ ] 其他功能
+- [ ] 设置功能
+- [ ] 更多功能...
 
 ## 捐赠
 
@@ -64,3 +67,4 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 - [SimpleStorage](https://github.com/anggrayudi/SimpleStorage): 为简化SAF
 - [Dhizuku](https://github.com/iamr0s/Dhizuku): 借鉴部分UI设计
 - [KernelSU](https://github.com/tiann/KernelSU): 借鉴部分UI设计
+- [Shizuku-API](https://github.com/RikkaApps/Shizuku-API)；通过 ADB 或 root 权限，以标准方式安全、便捷地调用系统级 API。
