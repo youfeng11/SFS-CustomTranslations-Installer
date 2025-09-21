@@ -23,10 +23,8 @@ jobs:
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Install Android NDK
-        run: |
-          echo "y" | sdkmanager "ndk;27.1.12297006"
+        with:
+          packages: "platforms;android-36 build-tools;36.0.0 ndk;27.1.12297006"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
