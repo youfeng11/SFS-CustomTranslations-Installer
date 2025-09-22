@@ -36,7 +36,6 @@ jobs:
         uses: android-actions/setup-android@v3
         with:
           packages: "platforms;android-${{ env.COMPILE_SDK }} ndk;${{ env.NDK_VERSION }}"
-          cache: 'true'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
