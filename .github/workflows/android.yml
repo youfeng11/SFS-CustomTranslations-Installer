@@ -10,9 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    env:
-      ANDROID_SDK_ROOT: ${{ github.workspace }}/.android-sdk
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -24,17 +21,22 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Cache Android SDK
-        id: cache-android-sdk
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.ANDROID_SDK_ROOT }}
-          key: android-sdk-${{ runner.os }}-${{ hashFiles('**/build.gradle*', '**/gradle.properties', '.github/workflows/*.yml') }}
+      - name: Parse SDK versions
+        id: parse-versions
+        run: |
+          COMPILE_SDK=$(grep 'compileSdk =' app/build.gradle.kts | sed 's/.*=//' | sed 's/ //g')
+          echo "Found compileSdk: $COMPILE_SDK"
+          echo "COMPILE_SDK=$COMPILE_SDK" >> $GITHUB_ENV
 
-      - name: Set up Android SDK
+          NDK_VERSION=$(grep 'ndkVersion =' app/build.gradle.kts | sed 's/.*=//' | sed 's/ //g' | tr -d '"')
+          echo "Found ndkVersion: $NDK_VERSION"
+          echo "NDK_VERSION=$NDK_VERSION" >> $GITHUB_ENV
+
+      - name: Set up Android SDK and NDK
         uses: android-actions/setup-android@v3
         with:
-          packages: "platforms;android-36 build-tools;36.0.0 ndk;27.1.12297006"
+          packages: "platforms;android-${{ env.COMPILE_SDK }} ndk;${{ env.NDK_VERSION }}"
+          cache: 'true'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
