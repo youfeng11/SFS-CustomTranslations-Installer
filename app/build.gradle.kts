@@ -31,8 +31,8 @@ android {
         applicationId = "com.youfeng.sfs.ctinstaller"
         minSdk = 24
         targetSdk = 36
-        versionCode = 3
-        versionName = "alpha01"
+        versionCode = 4
+        versionName = "alpha02"
 
         vectorDrawables {
             useSupportLibrary = true
