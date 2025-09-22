@@ -34,10 +34,6 @@ android {
         versionCode = 4
         versionName = "alpha02"
 
-        vectorDrawables {
-            useSupportLibrary = true
-        }
-
         ndk {
             abiFilters.clear()
             abiFilters.add("arm64-v8a")
