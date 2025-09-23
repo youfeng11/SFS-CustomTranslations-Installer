@@ -268,6 +268,11 @@ class MainViewModel @Inject constructor(
                     withContext(Dispatchers.IO) {
                         when (uiState.value.grantedType) {
                             GrantedType.Shizuku -> {
+                                if (shizukuRepository.connectionStatus.value
+                                    is ShizukuRepository.ConnectionStatus.Connecting
+                                ) {
+                                    updateInstallationProgress("等待FileService连接...")
+                                }
                                 shizukuRepository.mkdirs(target)
                                 shizukuRepository.copyFile(textCachePath, "${target}/简体中文.txt")
                                 updateInstallationProgress("复制成功")
