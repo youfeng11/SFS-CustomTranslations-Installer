@@ -19,28 +19,6 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-
-    private val viewModel: MainViewModel by viewModels()
-
-    private val permissionRequest = ActivityPermissionRequest.Builder(this)
-        .withPermissions(
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        )
-        .withCallback(object : PermissionCallback {
-            override fun onPermissionsChecked(
-                result: PermissionResult,
-                fromSystemDialog: Boolean
-            ) {
-                viewModel.onPermissionsChecked(result)
-            }
-
-            override fun onShouldRedirectToSystemSettings(blockedPermissions: List<PermissionReport>) {
-                viewModel.setGoToSettingsDialogVisible(true)
-            }
-        })
-        .build()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge(
@@ -52,7 +30,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MainTheme {
-                MainNavigation(viewModel, permissionRequest)
+                MainNavigation()
             }
         }
     }

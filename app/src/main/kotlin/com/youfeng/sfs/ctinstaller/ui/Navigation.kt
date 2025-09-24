@@ -25,18 +25,12 @@ import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 
 @Composable
-fun MainNavigation(
-    viewModel: MainViewModel,
-    permissionRequest: ActivityPermissionRequest,
-    navController: NavHostController = rememberNavController()
-) {
+fun MainNavigation(navController: NavHostController = rememberNavController()) {
     Box {
         NavHost(navController = navController, startDestination = "main") {
             composable("main") {
                 MainScreen(
-                    viewModel = viewModel,
-                    onNavigatorToDetails = { navController.navigate("settings") },
-                    permissionRequest = permissionRequest
+                    onNavigatorToDetails = { navController.navigate("settings") }
                 )
             }
             composable("settings") { SettingsScreen() }

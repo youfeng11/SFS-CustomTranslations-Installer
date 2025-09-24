@@ -170,17 +170,36 @@ class MainViewModel @Inject constructor(
             "获取失败"
         }
 
+    fun permissionRequestCheck() {
+        viewModelScope.launch {
+            _uiEvent.send(UiEvent.PermissionRequestCheck)
+        }
+    }
+
     /**
      * 处理权限检查结果。
      * @param result 权限请求的结果。
      */
-    fun onPermissionsChecked(result: PermissionResult) {
-        if (result.areAllPermissionsGranted) {
+    fun onPermissionsChecked(isGranted: Boolean, shouldShowRationale: Boolean?) {//result: PermissionResult) {
+        /*if (result.areAllPermissionsGranted) {
             updateMainState()
             showSnackbar("授权成功")
         } else {
             showSnackbar("您拒绝了 存储 权限请求", "重试") {
-                _uiEvent.trySend(UiEvent.PermissionRequestCheck)
+                permissionRequestCheck()
+            }
+        }*/
+        shouldShowRationale ?: return
+        if (isGranted) {
+            updateMainState()
+            showSnackbar("授权成功")
+        } else {
+            if (shouldShowRationale == true) {
+                showSnackbar("您拒绝了 存储 权限请求", "重试") {
+                    permissionRequestCheck()
+                }
+            } else {
+                setGoToSettingsDialogVisible(true)
             }
         }
     }

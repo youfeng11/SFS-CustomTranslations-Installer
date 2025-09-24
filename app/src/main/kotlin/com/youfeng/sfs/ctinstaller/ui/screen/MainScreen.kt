@@ -1,5 +1,7 @@
 package com.youfeng.sfs.ctinstaller.ui.screen
 
+import android.Manifest
+import androidx.activity.compose.LocalActivity
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -100,8 +102,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun MainScreen(
     onNavigatorToDetails: () -> Unit,
-    viewModel: MainViewModel = hiltViewModel(),
-    permissionRequest: ActivityPermissionRequest
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     // 收集 UI 状态
     val uiState by viewModel.uiState.collectAsState()
@@ -113,6 +114,7 @@ fun MainScreen(
         MainLayout(
             onNavigatorToDetails = onNavigatorToDetails,
             onRequestPermissionsClicked = viewModel::onRequestPermissionsClicked,
+            permissionRequestCheck = viewModel::permissionRequestCheck,
             uiState = uiState.appState, // 传递 AppState 给 StatusCard
             openSfs = viewModel::openSfs,
             onInstallButtonClick = viewModel::onInstallButtonClick,
@@ -122,10 +124,7 @@ fun MainScreen(
             forGameVersion = uiState.forGameVersion,
             grantedType = uiState.grantedType,
             options = uiState.options
-        ) {
-            // 在 MainLayout 首次组合时检查权限，或在需要时手动触发
-            permissionRequest.check()
-        }
+        )
     }
 
     // 处理生命周期事件，更新 ViewModel 状态
@@ -140,8 +139,7 @@ fun MainScreen(
     UiEventAwareHandler(
         viewModel,
         coroutineScope,
-        snackbarHostState,
-        permissionRequest
+        snackbarHostState
     )
 
     if (uiState.showGoToSettingsDialog) {
@@ -227,10 +225,10 @@ fun LifecycleAwareHandler(
 fun UiEventAwareHandler(
     viewModel: MainViewModel,
     coroutineScope: CoroutineScope,
-    snackbarHostState: SnackbarHostState,
-    permissionRequest: ActivityPermissionRequest
+    snackbarHostState: SnackbarHostState
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
     var text by remember { mutableStateOf("") }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
@@ -251,6 +249,12 @@ fun UiEventAwareHandler(
             }
         }
     }
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) {
+        val shouldShowRationale = activity?.shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        viewModel.onPermissionsChecked(it, shouldShowRationale)
+    }
     val safLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) {
@@ -265,14 +269,12 @@ fun UiEventAwareHandler(
                 }
 
                 is UiEvent.PermissionRequestCheck -> {
-                    permissionRequest.check()
+                    requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
 
                 is UiEvent.SaveTo -> {
                     text = event.content
-                    coroutineScope.launch {
-                        launcher.launch("简体中文.txt")
-                    }
+                    launcher.launch("简体中文.txt")
                 }
 
                 is UiEvent.ShowSnackbar -> {
@@ -303,6 +305,7 @@ fun UiEventAwareHandler(
 private fun MainLayout(// 添加默认参数以便于预览
     onNavigatorToDetails: () -> Unit = {},
     onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit = {},
+    permissionRequestCheck: () -> Unit = {},
     uiState: AppState = AppState.Uninstalled, // 更改为 AppState
     openSfs: () -> Unit = {},
     onInstallButtonClick: () -> Unit = {},
@@ -312,7 +315,6 @@ private fun MainLayout(// 添加默认参数以便于预览
     grantedType: GrantedType = GrantedType.Saf,
     forGameVersion: String = "",
     options: List<RadioOption> = emptyList(),
-    permissionRequestCheck: () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -363,9 +365,9 @@ private fun MainLayout(// 添加默认参数以便于预览
                 StatusCard(
                     appState = uiState, // 传递 AppState
                     onRequestPermissionsClicked = onRequestPermissionsClicked,
+                    permissionRequestCheck = permissionRequestCheck,
                     openSfs = openSfs,
                     sfsVersionName = sfsVersionName,
-                    permissionRequestCheck = permissionRequestCheck,
                     grantedType = grantedType,
                     options = options
                 )
@@ -394,9 +396,9 @@ private fun MainLayout(// 添加默认参数以便于预览
 private fun LazyItemScope.StatusCard(
     appState: AppState, // 更改为 AppState
     onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit,
+    permissionRequestCheck: () -> Unit,
     openSfs: () -> Unit,
     sfsVersionName: String,
-    permissionRequestCheck: () -> Unit,
     grantedType: GrantedType,
     options: List<RadioOption>
 ) {
