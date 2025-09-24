@@ -578,11 +578,9 @@ class MainViewModel @Inject constructor(
      * 重定向到系统设置。
      */
     fun redirectToSystemSettings() {
-        val intentSetting = Intent(
-            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-            "package:${context.packageName}".toUri()
-        )
-        context.startActivity(intentSetting)
+        viewModelScope.launch {
+            _uiEvent.send(UiEvent.RedirectToSystemSettings)
+        }
     }
 
     /**
@@ -656,7 +654,10 @@ sealed class UiEvent {
     ) : UiEvent()
 
     data class SaveTo(val content: String) : UiEvent()
+    
     data object PermissionRequestCheck : UiEvent()
+    
+    data object RedirectToSystemSettings : UiEvent()
 }
 
 sealed class GrantedType {

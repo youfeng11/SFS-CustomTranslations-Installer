@@ -3,6 +3,9 @@ package com.youfeng.sfs.ctinstaller.ui.screen
 import android.Manifest
 import androidx.activity.compose.LocalActivity
 import android.os.Build
+import android.content.Intent
+import androidx.core.net.toUri
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -269,6 +272,14 @@ fun UiEventAwareHandler(
 
                 is UiEvent.PermissionRequestCheck -> {
                     requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                }
+                
+                is UiEvent.RedirectToSystemSettings -> {
+                    val intentSetting = Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        "package:${context.packageName}".toUri()
+                    )
+                    activity?.startActivity(intentSetting)
                 }
 
                 is UiEvent.SaveTo -> {
