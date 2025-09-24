@@ -8,11 +8,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import com.anggrayudi.storage.permission.ActivityPermissionRequest
-import com.anggrayudi.storage.permission.PermissionCallback
-import com.anggrayudi.storage.permission.PermissionReport
-import com.anggrayudi.storage.permission.PermissionResult
 import com.youfeng.sfs.ctinstaller.ui.theme.MainTheme
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint

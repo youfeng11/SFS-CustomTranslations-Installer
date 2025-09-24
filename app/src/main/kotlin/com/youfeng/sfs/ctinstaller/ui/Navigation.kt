@@ -18,7 +18,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.anggrayudi.storage.permission.ActivityPermissionRequest
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
 import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
