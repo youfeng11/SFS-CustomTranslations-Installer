@@ -18,7 +18,6 @@ import com.anggrayudi.storage.file.FileFullPath
 import com.anggrayudi.storage.file.StorageType
 import com.anggrayudi.storage.file.copyFileTo
 import com.anggrayudi.storage.media.FileDescription
-import com.anggrayudi.storage.permission.PermissionResult
 import com.anggrayudi.storage.result.SingleFileResult
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
@@ -269,86 +268,88 @@ class MainViewModel @Inject constructor(
                 val target =
                     "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
 
-                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
-                    // Android 10 特殊处理
-                    fileSystem.createDirectories(target.toPath())
-                    fileSystem.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
-                    updateInstallationProgress("复制成功")
-                } else {
-                    // Android 11+ 处理
-                    withContext(Dispatchers.IO) {
-                        when (uiState.value.grantedType) {
-                            GrantedType.Shizuku -> {
-                                if (shizukuRepository.connectionStatus.value
-                                    is ShizukuRepository.ConnectionStatus.Connecting
+                withContext(Dispatchers.IO) {
+                    when (uiState.value.grantedType) {
+                        GrantedType.Shizuku -> {
+                            if (shizukuRepository.connectionStatus.value
+                                is ShizukuRepository.ConnectionStatus.Connecting
+                            ) {
+                                updateInstallationProgress("等待FileService连接...")
+                            }
+                            updateInstallationProgress("准备中...")
+                            shizukuRepository.mkdirs(target)
+                            updateInstallationProgress("复制中...")
+                            shizukuRepository.copyFile(textCachePath, "${target}/简体中文.txt")
+                            updateInstallationProgress("复制成功")
+                        }
+
+                        GrantedType.Bug -> {
+                            file.copyFileTo(
+                                context,
+                                target.toPathWithZwsp().toString(),
+                                fileDescription = FileDescription("简体中文.txt"),
+                                onConflict = object : SingleFileConflictCallback<DocumentFile>(
+                                    CoroutineScope(Dispatchers.Main)
                                 ) {
-                                    updateInstallationProgress("等待FileService连接...")
-                                }
-                                shizukuRepository.mkdirs(target)
-                                shizukuRepository.copyFile(textCachePath, "${target}/简体中文.txt")
-                                updateInstallationProgress("复制成功")
-                            }
-
-                            GrantedType.Bug -> {
-                                file.copyFileTo(
-                                    context,
-                                    target.toPathWithZwsp().toString(),
-                                    fileDescription = FileDescription("简体中文.txt"),
-                                    onConflict = object : SingleFileConflictCallback<DocumentFile>(
-                                        CoroutineScope(Dispatchers.Main)
+                                    override fun onFileConflict(
+                                        destinationFile: DocumentFile,
+                                        action: FileConflictAction
                                     ) {
-                                        override fun onFileConflict(
-                                            destinationFile: DocumentFile,
-                                            action: FileConflictAction
-                                        ) {
-                                            action.confirmResolution(ConflictResolution.REPLACE)
-                                        }
+                                        action.confirmResolution(ConflictResolution.REPLACE)
                                     }
-                                ).collect {
-                                    updateInstallationProgress(
-                                        when (it) {
-                                            is SingleFileResult.Validating -> "验证中..."
-                                            is SingleFileResult.Preparing -> "准备中..."
-                                            is SingleFileResult.CountingFiles -> "正在计算文件..."
-                                            is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
-                                            is SingleFileResult.Starting -> "开始中..."
-                                            is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
-                                            is SingleFileResult.Completed -> "复制成功"
-                                            is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
-                                        }
-                                    )
                                 }
+                            ).collect {
+                                updateInstallationProgress(
+                                    when (it) {
+                                        is SingleFileResult.Validating -> "验证中..."
+                                        is SingleFileResult.Preparing -> "准备中..."
+                                        is SingleFileResult.CountingFiles -> "正在计算文件..."
+                                        is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
+                                        is SingleFileResult.Starting -> "开始中..."
+                                        is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
+                                        is SingleFileResult.Completed -> "复制成功"
+                                        is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
+                                    }
+                                )
                             }
+                        }
 
-                            else -> {
-                                file.copyFileTo(
-                                    context,
-                                    target,
-                                    fileDescription = FileDescription("简体中文.txt"),
-                                    onConflict = object : SingleFileConflictCallback<DocumentFile>(
-                                        CoroutineScope(Dispatchers.Main)
+                        GrantedType.Old -> {
+                            updateInstallationProgress("准备中...")
+                            fileSystem.createDirectories(target.toPath())
+                            updateInstallationProgress("复制中...")
+                            fileSystem.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
+                            updateInstallationProgress("复制成功")
+                        }
+
+                        else -> {
+                            file.copyFileTo(
+                                context,
+                                target,
+                                fileDescription = FileDescription("简体中文.txt"),
+                                onConflict = object : SingleFileConflictCallback<DocumentFile>(
+                                    CoroutineScope(Dispatchers.Main)
+                                ) {
+                                    override fun onFileConflict(
+                                        destinationFile: DocumentFile,
+                                        action: FileConflictAction
                                     ) {
-                                        override fun onFileConflict(
-                                            destinationFile: DocumentFile,
-                                            action: FileConflictAction
-                                        ) {
-                                            action.confirmResolution(ConflictResolution.REPLACE)
-                                        }
+                                        action.confirmResolution(ConflictResolution.REPLACE)
                                     }
-                                ).collect {
-                                    updateInstallationProgress(
-                                        when (it) {
-                                            is SingleFileResult.Validating -> "验证中..."
-                                            is SingleFileResult.Preparing -> "准备中..."
-                                            is SingleFileResult.CountingFiles -> "正在计算文件..."
-                                            is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
-                                            is SingleFileResult.Starting -> "开始中..."
-                                            is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
-                                            is SingleFileResult.Completed -> "复制成功"
-                                            is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
-                                        }
-                                    )
                                 }
+                            ).collect {
+                                updateInstallationProgress(
+                                    when (it) {
+                                        is SingleFileResult.Validating -> "验证中..."
+                                        is SingleFileResult.Preparing -> "准备中..."
+                                        is SingleFileResult.CountingFiles -> "正在计算文件..."
+                                        is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
+                                        is SingleFileResult.Starting -> "开始中..."
+                                        is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
+                                        is SingleFileResult.Completed -> "复制成功"
+                                        is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
+                                    }
+                                )
                             }
                         }
                     }
