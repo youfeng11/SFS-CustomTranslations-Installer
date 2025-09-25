@@ -83,6 +83,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -100,6 +101,8 @@ import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.material3.LocalTextStyle
 
 @Composable
 fun MainScreen(
@@ -344,7 +347,12 @@ private fun MainLayout(// 添加默认参数以便于预览
                 windowInsets = WindowInsets.safeDrawing.only(
                     WindowInsetsSides.Top + WindowInsetsSides.Horizontal
                 ),
-                title = { Text(stringResource(R.string.app_name)) },
+                title = {
+                    Text(
+                        stringResource(R.string.app_name),
+                        fontWeight = FontWeight.Black
+                    )
+                },
                 actions = { OverflowMenu(onNavigatorToDetails) }, // 右上角菜单按钮
                 scrollBehavior = scrollBehavior
             )
@@ -697,8 +705,14 @@ private fun LazyItemScope.CardWidget(
                     }
                 }
                 Column {
-                    ProvideTextStyle(MaterialTheme.typography.titleMedium) {
-                        title.invoke()
+                    CompositionLocalProvider(
+                        LocalTextStyle provides LocalTextStyle.current.copy(
+                            fontWeight = FontWeight.Black
+                        )
+                    ) {
+                        ProvideTextStyle(MaterialTheme.typography.titleMedium) {
+                            title.invoke()
+                        }
                     }
                     ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                         AnimatedContent(targetState = text) {
