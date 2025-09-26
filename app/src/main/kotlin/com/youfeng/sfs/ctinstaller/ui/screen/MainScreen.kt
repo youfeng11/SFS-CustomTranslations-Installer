@@ -523,10 +523,13 @@ private fun LazyItemScope.StatusCard(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    openDialog = false
-                    onRequestPermissionsClicked(selectedOption.id)
-                }) {
+                TextButton(
+                    enabled = selectedOption.disableInfo == null,
+                    onClick = {
+                        openDialog = false
+                        onRequestPermissionsClicked(selectedOption.id)
+                    }
+                ) {
                     Text("确定")
                 }
             },
