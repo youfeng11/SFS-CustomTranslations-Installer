@@ -68,6 +68,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.RichTooltip
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -410,6 +416,7 @@ private fun MainLayout(// 添加默认参数以便于预览
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LazyItemScope.StatusCard(
     appState: AppState, // 更改为 AppState
@@ -494,24 +501,48 @@ private fun LazyItemScope.StatusCard(
         }
     )
 
+    val scope = rememberCoroutineScope()
+    val tooltipState = rememberTooltipState(isPersistent = true)
     if (openDialog) {
         AlertDialog(
             onDismissRequest = { openDialog = false },
-            title = { Text("请选择授权方式") },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(text = "请选择授权方式")
+
+                    TooltipBox(
+                        positionProvider =
+                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                        tooltip = {
+                            RichTooltip(caretShape = TooltipDefaults.caretShape()) { Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。\n因此，您必须通过以下方式授权 SFS汉化安装器 后才能安装汉化。") }
+                        },
+                        state = tooltipState,
+                    ) {
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    tooltipState.show()
+                                }
+                            }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.HelpOutline,
+                                contentDescription = "了解授权原因"
+                            )
+                        }
+                    }
+                }
+            },
             text = {
                 Column(
                     Modifier
                         .selectableGroup()
                         .verticalScroll(rememberScrollState())
-                ) { // selectableGroup 用于辅助无障碍功能
-                    Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。\n因此，您必须通过以下方式授权 SFS汉化安装器 后才能安装汉化。")
-                    HorizontalDivider(
-                        modifier = Modifier.padding(
-                            top = 10.dp,
-                            start = 4.dp,
-                            end = 4.dp
-                        )
-                    )
+                ) {
                     options.forEach { option ->
                         RadioOptionItem(
                             title = if (options[0].id == option.id) "${option.text}（推荐）" else option.text,
