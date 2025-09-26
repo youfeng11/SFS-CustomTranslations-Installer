@@ -707,7 +707,7 @@ private fun LazyItemScope.CardWidget(
                 Column {
                     CompositionLocalProvider(
                         LocalTextStyle provides MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Black
+                            fontWeight = FontWeight.SemiBold
                         )
                     ) {
                         title.invoke()
