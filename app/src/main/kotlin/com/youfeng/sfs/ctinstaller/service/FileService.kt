@@ -14,11 +14,7 @@ class FileService : IFileService.Stub() {
         val src = srcPath.toPath()
         val dest = destPath.toPath()
 
-        fs.source(src).use { source ->
-            fs.sink(dest).buffer().use { sink ->
-                sink.writeAll(source)
-            }
-        }
+        fs.copy(src, dest)
     }
 
     override fun isExists(path: String): Boolean =

@@ -240,11 +240,11 @@ class MainViewModel @Inject constructor(
                         ) else it
                     }
 
-                val fileSystem = FileSystem.SYSTEM
+                val fs = FileSystem.SYSTEM
                 var textCachePath = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
                 updateInstallationProgress("正在获取是否存在缓存…")
                 val canUseCache =
-                    fileSystem.exists(textCachePath.toPath()) && sha256 == textCachePath.toPath()
+                    fs.exists(textCachePath.toPath()) && sha256 == textCachePath.toPath()
                         .sha256()
 
                 if (!canUseCache) {
@@ -284,41 +284,18 @@ class MainViewModel @Inject constructor(
                         }
 
                         GrantedType.Bug -> {
-                            file.copyFileTo(
-                                context,
-                                target.toPathWithZwsp().toString(),
-                                fileDescription = FileDescription("简体中文.txt"),
-                                onConflict = object : SingleFileConflictCallback<DocumentFile>(
-                                    CoroutineScope(Dispatchers.Main)
-                                ) {
-                                    override fun onFileConflict(
-                                        destinationFile: DocumentFile,
-                                        action: FileConflictAction
-                                    ) {
-                                        action.confirmResolution(ConflictResolution.REPLACE)
-                                    }
-                                }
-                            ).collect {
-                                updateInstallationProgress(
-                                    when (it) {
-                                        is SingleFileResult.Validating -> "验证中..."
-                                        is SingleFileResult.Preparing -> "准备中..."
-                                        is SingleFileResult.CountingFiles -> "正在计算文件..."
-                                        is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
-                                        is SingleFileResult.Starting -> "开始中..."
-                                        is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
-                                        is SingleFileResult.Completed -> "复制成功"
-                                        is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
-                                    }
-                                )
-                            }
+                            updateInstallationProgress("准备中...")
+                            fs.createDirectories(target.toPathWithZwsp())
+                            updateInstallationProgress("复制中...")
+                            fs.copy(textCachePath.toPath(), "$target/简体中文.txt".toPathWithZwsp())
+                            updateInstallationProgress("复制成功")
                         }
 
                         GrantedType.Old -> {
                             updateInstallationProgress("准备中...")
-                            fileSystem.createDirectories(target.toPath())
+                            fs.createDirectories(target.toPath())
                             updateInstallationProgress("复制中...")
-                            fileSystem.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
+                            fs.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
                             updateInstallationProgress("复制成功")
                         }
 
