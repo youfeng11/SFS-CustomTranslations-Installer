@@ -706,13 +706,11 @@ private fun LazyItemScope.CardWidget(
                 }
                 Column {
                     CompositionLocalProvider(
-                        LocalTextStyle provides LocalTextStyle.current.copy(
+                        LocalTextStyle provides MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Black
                         )
                     ) {
-                        ProvideTextStyle(MaterialTheme.typography.titleMedium) {
-                            title.invoke()
-                        }
+                        title.invoke()
                     }
                     ProvideTextStyle(MaterialTheme.typography.bodyMedium) {
                         AnimatedContent(targetState = text) {
