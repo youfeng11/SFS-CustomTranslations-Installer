@@ -461,15 +461,9 @@ class MainViewModel @Inject constructor(
                 RadioOption(
                     GrantedType.Shizuku,
                     "Shizuku/Sui授权",
-                    //"待开发的功能"
                     if (!shizukuBinder)
                         "Shizuku/Sui不可用"
                     else null
-                ),
-                RadioOption(
-                    GrantedType.Su,
-                    "ROOT授权",
-                    "待开发的功能"
                 ),
                 RadioOption(
                     GrantedType.Bug,
@@ -480,6 +474,11 @@ class MainViewModel @Inject constructor(
                     GrantedType.Saf,
                     "SAF授权",
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) "您的设备不支持此方式" else null
+                ),
+                RadioOption(
+                    GrantedType.Su,
+                    "ROOT授权",
+                    "待开发的功能"
                 )
             )
             val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
