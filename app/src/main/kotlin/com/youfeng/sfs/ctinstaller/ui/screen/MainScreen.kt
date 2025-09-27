@@ -519,7 +519,7 @@ private fun LazyItemScope.StatusCard(
                             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
                         tooltip = {
                             RichTooltip(
-                                title = { Text("为什么需要权限？") },
+                                title = { Text("为什么需要授权？") },
                                 caretShape = TooltipDefaults.caretShape()
                             ) { Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。\n因此，您必须在授权后才能安装汉化。") }
                         },
