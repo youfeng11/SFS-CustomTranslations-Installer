@@ -98,8 +98,10 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
+import com.youfeng.sfs.ctinstaller.ui.component.ErrorCard
 import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
 import com.youfeng.sfs.ctinstaller.ui.component.RadioOptionItem
+import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.AppState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
@@ -516,7 +518,7 @@ private fun LazyItemScope.StatusCard(
 
                     TooltipBox(
                         positionProvider =
-                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below, 8.dp),
                         tooltip = {
                             RichTooltip(
                                 title = { Text("为什么需要授权？") },
@@ -546,6 +548,12 @@ private fun LazyItemScope.StatusCard(
                         .selectableGroup()
                         .verticalScroll(rememberScrollState())
                 ) {
+                    if (options[0].disableInfo != null) {
+                        ErrorCard(
+                            { Text("额...看起来当前任何授权方式都不可用呢...") },
+                            { AnnotatedLinkText(stringResource(R.string.all_options_unavailable_warning_text)) }
+                        )
+                    }
                     options.forEach { option ->
                         RadioOptionItem(
                             title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,

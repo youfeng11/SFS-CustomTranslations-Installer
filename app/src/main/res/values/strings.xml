@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">SFS汉化安装器</string>
+    <string name="all_options_unavailable_warning_text"><![CDATA[好吧，这是意料之内的事。<br/>目前而言，最简单的可行方式是去激活 <a href="https://shizuku.rikka.app/zh-hans/">Shizuku</a> 并使用其进行授权。<br/>注意：本应用不提供相关教程与帮助！]]></string>
 </resources>

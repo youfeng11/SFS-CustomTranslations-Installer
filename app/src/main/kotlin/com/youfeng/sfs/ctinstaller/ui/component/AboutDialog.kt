@@ -97,7 +97,7 @@ fun AnnotatedLinkText(htmlString: String) {
             ),
             pressedStyle = SpanStyle(
                 color = MaterialTheme.colorScheme.primary,
-                background = MaterialTheme.colorScheme.secondaryContainer,
+                background = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
                 textDecoration = TextDecoration.Underline,
                 fontWeight = FontWeight.Bold
             )
