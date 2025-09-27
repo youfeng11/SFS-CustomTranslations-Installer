@@ -518,7 +518,7 @@ private fun LazyItemScope.StatusCard(
                         positionProvider =
                             TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
                         tooltip = {
-                            RichTooltip(caretShape = TooltipDefaults.caretShape()) { Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。\n因此，您必须通过以下方式授权 SFS汉化安装器 后才能安装汉化。") }
+                            RichTooltip(caretShape = TooltipDefaults.caretShape()) { Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。") }
                         },
                         state = tooltipState,
                     ) {
@@ -545,7 +545,7 @@ private fun LazyItemScope.StatusCard(
                 ) {
                     options.forEach { option ->
                         RadioOptionItem(
-                            title = if (options[0].id == option.id) "${option.text}（推荐）" else option.text,
+                            title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
                             summary = option.disableInfo,
                             selected = option == selectedOption,
                             onClick = { selectedOption = option }
