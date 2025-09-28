@@ -278,7 +278,7 @@ fun UiEventAwareHandler(
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is UiEvent.RequestSafPermissions -> {
-                    safLauncher.launch(viewModel.sfsDataUri)
+                    safLauncher.launch(event.sfsDataUri)
                 }
 
                 is UiEvent.PermissionRequestCheck -> {

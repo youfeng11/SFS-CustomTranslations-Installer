@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -82,7 +83,11 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             Log.d("SFSCTI", uri.toString())
             Log.d("SFSCTI", sfsDataUri.toString())
-            if (uri != null && uri == DocumentUriUtil.buildAndroidData(Constants.SFS_PACKAGE_NAME)) {
+            if (
+                uri != null
+                && DocumentsContract.isTreeUri(uri)
+                && uri == DocumentUriUtil.buildAndroidData(Constants.SFS_PACKAGE_NAME)
+            ) {
                 showSnackbar("授权成功")
                 updateMainState()
                 folderRepository.persistFolderUri(uri)
@@ -94,7 +99,7 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    val sfsDataUri: Uri?
+    private val sfsDataUri: Uri?
         get() =
             DocumentUriUtil.buildAndroidDataInit(Constants.SFS_PACKAGE_NAME)
 
@@ -395,11 +400,9 @@ class MainViewModel @Inject constructor(
                 }
 
                 is GrantedType.Saf -> {
-                    // 发送事件请求 SAF 权限
-                    val fileFullPath =
-                        FileFullPath(context, StorageType.EXTERNAL, Constants.SFS_DATA_DIRECTORY)
-                    val expectedBasePath = Constants.SFS_DATA_DIRECTORY
-                    _uiEvent.trySend(UiEvent.RequestSafPermissions(fileFullPath, expectedBasePath))
+                    viewModelScope.launch {
+                        _uiEvent.send(UiEvent.RequestSafPermissions(sfsDataUri))
+                    }
                 }
 
                 is GrantedType.Shizuku -> {
@@ -473,7 +476,7 @@ class MainViewModel @Inject constructor(
                 RadioOption(
                     GrantedType.Saf,
                     "SAF授权",
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) "您的设备不支持此方式" else null
+                    null
                 ),
                 RadioOption(
                     GrantedType.Su,
@@ -621,8 +624,7 @@ sealed class AppState {
  * 定义一次性 UI 事件。
  */
 sealed class UiEvent {
-    data class RequestSafPermissions(val fileFullPath: FileFullPath, val expectedBasePath: String) :
-        UiEvent()
+    data class RequestSafPermissions(val sfsDataUri: Uri?) : UiEvent()
 
     data class ShowSnackbar(
         val text: String,
