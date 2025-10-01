@@ -552,12 +552,12 @@ private fun LazyItemScope.StatusCard(
                         .selectableGroup()
                         .verticalScroll(rememberScrollState())
                 ) {
-                    if (options[0].disableInfo != null) {
+                    if (options[1].disableInfo != null)
                         ErrorCard(
-                            { Text("额...看起来当前任何授权方式都不可用呢...") },
-                            { AnnotatedLinkText(stringResource(R.string.all_options_unavailable_warning_text)) }
+                            text = {
+                                AnnotatedLinkText(stringResource(R.string.all_options_unavailable_warning_text))
+                            }
                         )
-                    }
                     options.forEach { option ->
                         RadioOptionItem(
                             title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,

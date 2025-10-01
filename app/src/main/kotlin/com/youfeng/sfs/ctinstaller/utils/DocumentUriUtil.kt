@@ -17,7 +17,10 @@ object DocumentUriUtil {
             "com.android.externalstorage.documents",
             "primary"
         )
-        val packageDocId = "primary:Android/da${ExploitFileUtil.ZWSP}ta/$packageName"
+        val androidData =
+            if (ExploitFileUtil.isExploitable) "Android/da${ExploitFileUtil.ZWSP}ta" else
+                Constants.ANDROID_DATA_DIRECTORY
+        val packageDocId = "primary:/$androidData/$packageName"
         return DocumentsContract.buildDocumentUriUsingTree(dataUri, packageDocId)
     }
 }

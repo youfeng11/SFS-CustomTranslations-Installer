@@ -20,9 +20,9 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun ErrorCard(
-    title: @Composable () -> Unit,
-    text: (@Composable () -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    text: @Composable () -> Unit,
+    title: (@Composable () -> Unit)? = null
 ) {
     Card(
         modifier = modifier
@@ -49,11 +49,11 @@ fun ErrorCard(
             // 错误信息内容
             Column {
                 ProvideTextStyle(MaterialTheme.typography.titleSmall) {
-                    title.invoke()
+                    title?.invoke()
                 }
                 ProvideTextStyle(MaterialTheme.typography.bodySmall) {
                     AnimatedContent(targetState = text) {
-                        it?.invoke()
+                        it.invoke()
                     }
                 }
             }
