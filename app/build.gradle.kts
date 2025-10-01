@@ -35,9 +35,8 @@ android {
         versionName = "alpha02"
 
         ndk {
-            abiFilters.clear()
-            abiFilters.add("arm64-v8a")
-            abiFilters.add("armeabi-v7a")
+            //noinspection ChromeOsAbiSupport
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a")
         }
     }
 
