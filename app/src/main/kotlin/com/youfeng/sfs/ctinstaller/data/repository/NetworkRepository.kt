@@ -29,7 +29,7 @@ class NetworkRepository @Inject constructor(
                 if (!response.isSuccessful) {
                     throw IOException("Unexpected code $response")
                 }
-                response.body?.string() ?: ""
+                response.body.string()
             }
         }
     }
@@ -42,9 +42,9 @@ class NetworkRepository @Inject constructor(
                 if (!response.isSuccessful) {
                     throw IOException("Unexpected code $response")
                 }
-                val source = response.body?.source()
+                val source = response.body.source()
                 val cacheFile = "${context.externalCacheDir}/${url.md5()}"
-                source?.use { source ->
+                source.use { source ->
                     FileSystem.SYSTEM.sink(cacheFile.toPath()).buffer().use { sink ->
                         sink.writeAll(source)
                     }
