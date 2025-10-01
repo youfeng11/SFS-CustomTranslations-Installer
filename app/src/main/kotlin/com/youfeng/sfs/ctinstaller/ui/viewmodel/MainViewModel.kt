@@ -180,7 +180,6 @@ class MainViewModel @Inject constructor(
 
     /**
      * 处理权限检查结果。
-     * @param result 权限请求的结果。
      */
     fun onPermissionsChecked(isGranted: Boolean, shouldShowRationale: Boolean?) {
         shouldShowRationale ?: return
@@ -188,7 +187,7 @@ class MainViewModel @Inject constructor(
             updateMainState()
             showSnackbar("授权成功")
         } else {
-            if (shouldShowRationale == true) {
+            if (shouldShowRationale) {
                 showSnackbar("您拒绝了 存储 权限请求", "重试") {
                     permissionRequestCheck()
                 }
