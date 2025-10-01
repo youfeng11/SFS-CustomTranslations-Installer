@@ -13,7 +13,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import rikka.shizuku.Shizuku
 import java.io.IOException
@@ -33,9 +32,10 @@ class ShizukuRepository @Inject constructor(
     }
 
     private var fileService: IFileService? = null
-    
+
     // 使用 StateFlow 向 ViewModel 暴露连接状态
-    private val _connectionStatus = MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
+    private val _connectionStatus =
+        MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
     val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus
 
     private val serviceConnection = object : ServiceConnection {
@@ -67,7 +67,7 @@ class ShizukuRepository @Inject constructor(
         if (_connectionStatus.value is ConnectionStatus.Connected || _connectionStatus.value is ConnectionStatus.Connecting) {
             return
         }
-        
+
         _connectionStatus.value = ConnectionStatus.Connecting
         try {
             Shizuku.bindUserService(args, serviceConnection)
@@ -98,8 +98,14 @@ class ShizukuRepository @Inject constructor(
 
         val currentStatus = _connectionStatus.value
         return@withContext when (currentStatus) {
-            is ConnectionStatus.Connected -> fileService ?: throw IllegalStateException("Service is connected but fileService is null")
-            is ConnectionStatus.Error -> throw IOException("Shizuku service connection failed: ${currentStatus.throwable.message}", currentStatus.throwable)
+            is ConnectionStatus.Connected -> fileService
+                ?: throw IllegalStateException("Service is connected but fileService is null")
+
+            is ConnectionStatus.Error -> throw IOException(
+                "Shizuku service connection failed: ${currentStatus.throwable.message}",
+                currentStatus.throwable
+            )
+
             else -> throw IllegalStateException("Shizuku service is not connecting or connected.")
         }
     }

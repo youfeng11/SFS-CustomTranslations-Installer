@@ -3,7 +3,6 @@ package com.youfeng.sfs.ctinstaller.service
 import android.util.Log
 import okio.FileSystem
 import okio.Path.Companion.toPath
-import okio.buffer
 import kotlin.system.exitProcess
 
 class FileService : IFileService.Stub() {

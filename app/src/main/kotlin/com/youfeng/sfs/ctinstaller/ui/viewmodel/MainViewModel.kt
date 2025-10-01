@@ -6,8 +6,8 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
-import android.provider.Settings
 import android.provider.DocumentsContract
+import android.provider.Settings
 import android.util.Log
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -15,8 +15,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.anggrayudi.storage.callback.SingleFileConflictCallback
 import com.anggrayudi.storage.file.DocumentFileCompat
-import com.anggrayudi.storage.file.FileFullPath
-import com.anggrayudi.storage.file.StorageType
 import com.anggrayudi.storage.file.copyFileTo
 import com.anggrayudi.storage.media.FileDescription
 import com.anggrayudi.storage.result.SingleFileResult
@@ -277,7 +275,7 @@ class MainViewModel @Inject constructor(
                     when (uiState.value.grantedType) {
                         GrantedType.Shizuku -> {
                             if (shizukuRepository.connectionStatus.value
-                                is ShizukuRepository.ConnectionStatus.Connecting
+                                        is ShizukuRepository.ConnectionStatus.Connecting
                             ) {
                                 updateInstallationProgress("等待FileService连接...")
                             }
@@ -633,9 +631,9 @@ sealed class UiEvent {
     ) : UiEvent()
 
     data class SaveTo(val content: String) : UiEvent()
-    
+
     data object PermissionRequestCheck : UiEvent()
-    
+
     data object RedirectToSystemSettings : UiEvent()
 }
 

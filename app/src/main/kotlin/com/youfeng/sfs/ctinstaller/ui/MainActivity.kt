@@ -1,6 +1,5 @@
 package com.youfeng.sfs.ctinstaller.ui
 
-import android.Manifest
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -9,7 +8,6 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.youfeng.sfs.ctinstaller.ui.theme.MainTheme
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

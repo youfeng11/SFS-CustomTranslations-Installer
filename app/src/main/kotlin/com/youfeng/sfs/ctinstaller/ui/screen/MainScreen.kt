@@ -1,11 +1,10 @@
 package com.youfeng.sfs.ctinstaller.ui.screen
 
 import android.Manifest
-import androidx.activity.compose.LocalActivity
-import android.os.Build
 import android.content.Intent
-import androidx.core.net.toUri
+import android.os.Build
 import android.provider.Settings
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -52,12 +51,14 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
+import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -66,15 +67,14 @@ import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -92,16 +92,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
+import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
 import com.youfeng.sfs.ctinstaller.ui.component.ErrorCard
 import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
 import com.youfeng.sfs.ctinstaller.ui.component.RadioOptionItem
-import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.AppState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
@@ -109,8 +110,6 @@ import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.material3.LocalTextStyle
 
 @Composable
 fun MainScreen(
@@ -265,7 +264,8 @@ fun UiEventAwareHandler(
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) {
-        val shouldShowRationale = activity?.shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        val shouldShowRationale =
+            activity?.shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)
         viewModel.onPermissionsChecked(it, shouldShowRationale)
     }
     val safLauncher = rememberLauncherForActivityResult(
@@ -284,7 +284,7 @@ fun UiEventAwareHandler(
                 is UiEvent.PermissionRequestCheck -> {
                     requestPermissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 }
-                
+
                 is UiEvent.RedirectToSystemSettings -> {
                     val intentSetting = Intent(
                         Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
@@ -323,7 +323,8 @@ fun UiEventAwareHandler(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun MainLayout(// 添加默认参数以便于预览
+private fun MainLayout(
+// 添加默认参数以便于预览
     onNavigatorToDetails: () -> Unit = {},
     onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit = {},
     permissionRequestCheck: () -> Unit = {},
@@ -518,7 +519,10 @@ private fun LazyItemScope.StatusCard(
 
                     TooltipBox(
                         positionProvider =
-                            TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Below, 8.dp),
+                            TooltipDefaults.rememberTooltipPositionProvider(
+                                TooltipAnchorPosition.Below,
+                                8.dp
+                            ),
                         tooltip = {
                             RichTooltip(
                                 title = { Text("为什么需要授权？") },
