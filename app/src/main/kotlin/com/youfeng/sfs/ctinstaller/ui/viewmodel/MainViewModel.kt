@@ -66,6 +66,8 @@ class MainViewModel @Inject constructor(
     private val shizukuRepository: ShizukuRepository
 ) : ViewModel() {
 
+    private val requestCodeInit = (Int.MIN_VALUE..Int.MAX_VALUE).random()
+
     // UI 事件，用于触发一次性操作，如显示 Snackbar、启动 Activity 等
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
@@ -102,7 +104,7 @@ class MainViewModel @Inject constructor(
             DocumentUriUtil.buildAndroidDataInit(Constants.SFS_PACKAGE_NAME)
 
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        if (grantResult == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode == requestCodeInit && grantResult == PackageManager.PERMISSION_GRANTED) {
             updateMainState()
             shizukuRepository.startUserService()
         } else showSnackbar("授权失败")
@@ -156,7 +158,7 @@ class MainViewModel @Inject constructor(
             else -> {
                 // Request the permission
                 Shizuku.addRequestPermissionResultListener(requestPermissionResultListener)
-                Shizuku.requestPermission((Int.MIN_VALUE..Int.MAX_VALUE).random())
+                Shizuku.requestPermission(requestCodeInit)
                 return false
             }
         }
