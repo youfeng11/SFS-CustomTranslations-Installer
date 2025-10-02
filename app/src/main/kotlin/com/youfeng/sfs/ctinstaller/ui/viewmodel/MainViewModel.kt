@@ -302,6 +302,8 @@ class MainViewModel @Inject constructor(
                         }
 
                         else -> {
+                            val target = if (ExploitFileUtil.isExploitable) target.toPathWithZwsp()
+                                .toString() else target
                             file.copyFileTo(
                                 context,
                                 target,

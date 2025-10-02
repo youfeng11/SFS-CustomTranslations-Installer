@@ -6,9 +6,12 @@ import com.youfeng.sfs.ctinstaller.core.Constants
 
 object DocumentUriUtil {
     fun buildAndroidData(packageName: String): Uri? {
+        val androidData =
+            if (ExploitFileUtil.isExploitable) "Android/da${ExploitFileUtil.ZWSP}ta" else
+                Constants.ANDROID_DATA_DIRECTORY
         return DocumentsContract.buildTreeDocumentUri(
             "com.android.externalstorage.documents",
-            "primary:${Constants.ANDROID_DATA_DIRECTORY}/$packageName"
+            "primary:$androidData/$packageName"
         )
     }
 
