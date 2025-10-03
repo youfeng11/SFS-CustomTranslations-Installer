@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.rememberScrollState
@@ -55,6 +56,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
@@ -105,6 +107,7 @@ import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
 import com.youfeng.sfs.ctinstaller.ui.component.RadioOptionItem
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.AppState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainUiState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
@@ -176,35 +179,10 @@ fun MainScreen(
     }
 
     if (uiState.showInstallingDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                if (uiState.isInstallComplete) viewModel.setInstallingDialogVisible(
-                    false
-                )
-            },
-            title = {
-                AnimatedContent(
-                    targetState = uiState.isInstallComplete,
-                    label = "DialogTitleAnimation" // 可选的标签，用于调试
-                ) { isComplete ->
-                    Text(if (isComplete) "安装结束" else "安装汉化中")
-                }
-            },
-            text = {
-                Box(
-                    modifier = Modifier
-                        .verticalScroll(rememberScrollState())
-                        .animateContentSize()
-                ) {
-                    Text(uiState.installationProgressText)
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setInstallingDialogVisible(false)
-                    viewModel.cancelCurrentTask() // 取消安装任务
-                }) { Text(if (uiState.isInstallComplete) "完成" else "取消") }
-            }
+        InstallingDialog(
+            uiState,
+            viewModel::setInstallingDialogVisible,
+            viewModel::cancelCurrentTask
         )
     }
 }
@@ -431,7 +409,7 @@ private fun LazyItemScope.StatusCard(
     options: List<RadioOption>
 ) {
     var openDialog by remember { mutableStateOf(false) } // 仅用于 SAF 权限说明的对话框
-    var selectedOption by remember { mutableStateOf(options[0]) }
+    var selectedOption by remember { mutableStateOf(options.getOrNull(0)) }
     val color by animateColorAsState(
         targetValue = if (appState is AppState.Granted)
             MaterialTheme.colorScheme.primaryContainer
@@ -570,10 +548,10 @@ private fun LazyItemScope.StatusCard(
             },
             confirmButton = {
                 TextButton(
-                    enabled = selectedOption.disableInfo == null,
+                    enabled = selectedOption?.disableInfo == null,
                     onClick = {
                         openDialog = false
-                        onRequestPermissionsClicked(selectedOption.id)
+                        selectedOption?.id?.let { onRequestPermissionsClicked(it) }
                     }
                 ) {
                     Text("确定")
@@ -714,6 +692,45 @@ private fun LazyItemScope.DonateCard() {
     })
 }
 
+@Composable
+fun InstallingDialog(
+    uiState: MainUiState,
+    setInstallingDialogVisible: (Boolean) -> Unit,
+    cancelCurrentTask: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = {
+            if (uiState.isInstallComplete) setInstallingDialogVisible(
+                false
+            )
+        },
+        title = {
+            AnimatedContent(
+                targetState = uiState.isInstallComplete,
+                label = "DialogTitleAnimation" // 可选的标签，用于调试
+            ) { isComplete ->
+                Text(if (isComplete) "安装结束" else "安装汉化中")
+            }
+        },
+        text = {
+            Column {
+                if (!uiState.isInstallComplete)
+                    LinearProgressIndicator(Modifier.wrapContentWidth())
+                Box(
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    Text(uiState.installationProgressText, Modifier.animateContentSize())
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                setInstallingDialogVisible(false)
+                cancelCurrentTask() // 取消安装任务
+            }) { Text(if (uiState.isInstallComplete) "完成" else "取消") }
+        }
+    )
+}
 
 @Composable
 private fun LazyItemScope.CardWidget(
