@@ -10,6 +10,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -418,24 +422,46 @@ private fun LazyItemScope.StatusCard(
     )
     CardWidget(
         title = {
-            Text(
-                when (appState) {
-                    is AppState.Uninstalled -> "未安装"
-                    is AppState.NeverOpened -> "未创建数据目录"
-                    is AppState.Granted -> "已授权"
-                    else -> "未授权"
+            AnimatedContent(
+                appState,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            500
+                        )
+                    )
                 }
-            )
+            ) { appState ->
+                Text(
+                    when (appState) {
+                        is AppState.Uninstalled -> "未安装"
+                        is AppState.NeverOpened -> "未创建数据目录"
+                        is AppState.Granted -> "已授权"
+                        else -> "未授权"
+                    }
+                )
+            }
         },
         icon = {
-            Icon(
-                when (appState) {
-                    AppState.Granted -> Icons.Outlined.CheckCircle
-                    AppState.Uninstalled -> Icons.Default.Block
-                    else -> Icons.Default.Error
-                },
-                contentDescription = null
-            )
+            AnimatedContent(
+                appState,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            500
+                        )
+                    )
+                }
+            ) { appState ->
+                Icon(
+                    when (appState) {
+                        AppState.Granted -> Icons.Outlined.CheckCircle
+                        AppState.Uninstalled -> Icons.Default.Block
+                        else -> Icons.Default.Error
+                    },
+                    contentDescription = null
+                )
+            }
         },
         colors = CardDefaults.cardColors(
             containerColor = color
@@ -447,23 +473,34 @@ private fun LazyItemScope.StatusCard(
             } else MaterialTheme.colorScheme.onErrorContainer
         ),
         text = {
-            Text(
-                when (appState) {
-                    is AppState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
-                    is AppState.NeverOpened -> "点击此处打开SFS"
-                    is AppState.Ungranted -> "点击此处前往授权"
-                    is AppState.Granted -> {
-                        val type = when (grantedType) {
-                            is GrantedType.Saf -> "SAF授权"
-                            is GrantedType.Old -> "存储权限授权"
-                            is GrantedType.Bug -> "漏洞授权"
-                            is GrantedType.Shizuku -> "Shizuku/Sui授权"
-                            is GrantedType.Su -> "ROOT授权"
-                        }
-                        "$type | $sfsVersionName"
-                    }
+            AnimatedContent(
+                appState,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            500
+                        )
+                    )
                 }
-            )
+            ) { appState ->
+                Text(
+                    when (appState) {
+                        is AppState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
+                        is AppState.NeverOpened -> "点击此处打开SFS"
+                        is AppState.Ungranted -> "点击此处前往授权"
+                        is AppState.Granted -> {
+                            val type = when (grantedType) {
+                                is GrantedType.Saf -> "SAF授权"
+                                is GrantedType.Old -> "存储权限授权"
+                                is GrantedType.Bug -> "漏洞授权"
+                                is GrantedType.Shizuku -> "Shizuku/Sui授权"
+                                is GrantedType.Su -> "ROOT授权"
+                            }
+                            "$type | $sfsVersionName"
+                        }
+                    }
+                )
+            }
         },
         onClick = {
             when (appState) {
