@@ -6,8 +6,8 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import com.youfeng.sfs.ctinstaller.BuildConfig
-import com.youfeng.sfs.ctinstaller.service.FileService
-import com.youfeng.sfs.ctinstaller.service.IFileService
+import com.youfeng.sfs.ctinstaller.service.ShizukuFileService
+import com.youfeng.sfs.ctinstaller.service.IShizukuFileService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -31,7 +31,7 @@ class ShizukuRepository @Inject constructor(
         data class Error(val throwable: Throwable) : ConnectionStatus()
     }
 
-    private var fileService: IFileService? = null
+    private var fileService: IShizukuFileService? = null
 
     // 使用 StateFlow 向 ViewModel 暴露连接状态
     private val _connectionStatus =
@@ -41,7 +41,7 @@ class ShizukuRepository @Inject constructor(
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             Log.d("ShizukuRepository", "Service connected")
-            fileService = IFileService.Stub.asInterface(service)
+            fileService = IShizukuFileService.Stub.asInterface(service)
             _connectionStatus.value = ConnectionStatus.Connected
         }
 
@@ -54,7 +54,7 @@ class ShizukuRepository @Inject constructor(
 
     private val args by lazy {
         Shizuku.UserServiceArgs(
-            ComponentName(context.packageName, FileService::class.java.name)
+            ComponentName(context.packageName, ShizukuFileService::class.java.name)
         )
             .processNameSuffix("file_service")
             .daemon(false)
@@ -90,7 +90,7 @@ class ShizukuRepository @Inject constructor(
      * 这是一个私有挂起函数，用于处理异步等待逻辑，避免重复代码。
      * @throws IllegalStateException 如果连接失败
      */
-    private suspend fun waitForService(): IFileService = withContext(Dispatchers.IO) {
+    private suspend fun waitForService(): IShizukuFileService = withContext(Dispatchers.IO) {
         // 等待服务连接，直到状态变为 Connected 或 Error
         while (_connectionStatus.value is ConnectionStatus.Connecting) {
             delay(100) // 等待一小段时间

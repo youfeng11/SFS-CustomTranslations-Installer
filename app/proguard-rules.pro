@@ -20,4 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class com.youfeng.sfs.ctinstaller.service.FileService { *; }
+-keep class com.youfeng.sfs.ctinstaller.service.ShizukuFileService { *; }

@@ -5,7 +5,7 @@ import okio.FileSystem
 import okio.Path.Companion.toPath
 import kotlin.system.exitProcess
 
-class FileService : IFileService.Stub() {
+class ShizukuFileService : IShizukuFileService.Stub() {
 
     private val fs = FileSystem.SYSTEM
 

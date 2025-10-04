@@ -1,6 +1,6 @@
 package com.youfeng.sfs.ctinstaller.service;
 
-interface IFileService {
+interface IShizukuFileService {
 
     void destroy() = 16777114; // Destroy method defined by Shizuku server
 
