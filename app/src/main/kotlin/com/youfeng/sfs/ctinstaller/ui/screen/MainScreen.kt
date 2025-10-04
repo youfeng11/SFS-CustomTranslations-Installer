@@ -434,6 +434,7 @@ private fun LazyItemScope.StatusCard(
             ) { appState ->
                 Text(
                     when (appState) {
+                        is AppState.Loading -> "加载中..."
                         is AppState.Uninstalled -> "未安装"
                         is AppState.NeverOpened -> "未创建数据目录"
                         is AppState.Granted -> "已授权"
@@ -485,6 +486,7 @@ private fun LazyItemScope.StatusCard(
             ) { appState ->
                 Text(
                     when (appState) {
+                        is AppState.Loading -> "加载中..."
                         is AppState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
                         is AppState.NeverOpened -> "点击此处打开SFS"
                         is AppState.Ungranted -> "点击此处前往授权"

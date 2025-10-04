@@ -595,7 +595,7 @@ class MainViewModel @Inject constructor(
  * 定义主屏幕的 UI 状态。
  */
 data class MainUiState(
-    val appState: AppState = AppState.Uninstalled,
+    val appState: AppState = AppState.Loading,
     val showInstallingDialog: Boolean = false,
     val showGoToSettingsDialog: Boolean = false,
     val installationProgressText: String = "",
@@ -615,6 +615,7 @@ data class MainUiState(
  * 定义 SFS 应用的状态。
  */
 sealed class AppState {
+    data object Loading : AppState()
     data object Uninstalled : AppState()
     data object NeverOpened : AppState()
     data object Ungranted : AppState()
