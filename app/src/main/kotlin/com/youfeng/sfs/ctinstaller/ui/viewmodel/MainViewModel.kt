@@ -147,7 +147,7 @@ class MainViewModel @Inject constructor(
     }
 
     private fun hasSu(): Boolean {
-        return Shell.isAppGrantedRoot() ?: try {
+        return try {
             // 检查是否存在 su 二进制文件
             Log.d("SFSCTI", "su二进制检查")
             val process = Runtime.getRuntime().exec("which su")
@@ -310,6 +310,15 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("复制成功")
                         }
 
+                        GrantedType.Su -> {
+                            updateInstallationProgress("准备中...")
+                            Shell.cmd("mkdir -p \"$target\"").exec()
+                            updateInstallationProgress("复制中...")
+                            val shellResult = Shell.cmd("cp -f \"$textCachePath\" \"$target/简体中文.txt\"").exec()
+                            if (!shellResult.isSuccess) throw IllegalArgumentException("复制失败：${shellResult.code}")
+                            updateInstallationProgress("复制成功")
+                        }
+
                         GrantedType.Bug -> {
                             updateInstallationProgress("准备中...")
                             fs.createDirectories(target.toPathWithZwsp())
@@ -326,7 +335,7 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("复制成功")
                         }
 
-                        else -> {
+                        GrantedType.Saf -> {
                             val target = if (ExploitFileUtil.isExploitable) target.toPathWithZwsp()
                                 .toString() else target
                             file.copyFileTo(
