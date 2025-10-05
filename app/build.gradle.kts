@@ -134,7 +134,6 @@ dependencies {
     implementation(libs.shizuku.provider)
 
     implementation(libs.libsu.core)
-    implementation(libs.libsu.nio)
 
     implementation(libs.documentfile)
     implementation(project(":storage"))
