@@ -18,6 +18,8 @@ import com.anggrayudi.storage.file.DocumentFileCompat
 import com.anggrayudi.storage.file.copyFileTo
 import com.anggrayudi.storage.media.FileDescription
 import com.anggrayudi.storage.result.SingleFileResult
+import com.topjohnwu.superuser.Shell
+import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
@@ -79,6 +81,15 @@ class MainViewModel @Inject constructor(
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
 
+    init {
+        Shell.enableVerboseLogging = BuildConfig.DEBUG
+        Shell.setDefaultBuilder(
+            Shell.Builder.create()
+                .setFlags(Shell.FLAG_MOUNT_MASTER)
+                .setTimeout(10)
+        )
+    }
+
     fun onFolderSelected(uri: Uri?) {
         viewModelScope.launch {
             Log.d("SFSCTI", uri.toString())
@@ -133,6 +144,18 @@ class MainViewModel @Inject constructor(
     fun removeShizukuListener() {
         Shizuku.removeBinderReceivedListener(binderReceivedListener)
         Shizuku.removeBinderDeadListener(binderDeadListener)
+    }
+
+    private fun hasSu(): Boolean {
+        return Shell.isAppGrantedRoot() ?: try {
+            // 检查是否存在 su 二进制文件
+            Log.d("SFSCTI", "su二进制检查")
+            val process = Runtime.getRuntime().exec("which su")
+            process.waitFor() == 0
+        } catch (e: Exception) {
+            Log.d("SFSCTI", "su二进制检查出错${e.message}")
+            false
+        }
     }
 
     private fun checkShizukuPermission(): Boolean {
@@ -410,6 +433,11 @@ class MainViewModel @Inject constructor(
                     checkShizukuPermission()
                 }
 
+                is GrantedType.Su -> {
+                    Shell.cmd("whoami").exec()
+                    updateMainState()
+                }
+
                 else -> {}
             }
         }
@@ -460,7 +488,7 @@ class MainViewModel @Inject constructor(
      * 更新主界面的状态。
      */
     fun updateMainState() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val optionList = listOf(
                 RadioOption(
                     GrantedType.Shizuku,
@@ -482,7 +510,7 @@ class MainViewModel @Inject constructor(
                 RadioOption(
                     GrantedType.Su,
                     "ROOT授权",
-                    "待开发的功能"
+                    if (!hasSu()) "超级用户不可用" else null
                 )
             )
             val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
@@ -576,6 +604,8 @@ class MainViewModel @Inject constructor(
                 shizukuRepository.startUserService()
                 true to GrantedType.Shizuku
             }
+
+            Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot -> true to GrantedType.Su
 
             !Environment.isExternalStorageManager() -> (folderRepository.getPersistedFolderUri() != null) to GrantedType.Saf
 
