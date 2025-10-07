@@ -81,6 +81,8 @@ class MainViewModel @Inject constructor(
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
 
+    private var tempGrantedType: GrantedType? = null
+
     init {
         Shell.enableVerboseLogging = BuildConfig.DEBUG
         Shell.setDefaultBuilder(
@@ -537,8 +539,8 @@ class MainViewModel @Inject constructor(
 
                     !isSfsDataDirectoryExists -> AppState.NeverOpened
 
-                    hasStorageAccess().first -> {
-                        _uiState.update { it.copy(grantedType = hasStorageAccess().second) }
+                    hasStorageAccess() != null -> {
+                        _uiState.update { it.copy(grantedType = tempGrantedType!!) }
                         AppState.Granted
                     }
 
@@ -609,30 +611,26 @@ class MainViewModel @Inject constructor(
 
     /**
      * 检查是否有存储访问权限。
-     * @return 如果有权限，则为 true；否则为 false。
+     * @return 如果有权限，则为返回授权类型；否则为 null。
      */
-    private suspend fun hasStorageAccess(): Pair<Boolean, GrantedType> {
-        return when {
-            Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> checkStoragePermission(context) to GrantedType.Old
+    private suspend fun hasStorageAccess(): GrantedType? {
+        tempGrantedType = when {
+            Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> if (checkStoragePermission(context)) GrantedType.Old else null
 
             shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
                 shizukuRepository.startUserService()
-                true to GrantedType.Shizuku
+                GrantedType.Shizuku
             }
 
-            Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot -> true to GrantedType.Su
+            folderRepository.getPersistedFolderUri() != null -> GrantedType.Saf
 
-            !Environment.isExternalStorageManager() -> (folderRepository.getPersistedFolderUri() != null) to GrantedType.Saf
+            Environment.isExternalStorageManager() && ExploitFileUtil.isExploitable -> GrantedType.Bug
 
-            ExploitFileUtil.isExploitable -> true to GrantedType.Bug
-
-            else -> {
-                val accessiblePaths =
-                    DocumentFileCompat.getAccessibleAbsolutePaths(context).values.flatten()
-                        .toSet()
-                accessiblePaths.contains("${Constants.externalStorage}/${Constants.SFS_DATA_DIRECTORY}") to GrantedType.Saf
-            }
+            Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot -> GrantedType.Su
+            
+            else -> null
         }
+        return tempGrantedType
     }
 }
 
