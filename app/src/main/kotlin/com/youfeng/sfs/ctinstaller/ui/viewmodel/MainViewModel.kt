@@ -443,7 +443,13 @@ class MainViewModel @Inject constructor(
                 }
 
                 is GrantedType.Su -> {
-                    Shell.cmd("whoami").exec()
+                    if (Shell.isAppGrantedRoot() != true) {
+                        Shell.getShell().close()
+                        Shell.getShell({ shell ->
+                            if (!shell.isRoot)
+                                showSnackbar("ROOT请求被拒")
+                        })
+                    }
                     updateMainState()
                 }
 
