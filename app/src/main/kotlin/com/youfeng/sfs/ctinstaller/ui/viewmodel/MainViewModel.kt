@@ -243,6 +243,8 @@ class MainViewModel @Inject constructor(
         val url = Constants.API_URL
         installSaveJob = viewModelScope.launch {
             try {
+                val fs = FileSystem.SYSTEM
+
                 updateInstallationProgress("正在获取API…")
                 val result = networkRepository.fetchContentFromUrl(url)
                 updateInstallationProgress("正在解析API…")
@@ -264,7 +266,6 @@ class MainViewModel @Inject constructor(
                         ) else it
                     }
 
-                val fs = FileSystem.SYSTEM
                 var textCachePath = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
                 updateInstallationProgress("正在获取是否存在缓存…")
                 val canUseCache =
@@ -274,12 +275,10 @@ class MainViewModel @Inject constructor(
                 if (!canUseCache) {
                     updateInstallationProgress("正在下载汉化…")
                     textCachePath = networkRepository.downloadFileToCache(customTranslationInfo.url)
-                    customTranslationInfo.sha256.apply {
+                    sha256?.apply {
                         if (!isNullOrBlank()) {
                             updateInstallationProgress("正在检查完整性…")
-                            val sha256 =
-                                if (isUrl()) networkRepository.fetchContentFromUrl(this) else this
-                            if (sha256 != textCachePath.toPath().sha256())
+                            if (this != textCachePath.toPath().sha256())
                                 throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
                         }
                     }
