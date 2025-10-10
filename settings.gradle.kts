@@ -39,4 +39,3 @@ dependencyResolutionManagement {
 rootProject.name = "SFS汉化安装器"
 
 include(":app")
-include(":storage")

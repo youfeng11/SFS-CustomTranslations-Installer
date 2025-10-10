@@ -136,5 +136,4 @@ dependencies {
     implementation(libs.libsu.core)
 
     implementation(libs.documentfile)
-    implementation(project(":storage"))
 }

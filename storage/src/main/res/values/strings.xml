@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="ss_please_grant_storage_permission">Please grant read and write permissions for external storage.</string>
-    <string name="ss_selecting_root_path_success_with_open_folder_picker">Now you can select any folders under %s</string>
-    <string name="ss_selecting_root_path_success_without_open_folder_picker">Storage access has been granted for %s</string>
-    <string name="ss_missing_saf_activity_handler">Storage Access Framework is currently not available.</string>
-</resources>
