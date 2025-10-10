@@ -380,7 +380,7 @@ class MainViewModel @Inject constructor(
                     }
                 }
             } catch (_: CancellationException) {
-                // 协程被取消，不进行错误提示
+                return@launch
             } catch (e: Exception) {
                 val err = e.message ?: "未知错误"
                 e.printStackTrace()
@@ -420,7 +420,7 @@ class MainViewModel @Inject constructor(
                 val textContent = networkRepository.fetchContentFromUrl(customTranslationInfo.url)
                 _uiEvent.send(UiEvent.SaveTo(textContent))
             } catch (_: CancellationException) {
-                // 协程被取消，不进行错误提示
+                return@launch
             } catch (e: Exception) {
                 val err = e.message ?: "未知错误"
                 showSnackbar("无法保存汉化：$err")
