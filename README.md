@@ -64,8 +64,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 </a>
 
 ## 鸣谢
-- [SimpleStorage](https://github.com/anggrayudi/SimpleStorage): 为简化SAF
 - [Dhizuku](https://github.com/iamr0s/Dhizuku): 借鉴部分UI设计
 - [KernelSU](https://github.com/tiann/KernelSU): 借鉴部分UI设计
 - [libsu](https://github.com/topjohnwu/libsu): 针对使用 root 权限的应用程序的完整解决方案
 - [Shizuku-API](https://github.com/RikkaApps/Shizuku-API): 通过 ADB 或 root 权限，以标准方式安全、便捷地调用系统级 API。
+- ~~[SimpleStorage](https://github.com/anggrayudi/SimpleStorage): 为简化SAF~~
