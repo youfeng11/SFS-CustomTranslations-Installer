@@ -379,6 +379,8 @@ class MainViewModel @Inject constructor(
                         }
                     }
                 }
+            } catch (_: CancellationException) {
+                // 协程被取消，不进行错误提示
             } catch (e: Exception) {
                 val err = e.message ?: "未知错误"
                 e.printStackTrace()
