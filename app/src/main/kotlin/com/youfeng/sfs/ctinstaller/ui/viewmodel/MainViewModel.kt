@@ -13,11 +13,6 @@ import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.anggrayudi.storage.callback.SingleFileConflictCallback
-import com.anggrayudi.storage.file.DocumentFileCompat
-import com.anggrayudi.storage.file.copyFileTo
-import com.anggrayudi.storage.media.FileDescription
-import com.anggrayudi.storage.result.SingleFileResult
 import com.topjohnwu.superuser.Shell
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.core.Constants
@@ -293,13 +288,13 @@ class MainViewModel @Inject constructor(
                 }
                 updateInstallationProgress("正在安装汉化…")
 
-                val file = DocumentFile.fromFile(File(textCachePath))
                 val target =
                     "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
 
                 withContext(Dispatchers.IO) {
                     when (uiState.value.grantedType) {
                         GrantedType.Shizuku -> {
+                            updateInstallationProgress("验证中...")
                             if (shizukuRepository.connectionStatus.value
                                         is ShizukuRepository.ConnectionStatus.Connecting
                             ) {
@@ -338,36 +333,50 @@ class MainViewModel @Inject constructor(
                         }
 
                         GrantedType.Saf -> {
-                            val target = if (ExploitFileUtil.isExploitable) target.toPathWithZwsp()
-                                .toString() else target
-                            file.copyFileTo(
-                                context,
-                                target,
-                                fileDescription = FileDescription("简体中文.txt"),
-                                onConflict = object : SingleFileConflictCallback<DocumentFile>(
-                                    CoroutineScope(Dispatchers.Main)
-                                ) {
-                                    override fun onFileConflict(
-                                        destinationFile: DocumentFile,
-                                        action: FileConflictAction
-                                    ) {
-                                        action.confirmResolution(ConflictResolution.REPLACE)
-                                    }
+                            updateInstallationProgress("验证中...")
+                            val sfsDataDirUri = folderRepository.getPersistedFolderUri()
+                                ?: throw IllegalArgumentException("请检测授权状况并重试")
+
+                            val sourceFile = DocumentFile.fromFile(File(textCachePath))
+                            val rootDir = DocumentFile.fromTreeUri(context, sfsDataDirUri)
+                                ?: throw IllegalArgumentException("获取DocumentFile失败")
+
+                            updateInstallationProgress("准备中...")
+
+                            val filesDir = rootDir.findFile("files")
+                                ?.takeIf { it.isDirectory }
+                                ?: run {
+                                    rootDir.findFile("files")?.delete()
+                                    rootDir.createDirectory("files")
+                                        ?: throw IllegalArgumentException("无法创建 files 目录")
                                 }
-                            ).collect {
-                                updateInstallationProgress(
-                                    when (it) {
-                                        is SingleFileResult.Validating -> "验证中..."
-                                        is SingleFileResult.Preparing -> "准备中..."
-                                        is SingleFileResult.CountingFiles -> "正在计算文件..."
-                                        is SingleFileResult.DeletingConflictedFile -> "正在删除冲突的文件..."
-                                        is SingleFileResult.Starting -> "开始中..."
-                                        is SingleFileResult.InProgress -> "进度：${it.progress.toInt()}%"
-                                        is SingleFileResult.Completed -> "复制成功"
-                                        is SingleFileResult.Error -> "发生错误：${it.errorCode.name}"
-                                    }
-                                )
+
+                            val customTranslationsDir = filesDir.findFile("Custom Translations")
+                                ?.takeIf { it.isDirectory }
+                                ?: run {
+                                    filesDir.findFile("Custom Translations")?.delete()
+                                    filesDir.createDirectory("Custom Translations")
+                                        ?: throw IllegalArgumentException("无法创建 Custom Translations 目录")
+                                }
+
+                            // 检查目标文件是否存在
+                            val existingFile = customTranslationsDir.findFile("简体中文.txt")
+                            if (existingFile != null) {
+                                updateInstallationProgress("删除冲突文件中...")
+                                existingFile.delete()
                             }
+
+                            updateInstallationProgress("开始中...")
+                            val newFile = customTranslationsDir.createFile("text/plain", "简体中文.txt")
+                                ?: throw IllegalArgumentException("新建文件失败")
+
+                            context.contentResolver.openInputStream(sourceFile.uri)?.use { inputStream ->
+                                context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
+                                    inputStream.copyTo(outputStream)
+                                }
+                            }
+
+                            updateInstallationProgress("复制成功")
                         }
                     }
                 }
