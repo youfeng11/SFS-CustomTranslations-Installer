@@ -6,6 +6,5 @@ import kotlinx.serialization.Serializable
 data class CustomTranslationInfo(
     val url: String? = null,
     val compatibleVersion: String? = null,
-    val versionCode: Int? = null,
     val sha256: String? = null
 )

@@ -254,8 +254,7 @@ class MainViewModel @Inject constructor(
 
                 // 检查必要字段
                 if (customTranslationInfo.url.isNullOrBlank() ||
-                    customTranslationInfo.compatibleVersion.isNullOrBlank() ||
-                    customTranslationInfo.versionCode == null
+                    customTranslationInfo.compatibleVersion.isNullOrBlank()
                 ) {
                     throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
@@ -410,8 +409,7 @@ class MainViewModel @Inject constructor(
 
                 // 检查必要字段
                 if (customTranslationInfo.url.isNullOrBlank() ||
-                    customTranslationInfo.compatibleVersion.isNullOrBlank() ||
-                    customTranslationInfo.versionCode == null
+                    customTranslationInfo.compatibleVersion.isNullOrBlank()
                 ) {
                     throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
