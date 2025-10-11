@@ -69,4 +69,5 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 - [libsu](https://github.com/topjohnwu/libsu): 针对使用 root 权限的应用程序的完整解决方案
 - [Shizuku-API](https://github.com/RikkaApps/Shizuku-API): 通过 ADB 或 root 权限，以标准方式安全、便捷地调用系统级 API
 - [SFS简体中文语言包](https://gitee.com/YouFeng11/SFS-zh-CN-Translation): 默认使用的汉化包，由本项目开发者维护
+- [航天模拟器简体中文汉化包](https://github.com/sTheNight/Spaceflight-Simulator-CNlang): 由可爱的重铬酸钠制作的汉化包，在此感谢他的支持
 - ~~[SimpleStorage](https://github.com/anggrayudi/SimpleStorage): 为简化SAF~~
