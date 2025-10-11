@@ -359,10 +359,9 @@ class MainViewModel @Inject constructor(
                                 }
 
                             // 检查目标文件是否存在
-                            val existingFile = customTranslationsDir.findFile("简体中文.txt")
-                            if (existingFile != null) {
+                            customTranslationsDir.findFile("简体中文.txt")?.let {
                                 updateInstallationProgress("删除冲突文件中...")
-                                existingFile.delete()
+                                it.delete()
                             }
 
                             updateInstallationProgress("开始中...")
