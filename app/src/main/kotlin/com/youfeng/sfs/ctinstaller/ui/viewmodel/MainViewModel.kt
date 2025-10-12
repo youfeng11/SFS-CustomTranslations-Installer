@@ -569,6 +569,7 @@ class MainViewModel @Inject constructor(
                 val result = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
                 val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
 
+                optionList.clear()
                 for ((name, translationInfo) in translationsApi) {
                     translationInfo.file ?: throw IllegalArgumentException()
                     translationInfo.lang ?: throw IllegalArgumentException()
