@@ -30,9 +30,7 @@ import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
 import com.youfeng.sfs.ctinstaller.utils.isDirectoryExists
 import com.youfeng.sfs.ctinstaller.utils.isUrl
 import com.youfeng.sfs.ctinstaller.utils.isValidJson
-import com.youfeng.sfs.ctinstaller.utils.md5
 import com.youfeng.sfs.ctinstaller.utils.openApp
-import com.youfeng.sfs.ctinstaller.utils.sha256
 import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -266,33 +264,9 @@ class MainViewModel @Inject constructor(
                     ) {
                         throw IllegalArgumentException("目标API数据不完整或非法！")
                     }
-                    val sha256: String? =
-                        customTranslationInfo.sha256?.let {
-                            if (it.isUrl()) networkRepository.fetchContentFromUrl(
-                                it
-                            ) else it
-                        }
 
-                    var textCache = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
-                    updateInstallationProgress("正在获取是否存在缓存…")
-                    val canUseCache =
-                        fs.exists(textCache.toPath()) && sha256 == textCache.toPath()
-                            .sha256()
-
-                    if (!canUseCache) {
-                        updateInstallationProgress("正在下载汉化…")
-                        textCache = networkRepository.downloadFileToCache(customTranslationInfo.url)
-                        sha256?.apply {
-                            if (!isNullOrBlank()) {
-                                updateInstallationProgress("正在检查完整性…")
-                                if (this != textCache.toPath().sha256())
-                                    throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
-                            }
-                        }
-                    } else {
-                        updateInstallationProgress("存在缓存，跳过下载")
-                    }
-                    textCache
+                    updateInstallationProgress("正在下载汉化…")
+                    networkRepository.downloadFileToCache(customTranslationInfo.url)
                 } else {
                     updateInstallationProgress("正在获取API…")
                     val result = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)

@@ -11,9 +11,9 @@ import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
 import java.io.IOException
+import java.net.URLDecoder
 import javax.inject.Inject
 import javax.inject.Singleton
-
 
 @Singleton
 class NetworkRepository @Inject constructor(
@@ -22,34 +22,76 @@ class NetworkRepository @Inject constructor(
 
     private val client = OkHttpClient()
 
-    suspend fun fetchContentFromUrl(url: String): String {
+    suspend fun fetchContentFromUrl(url: String): String = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(url).build()
-        return withContext(Dispatchers.IO) {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("Unexpected code $response")
-                }
-                response.body.string()
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("Unexpected code $response")
             }
+            response.body.string()
         }
     }
 
-    suspend fun downloadFileToCache(url: String): String {
-        // 创建目标文件
+    /**
+     * 下载文件到缓存目录，自动解析 UTF-8 编码文件名。
+     */
+    suspend fun downloadFileToCache(url: String): String = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(url).build()
-        return withContext(Dispatchers.IO) {
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    throw IOException("Unexpected code $response")
-                }
-                val source = response.body.source()
-                val cacheFile = "${context.externalCacheDir}/${url.md5()}"
-                source.use { source ->
-                    FileSystem.SYSTEM.sink(cacheFile.toPath()).buffer().use { sink ->
-                        sink.writeAll(source)
-                    }
-                }
-                cacheFile
+
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw IOException("Unexpected code $response")
+            }
+
+            // 1️⃣ 获取 UTF-8 解码后的文件名
+            val rawFileName = response.header("Content-Disposition")
+                ?.let { parseFileNameFromDisposition(it) }
+                ?: url.substringAfterLast('/').ifBlank { "${url.md5()}.txt" }
+
+            // 🔤 确保任何来源的文件名都被 UTF-8 解码
+            val fileName = try {
+                URLDecoder.decode(rawFileName, "UTF-8")
+            } catch (e: Exception) {
+                rawFileName // 解码失败就用原值
+            }
+
+            // 2️⃣ 目标路径
+            val cacheDir = context.externalCacheDir
+                ?: throw IOException("External cache directory not available")
+            val targetPath = "${cacheDir.absolutePath}/$fileName".toPath()
+
+            // 3️⃣ 写入文件（纯 Okio）
+            val source = response.body?.source()
+                ?: throw IOException("Empty response body")
+
+            FileSystem.SYSTEM.sink(targetPath).buffer().use { sink ->
+                sink.writeAll(source)
+            }
+
+            targetPath.toString()
+        }
+    }
+
+    /**
+     * 从 Content-Disposition 中提取 UTF-8 或普通文件名。
+     */
+    private fun parseFileNameFromDisposition(header: String): String? {
+        // filename*=UTF-8''encoded
+        val utf8Match = Regex("filename\\*=(?:UTF-8'')?([^;]+)").find(header)
+        if (utf8Match != null) {
+            val encodedName = utf8Match.groupValues[1]
+            return URLDecoder.decode(encodedName, "UTF-8")
+        }
+
+        // 普通 filename="..."，也可能是 URL 编码
+        val simpleMatch = Regex("filename=\"?([^\";]+)\"?").find(header)
+        val name = simpleMatch?.groupValues?.getOrNull(1)
+        return name?.let {
+            try {
+                URLDecoder.decode(it, "UTF-8")
+            } catch (_: Exception) {
+                it
             }
         }
     }
