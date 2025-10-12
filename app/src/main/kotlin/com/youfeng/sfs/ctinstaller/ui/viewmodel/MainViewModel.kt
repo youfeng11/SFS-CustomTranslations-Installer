@@ -285,6 +285,7 @@ class MainViewModel @Inject constructor(
 
                 val target =
                     "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
+                val fileName = textCachePath.toPath().name
 
                 withContext(Dispatchers.IO) {
                     when (uiState.value.grantedType) {
@@ -298,7 +299,7 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("准备中...")
                             shizukuRepository.mkdirs(target)
                             updateInstallationProgress("复制中...")
-                            shizukuRepository.copyFile(textCachePath, "${target}/简体中文.txt")
+                            shizukuRepository.copyFile(textCachePath, "${target}/$fileName")
                             updateInstallationProgress("复制成功")
                         }
 
@@ -306,7 +307,7 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("准备中...")
                             Shell.cmd("mkdir -p \"$target\"").exec()
                             updateInstallationProgress("复制中...")
-                            val shellResult = Shell.cmd("cp -f \"$textCachePath\" \"$target/简体中文.txt\"").exec()
+                            val shellResult = Shell.cmd("cp -f \"$textCachePath\" \"$target/$fileName\"").exec()
                             if (!shellResult.isSuccess) throw IllegalArgumentException("复制失败：${shellResult.code}")
                             updateInstallationProgress("复制成功")
                         }
@@ -315,7 +316,7 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("准备中...")
                             fs.createDirectories(target.toPathWithZwsp())
                             updateInstallationProgress("复制中...")
-                            fs.copy(textCachePath.toPath(), "$target/简体中文.txt".toPathWithZwsp())
+                            fs.copy(textCachePath.toPath(), "$target/$fileName".toPathWithZwsp())
                             updateInstallationProgress("复制成功")
                         }
 
@@ -323,7 +324,7 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("准备中...")
                             fs.createDirectories(target.toPath())
                             updateInstallationProgress("复制中...")
-                            fs.copy(textCachePath.toPath(), "$target/简体中文.txt".toPath())
+                            fs.copy(textCachePath.toPath(), "$target/$fileName".toPath())
                             updateInstallationProgress("复制成功")
                         }
 
@@ -355,13 +356,13 @@ class MainViewModel @Inject constructor(
                                 }
 
                             // 检查目标文件是否存在
-                            customTranslationsDir.findFile("简体中文.txt")?.let {
+                            customTranslationsDir.findFile(fileName)?.let {
                                 updateInstallationProgress("删除冲突文件中...")
                                 it.delete()
                             }
 
                             updateInstallationProgress("开始中...")
-                            val newFile = customTranslationsDir.createFile("text/plain", "简体中文.txt")
+                            val newFile = customTranslationsDir.createFile("text/plain", fileName)
                                 ?: throw IllegalArgumentException("新建文件失败")
 
                             context.contentResolver.openInputStream(sourceFile.uri)?.use { inputStream ->
