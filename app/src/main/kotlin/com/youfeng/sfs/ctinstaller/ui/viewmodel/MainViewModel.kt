@@ -389,7 +389,7 @@ class MainViewModel @Inject constructor(
     /**
      * 点击保存到按钮时的处理逻辑。
      */
-    fun onSaveToButtonClick() {
+    fun onSaveToButtonClick(realOption: Int) {
         if (!_uiState.value.isSavingComplete) {
             showSnackbar("保存正在进行中，请勿频繁点击")
             return
@@ -397,22 +397,29 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(isSavingComplete = false) }
         showSnackbar("正在下载汉化…")
 
-        val url = Constants.API_URL
+        val title = optionList.getOrNull(realOption)?.title
         installSaveJob = viewModelScope.launch {
             try {
-                val (result, _) = networkRepository.fetchContentFromUrl(url)
-                val customTranslationInfo = if (result.isValidJson()) {
-                    json.decodeFromString<CustomTranslationInfo>(result)
-                } else throw IllegalArgumentException("无法解析API！")
+                val url = if (title == null) {
+                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
+                    val customTranslationInfo = if (result.isValidJson()) {
+                        json.decodeFromString<CustomTranslationInfo>(result)
+                    } else throw IllegalArgumentException("无法解析API！")
 
-                // 检查必要字段
-                if (customTranslationInfo.url.isNullOrBlank() ||
-                    customTranslationInfo.compatibleVersion.isNullOrBlank()
-                ) {
-                    throw IllegalArgumentException("目标API数据不完整或非法！")
+                    // 检查必要字段
+                    if (customTranslationInfo.url.isNullOrBlank()) {
+                        throw IllegalArgumentException("目标API数据不完整或非法！")
+                    }
+                    customTranslationInfo.url
+                } else {
+                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
+
+                    val translationInfo = translationsApi[title] ?: throw IllegalArgumentException("API异常")
+                    translationInfo.file ?: throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
 
-                val (textContent, fileName) = networkRepository.fetchContentFromUrl(customTranslationInfo.url)
+                val (textContent, fileName) = networkRepository.fetchContentFromUrl(url)
                 _uiEvent.send(UiEvent.SaveTo(textContent, fileName))
             } catch (_: CancellationException) {
                 return@launch

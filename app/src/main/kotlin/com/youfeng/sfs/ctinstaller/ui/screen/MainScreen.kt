@@ -316,7 +316,7 @@ private fun MainLayout(
     uiState: AppState = AppState.Uninstalled, // 更改为 AppState
     openSfs: () -> Unit = {},
     onInstallButtonClick: (realOption: Int) -> Unit = {},
-    onSaveToButtonClick: () -> Unit = {},
+    onSaveToButtonClick: (realOption: Int) -> Unit = {},
     sfsVersionName: String = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
@@ -637,7 +637,7 @@ private fun LazyItemScope.UpdateCard() {
 @Composable
 private fun LazyItemScope.InstallCard(
     onInstallButtonClick: (realOption: Int) -> Unit,
-    onSaveToButtonClick: () -> Unit,
+    onSaveToButtonClick: (realOption: Int) -> Unit,
     enableInstallButton: Boolean,
     forGameVersion: String,
     ctRadio: List<CTRadioOption>?
@@ -739,7 +739,7 @@ private fun LazyItemScope.InstallCard(
                     }
                 }
                 TextButton(onClick = {
-                    onSaveToButtonClick()
+                    onSaveToButtonClick(realOption)
                 }) {
                     Text("保存到")
                 }
