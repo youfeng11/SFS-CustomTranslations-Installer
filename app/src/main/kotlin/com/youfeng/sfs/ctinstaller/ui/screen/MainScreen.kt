@@ -56,6 +56,7 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonColors
@@ -104,6 +105,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.youfeng.sfs.ctinstaller.R
+import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
 import com.youfeng.sfs.ctinstaller.ui.component.ErrorCard
@@ -142,7 +144,8 @@ fun MainScreen(
             snackbarHostState = snackbarHostState,
             forGameVersion = uiState.forGameVersion,
             grantedType = uiState.grantedType,
-            options = uiState.options
+            options = uiState.options,
+            ctRadio = uiState.ctRadio
         )
     }
 
@@ -312,13 +315,14 @@ private fun MainLayout(
     permissionRequestCheck: () -> Unit = {},
     uiState: AppState = AppState.Uninstalled, // 更改为 AppState
     openSfs: () -> Unit = {},
-    onInstallButtonClick: () -> Unit = {},
+    onInstallButtonClick: (realOption: Int) -> Unit = {},
     onSaveToButtonClick: () -> Unit = {},
     sfsVersionName: String = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
     forGameVersion: String = "",
     options: List<RadioOption> = emptyList(),
+    ctRadio: List<CTRadioOption>? = null
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -391,7 +395,8 @@ private fun MainLayout(
                     onInstallButtonClick = onInstallButtonClick,
                     onSaveToButtonClick = onSaveToButtonClick,
                     enableInstallButton = uiState is AppState.Granted, // 根据 AppState 判断是否启用
-                    forGameVersion = forGameVersion
+                    forGameVersion = forGameVersion,
+                    ctRadio = ctRadio
                 )
             }
             item("donate") {
@@ -631,22 +636,56 @@ private fun LazyItemScope.UpdateCard() {
 
 @Composable
 private fun LazyItemScope.InstallCard(
-    onInstallButtonClick: () -> Unit,
+    onInstallButtonClick: (realOption: Int) -> Unit,
     onSaveToButtonClick: () -> Unit,
     enableInstallButton: Boolean,
-    forGameVersion: String
-
+    forGameVersion: String,
+    ctRadio: List<CTRadioOption>?
 ) {
+    var realOption by remember { mutableStateOf(-1) }
+    var selectedOption by remember { mutableStateOf(-1) }
     var openChooseDialog by remember { mutableStateOf(false) }
     if (openChooseDialog) {
         AlertDialog(
             onDismissRequest = { openChooseDialog = false },
             title = { Text("选择要安装的汉化") },
             text = {
-                Text("未完成功能\n开发者还在努力制作中 ⚈₃⚈꧞")
+                Column(
+                    Modifier
+                        .selectableGroup()
+                        .verticalScroll(rememberScrollState())
+                        .animateContentSize()
+                ) {
+                    RadioOptionItem(
+                        title = "SFS简体中文语言包",
+                        summary = "简体中文 | 默认",
+                        selected = -1 == selectedOption,
+                        onClick = { selectedOption = -1 },
+                        normal = true
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(12.dp))
+                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    ctRadio?.forEachIndexed { index, option ->
+                        RadioOptionItem(
+                            title = option.title,
+                            summary = option.text,
+                            selected = index == selectedOption,
+                            onClick = { selectedOption = index },
+                            normal = true
+                        )
+                    } ?: run {
+                        selectedOption = -1
+                        realOption = -1
+                        Text("加载失败")
+                    }
+                    }
+                }
             },
             confirmButton = {
-                TextButton(onClick = { openChooseDialog = false }) {
+                TextButton(onClick = {
+                    realOption = selectedOption
+                    openChooseDialog = false
+                }) {
                     Text("确定")
                 }
             },
@@ -656,6 +695,8 @@ private fun LazyItemScope.InstallCard(
                 }
             }
         )
+    } else {
+        selectedOption = realOption
     }
     CardWidget({
         Text("安装汉化")
@@ -665,9 +706,11 @@ private fun LazyItemScope.InstallCard(
             contentDescription = null
         )
     }) {
+        val translationName = ctRadio?.getOrNull(realOption)?.title ?: "SFS简体中文语言包"
         Column {
-            Text("当前选择：简体中文")
-            Text("适用版本：$forGameVersion")
+            Text("当前选择：$translationName")
+            if (ctRadio?.getOrNull(realOption) == null)
+                Text("适用版本：$forGameVersion")
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -703,7 +746,7 @@ private fun LazyItemScope.InstallCard(
                 Spacer(Modifier.width(6.dp))
                 Button(
                     onClick = {
-                        onInstallButtonClick()
+                        onInstallButtonClick(realOption)
                     },
                     enabled = enableInstallButton
                 ) {

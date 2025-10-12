@@ -16,8 +16,10 @@ import androidx.lifecycle.viewModelScope
 import com.topjohnwu.superuser.Shell
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.core.Constants
+import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
+import com.youfeng.sfs.ctinstaller.data.model.TranslationsApi
 import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
 import com.youfeng.sfs.ctinstaller.data.repository.ShizukuRepository
@@ -77,6 +79,10 @@ class MainViewModel @Inject constructor(
     private var installSaveJob: Job? = null
 
     private var tempGrantedType: GrantedType? = null
+
+    private val optionList = mutableListOf<CTRadioOption>()
+
+    private val json = Json { ignoreUnknownKeys = true }
 
     init {
         Shell.enableVerboseLogging = BuildConfig.DEBUG
@@ -230,7 +236,7 @@ class MainViewModel @Inject constructor(
     /**
      * 点击安装按钮时的处理逻辑。
      */
-    fun onInstallButtonClick() {
+    fun onInstallButtonClick(realOption: Int) {
         if (_uiState.value.showInstallingDialog) return // 防止重复点击
         _uiState.update {
             it.copy(
@@ -240,49 +246,66 @@ class MainViewModel @Inject constructor(
             )
         }
 
-        val url = Constants.API_URL
+        val title = optionList.getOrNull(realOption)?.title
+        val fs = FileSystem.SYSTEM
         installSaveJob = viewModelScope.launch {
             try {
-                val fs = FileSystem.SYSTEM
+                val textCachePath = if (title == null) {
+                    val url = Constants.API_URL
 
-                updateInstallationProgress("正在获取API…")
-                val result = networkRepository.fetchContentFromUrl(url)
-                updateInstallationProgress("正在解析API…")
-                val customTranslationInfo = if (result.isValidJson()) {
-                    Json.decodeFromString<CustomTranslationInfo>(result)
-                } else throw IllegalArgumentException("无法解析API！")
+                    updateInstallationProgress("正在获取API…")
+                    val result = networkRepository.fetchContentFromUrl(url)
+                    updateInstallationProgress("正在解析API…")
+                    val customTranslationInfo = if (result.isValidJson()) {
+                        json.decodeFromString<CustomTranslationInfo>(result)
+                    } else throw IllegalArgumentException("无法解析API！")
 
-                // 检查必要字段
-                if (customTranslationInfo.url.isNullOrBlank() ||
-                    customTranslationInfo.compatibleVersion.isNullOrBlank()
-                ) {
-                    throw IllegalArgumentException("目标API数据不完整或非法！")
-                }
-                val sha256: String? =
-                    customTranslationInfo.sha256?.let {
-                        if (it.isUrl()) networkRepository.fetchContentFromUrl(
-                            it
-                        ) else it
+                    // 检查必要字段
+                    if (customTranslationInfo.url.isNullOrBlank() ||
+                        customTranslationInfo.compatibleVersion.isNullOrBlank()
+                    ) {
+                        throw IllegalArgumentException("目标API数据不完整或非法！")
                     }
-
-                var textCachePath = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
-                updateInstallationProgress("正在获取是否存在缓存…")
-                val canUseCache =
-                    fs.exists(textCachePath.toPath()) && sha256 == textCachePath.toPath()
-                        .sha256()
-
-                if (!canUseCache) {
-                    updateInstallationProgress("正在下载汉化…")
-                    textCachePath = networkRepository.downloadFileToCache(customTranslationInfo.url)
-                    sha256?.apply {
-                        if (!isNullOrBlank()) {
-                            updateInstallationProgress("正在检查完整性…")
-                            if (this != textCachePath.toPath().sha256())
-                                throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
+                    val sha256: String? =
+                        customTranslationInfo.sha256?.let {
+                            if (it.isUrl()) networkRepository.fetchContentFromUrl(
+                                it
+                            ) else it
                         }
+
+                    var textCache = "${context.externalCacheDir}/${customTranslationInfo.url.md5()}"
+                    updateInstallationProgress("正在获取是否存在缓存…")
+                    val canUseCache =
+                        fs.exists(textCache.toPath()) && sha256 == textCache.toPath()
+                            .sha256()
+
+                    if (!canUseCache) {
+                        updateInstallationProgress("正在下载汉化…")
+                        textCache = networkRepository.downloadFileToCache(customTranslationInfo.url)
+                        sha256?.apply {
+                            if (!isNullOrBlank()) {
+                                updateInstallationProgress("正在检查完整性…")
+                                if (this != textCache.toPath().sha256())
+                                    throw IllegalArgumentException("完整性检查未通过，汉化可能被损坏，请尝试重试！")
+                            }
+                        }
+                    } else {
+                        updateInstallationProgress("存在缓存，跳过下载")
                     }
+                    textCache
                 } else {
-                    updateInstallationProgress("存在缓存，跳过下载")
+                    updateInstallationProgress("正在获取API…")
+                    val result = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    updateInstallationProgress("正在解析API…")
+                    val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
+
+                    val translationInfo = translationsApi[title] ?: throw IllegalArgumentException("API异常")
+                    translationInfo.file ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                    translationInfo.lang ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                    translationInfo.author ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+
+                    updateInstallationProgress("正在下载汉化…")
+                    networkRepository.downloadFileToCache(translationInfo.file)
                 }
                 updateInstallationProgress("正在安装汉化…")
 
@@ -404,7 +427,7 @@ class MainViewModel @Inject constructor(
             try {
                 val result = networkRepository.fetchContentFromUrl(url)
                 val customTranslationInfo = if (result.isValidJson()) {
-                    Json.decodeFromString<CustomTranslationInfo>(result)
+                    json.decodeFromString<CustomTranslationInfo>(result)
                 } else throw IllegalArgumentException("无法解析API！")
 
                 // 检查必要字段
@@ -562,16 +585,30 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val result = networkRepository.fetchContentFromUrl(Constants.API_URL)
-                val customTranslationInfo = if (result.isValidJson()) {
-                    Json.decodeFromString<CustomTranslationInfo>(result)
-                } else throw IllegalArgumentException("无法解析API！")
+                val customTranslationInfo =  json.decodeFromString<CustomTranslationInfo>(result)
 
-                // 检查必要字段
-                if (customTranslationInfo.compatibleVersion.isNullOrBlank())
-                    throw IllegalArgumentException("目标API数据不完整或非法！")
-                _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion) }
+                _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion!!) }
             } catch (_: Exception) {
                 _uiState.update { it.copy(forGameVersion = "获取失败") }
+            }
+            try {
+                val result = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
+
+                for ((name, translationInfo) in translationsApi) {
+                    translationInfo.file ?: throw IllegalArgumentException()
+                    translationInfo.lang ?: throw IllegalArgumentException()
+                    translationInfo.author ?: throw IllegalArgumentException()
+                    val lang = when (translationInfo.lang) {
+                        "zh_CN" -> "简体中文"
+                        "zh_TW" -> "繁體中文"
+                        else -> translationInfo.lang
+                    }
+                    optionList.add(CTRadioOption(name, "$lang | 作者：${translationInfo.author}"))
+                }
+                _uiState.update { it.copy(ctRadio = optionList) }
+            } catch (_: Exception) {
+                _uiState.update { it.copy(ctRadio = null) }
             }
         }
     }
@@ -658,6 +695,9 @@ data class MainUiState(
             id = GrantedType.Old,
             text = "加载中..."
         )
+    ),
+    val ctRadio: List<CTRadioOption>? = listOf(
+        CTRadioOption("加载中...")
     )
 )
 

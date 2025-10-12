@@ -22,7 +22,8 @@ fun RadioOptionItem(
     title: String,
     summary: String? = null,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    normal: Boolean = false
 ) {
     val interactionSource = remember { MutableInteractionSource() }
 
@@ -33,7 +34,7 @@ fun RadioOptionItem(
                 value = selected,
                 interactionSource = interactionSource,
                 role = Role.RadioButton,
-                enabled = summary == null,
+                enabled = summary == null || normal,
                 indication = LocalIndication.current,
                 onValueChange = { _ -> onClick() }
             ),
@@ -43,18 +44,24 @@ fun RadioOptionItem(
         leadingContent = {
             RadioButton(
                 selected = selected,
-                enabled = summary == null,
+                enabled = summary == null || normal,
                 onClick = onClick,
                 interactionSource = interactionSource
             )
         },
         supportingContent = summary?.let {
             {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
-                )
+                if (normal)
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                else
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
             }
         },
         colors = ListItemDefaults.colors(containerColor = AlertDialogDefaults.containerColor)

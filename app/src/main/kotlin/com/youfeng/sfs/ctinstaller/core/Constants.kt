@@ -15,4 +15,6 @@ object Constants {
     const val SFS_CUSTOM_TRANSLATION_DIRECTORY = "$SFS_DATA_DIRECTORY/files/Custom Translations/"
 
     const val API_URL = "https://gitee.com/YouFeng11/SFS-zh-CN-Translation/raw/master/info.json"
+
+    const val TRANSLATIONS_API_URL = "https://raw.githubusercontent.com/youfeng11/SFS-CustomTranslations-Installer/refs/heads/main/api/translations.json"
 }
