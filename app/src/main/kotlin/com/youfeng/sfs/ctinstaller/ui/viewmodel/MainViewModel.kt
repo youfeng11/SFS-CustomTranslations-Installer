@@ -269,7 +269,12 @@ class MainViewModel @Inject constructor(
                     networkRepository.downloadFileToCache(customTranslationInfo.url)
                 } else {
                     updateInstallationProgress("正在获取API…")
-                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    val (result, _) = try {
+                        networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    } catch (_: Exception) {
+                        networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
+                    }
+
                     updateInstallationProgress("正在解析API…")
                     val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
 
@@ -279,7 +284,11 @@ class MainViewModel @Inject constructor(
                     translationInfo.author ?: throw IllegalArgumentException("目标API数据不完整或非法！")
 
                     updateInstallationProgress("正在下载汉化…")
-                    networkRepository.downloadFileToCache(translationInfo.file)
+                    try {
+                        networkRepository.downloadFileToCache(translationInfo.file)
+                    } catch (_: Exception) {
+                        networkRepository.downloadFileToCache(Constants.DOWNLOAD_ACCELERATOR_URL + translationInfo.file)
+                    }
                 }
                 updateInstallationProgress("正在安装汉化…")
 
@@ -412,14 +421,22 @@ class MainViewModel @Inject constructor(
                     }
                     customTranslationInfo.url
                 } else {
-                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    val (result, _) = try {
+                        networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    } catch (_: Exception) {
+                        networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
+                    }
                     val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
 
                     val translationInfo = translationsApi[title] ?: throw IllegalArgumentException("API异常")
                     translationInfo.file ?: throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
 
-                val (textContent, fileName) = networkRepository.fetchContentFromUrl(url)
+                val (textContent, fileName) = try {
+                    networkRepository.fetchContentFromUrl(url)
+                } catch (_: Exception) {
+                    networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + url)
+                }
                 _uiEvent.send(UiEvent.SaveTo(textContent, fileName))
             } catch (_: CancellationException) {
                 return@launch
@@ -574,7 +591,11 @@ class MainViewModel @Inject constructor(
                 _uiState.update { it.copy(forGameVersion = "获取失败") }
             }
             try {
-                val (result, _) = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                val (result, _) = try {
+                    networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                } catch (_: Exception) {
+                    networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
+                }
                 val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
 
                 optionList.clear()

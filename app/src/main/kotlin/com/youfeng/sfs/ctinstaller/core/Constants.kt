@@ -17,4 +17,6 @@ object Constants {
     const val API_URL = "https://gitee.com/YouFeng11/SFS-zh-CN-Translation/raw/master/info.json"
 
     const val TRANSLATIONS_API_URL = "https://raw.githubusercontent.com/youfeng11/SFS-CustomTranslations-Installer/refs/heads/main/api/translations.json"
+
+    const val DOWNLOAD_ACCELERATOR_URL = "https://get.2sb.org/"
 }
