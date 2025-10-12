@@ -252,7 +252,7 @@ class MainViewModel @Inject constructor(
                     val url = Constants.API_URL
 
                     updateInstallationProgress("正在获取API…")
-                    val result = networkRepository.fetchContentFromUrl(url)
+                    val (result, _) = networkRepository.fetchContentFromUrl(url)
                     updateInstallationProgress("正在解析API…")
                     val customTranslationInfo = if (result.isValidJson()) {
                         json.decodeFromString<CustomTranslationInfo>(result)
@@ -269,7 +269,7 @@ class MainViewModel @Inject constructor(
                     networkRepository.downloadFileToCache(customTranslationInfo.url)
                 } else {
                     updateInstallationProgress("正在获取API…")
-                    val result = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
                     updateInstallationProgress("正在解析API…")
                     val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
 
@@ -400,7 +400,7 @@ class MainViewModel @Inject constructor(
         val url = Constants.API_URL
         installSaveJob = viewModelScope.launch {
             try {
-                val result = networkRepository.fetchContentFromUrl(url)
+                val (result, _) = networkRepository.fetchContentFromUrl(url)
                 val customTranslationInfo = if (result.isValidJson()) {
                     json.decodeFromString<CustomTranslationInfo>(result)
                 } else throw IllegalArgumentException("无法解析API！")
@@ -412,8 +412,8 @@ class MainViewModel @Inject constructor(
                     throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
 
-                val textContent = networkRepository.fetchContentFromUrl(customTranslationInfo.url)
-                _uiEvent.send(UiEvent.SaveTo(textContent))
+                val (textContent, fileName) = networkRepository.fetchContentFromUrl(customTranslationInfo.url)
+                _uiEvent.send(UiEvent.SaveTo(textContent, fileName))
             } catch (_: CancellationException) {
                 return@launch
             } catch (e: Exception) {
@@ -559,7 +559,7 @@ class MainViewModel @Inject constructor(
     fun updateStateFromRemote() {
         viewModelScope.launch {
             try {
-                val result = networkRepository.fetchContentFromUrl(Constants.API_URL)
+                val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
                 val customTranslationInfo =  json.decodeFromString<CustomTranslationInfo>(result)
 
                 _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion!!) }
@@ -567,7 +567,7 @@ class MainViewModel @Inject constructor(
                 _uiState.update { it.copy(forGameVersion = "获取失败") }
             }
             try {
-                val result = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
+                val (result, _) = networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
                 val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
 
                 optionList.clear()
@@ -700,7 +700,7 @@ sealed class UiEvent {
         val action: (() -> Unit)? = null
     ) : UiEvent()
 
-    data class SaveTo(val content: String) : UiEvent()
+    data class SaveTo(val content: String, val fileName: String) : UiEvent()
 
     data object PermissionRequestCheck : UiEvent()
 

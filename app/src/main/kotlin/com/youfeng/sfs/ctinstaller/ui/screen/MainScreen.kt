@@ -280,7 +280,7 @@ fun UiEventAwareHandler(
 
                 is UiEvent.SaveTo -> {
                     text = event.content
-                    launcher.launch("简体中文.txt")
+                    launcher.launch(event.fileName)
                 }
 
                 is UiEvent.ShowSnackbar -> {
