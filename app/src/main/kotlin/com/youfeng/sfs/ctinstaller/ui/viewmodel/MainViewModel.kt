@@ -78,6 +78,8 @@ class MainViewModel @Inject constructor(
 
     private var tempGrantedType: GrantedType? = null
 
+    private var tempSaveContent: String? = null
+
     private val optionList = mutableListOf<CTRadioOption>()
 
     private val json = Json { ignoreUnknownKeys = true }
@@ -437,7 +439,8 @@ class MainViewModel @Inject constructor(
                 } catch (_: Exception) {
                     networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + url)
                 }
-                _uiEvent.send(UiEvent.SaveTo(textContent, fileName))
+                tempSaveContent = textContent
+                _uiEvent.send(UiEvent.SaveTo(fileName))
             } catch (_: CancellationException) {
                 return@launch
             } catch (e: Exception) {
@@ -485,6 +488,24 @@ class MainViewModel @Inject constructor(
                 }
 
                 else -> {}
+            }
+        }
+    }
+    
+    fun saveToUri(uri: Uri?) {
+        viewModelScope.launch {
+            try {
+                tempSaveContent?.let { content ->
+                    context.contentResolver.openOutputStream(uri!!)?.bufferedWriter()?.use { writer ->
+                        writer.write(content)
+                    }
+                    showSnackbar("汉化已保存")
+                } ?: throw IllegalStateException("无待保存内容")
+            } catch (e: Exception) {
+                e.printStackTrace()
+                showSnackbar("保存失败: ${e.message}")
+            } finally {
+                tempSaveContent = null
             }
         }
     }
@@ -728,7 +749,7 @@ sealed class UiEvent {
         val action: (() -> Unit)? = null
     ) : UiEvent()
 
-    data class SaveTo(val content: String, val fileName: String) : UiEvent()
+    data class SaveTo(val fileName: String) : UiEvent()
 
     data object PermissionRequestCheck : UiEvent()
 

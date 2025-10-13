@@ -226,25 +226,10 @@ fun UiEventAwareHandler(
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
-    var text by remember { mutableStateOf("") }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
-        uri?.let {
-            coroutineScope.launch {
-                try {
-                    context.contentResolver.openOutputStream(uri)?.bufferedWriter().use { writer ->
-                        writer?.write(text)
-                    }
-                    viewModel.showSnackbar("汉化已保存")
-                    text = ""
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                    viewModel.showSnackbar("保存失败: ${e.message}")
-                    text = ""
-                }
-            }
-        }
+        viewModel.saveToUri(uri)
     }
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -279,7 +264,6 @@ fun UiEventAwareHandler(
                 }
 
                 is UiEvent.SaveTo -> {
-                    text = event.content
                     launcher.launch(event.fileName)
                 }
 
