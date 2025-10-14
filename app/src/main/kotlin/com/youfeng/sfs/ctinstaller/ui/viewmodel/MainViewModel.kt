@@ -496,14 +496,19 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 tempSaveContent?.let { content ->
-                    context.contentResolver.openOutputStream(uri!!)?.bufferedWriter()?.use { writer ->
+                    uri ?: run {
+                        showSnackbar("保存取消")
+                        return@launch
+                    }
+                    context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
                         writer.write(content)
                     }
                     showSnackbar("汉化已保存")
-                } ?: throw IllegalStateException("无待保存内容")
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                showSnackbar("保存失败: ${e.message}")
+                val err = e.message ?: "未知原因"
+                showSnackbar("保存失败: ${err}")
             } finally {
                 tempSaveContent = null
             }
