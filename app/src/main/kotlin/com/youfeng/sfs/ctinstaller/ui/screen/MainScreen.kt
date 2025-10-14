@@ -631,7 +631,10 @@ private fun LazyItemScope.InstallCard(
     var openChooseDialog by remember { mutableStateOf(false) }
     if (openChooseDialog) {
         AlertDialog(
-            onDismissRequest = { openChooseDialog = false },
+            onDismissRequest = {
+                openChooseDialog = false
+                selectedOption = realOption
+            },
             title = { Text("选择要安装的汉化") },
             text = {
                 Column(
@@ -674,13 +677,14 @@ private fun LazyItemScope.InstallCard(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { openChooseDialog = false }) {
+                TextButton(onClick = {
+                    openChooseDialog = false
+                    selectedOption = realOption
+                }) {
                     Text("取消")
                 }
             }
         )
-    } else {
-        selectedOption = realOption
     }
     CardWidget({
         Text("安装汉化")
