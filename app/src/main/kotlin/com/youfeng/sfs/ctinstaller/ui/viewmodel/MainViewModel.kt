@@ -393,7 +393,8 @@ class MainViewModel @Inject constructor(
                 e.printStackTrace()
                 updateInstallationProgress("错误：$err")
             }
-            updateInstallationProgress("安装结束", true)
+            _uiState.update { it.copy(isInstallComplete = true) }
+            updateInstallationProgress("安装结束")
         }
     }
 
@@ -528,7 +529,7 @@ class MainViewModel @Inject constructor(
      * @param text 要追加的进度文本。
      * @param isFinished 安装是否完成。
      */
-    fun updateInstallationProgress(text: String, isFinished: Boolean? = null) {
+    fun updateInstallationProgress(text: String) {
         _uiState.update { currentState ->
             val updatedText = if (currentState.installationProgressText.isNotEmpty()) {
                 "${currentState.installationProgressText}\n$text"
@@ -536,8 +537,7 @@ class MainViewModel @Inject constructor(
                 text
             }
             currentState.copy(
-                installationProgressText = updatedText,
-                isInstallComplete = isFinished ?: currentState.isInstallComplete
+                installationProgressText = updatedText
             )
         }
     }
