@@ -446,8 +446,9 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 val err = e.message ?: "未知错误"
                 showSnackbar("无法保存汉化：$err")
+            } finally {
+                _uiState.update { it.copy(isSavingComplete = true) }
             }
-            _uiState.update { it.copy(isSavingComplete = true) }
         }
     }
 
