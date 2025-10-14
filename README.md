@@ -4,7 +4,7 @@
 > 该项目目前处于Alpha阶段，许多功能尚未完成且可能存在严重BUG！  
 > 开发者正在努力开发中，敬请关注
 
-用于 [Spaceflight Simulator](https://spaceflightsimulator.com/) 的 **自定义翻译（Custom Translations）** 安装器。
+用于 [Spaceflight Simulator](https://spaceflightsimulator.com/) 的 **自定义翻译（Custom Translations）** 的便捷式安装器。
 
 旨在简化SFS汉化过程，降低安装门槛。
 
@@ -19,6 +19,10 @@
 > 目前只提供 CI版本
 - [GitHub Actions（CI版）](https://github.com/youfeng11/SFS-CustomTranslations-Installer/actions/workflows/android.yml)
 
+### 接入本项目
+
+- 请阅读 **[自定义语言接入指南](INTEGRATE.md)**
+
 ## 计划
 
 - [x] 常见授权方式
@@ -29,8 +33,8 @@
     - [x] 使用漏洞授权
     - [x] 使用Shizuku/Sui权限授权
     - [x] 使用ROOT权限授权
-- [ ] 安装自定义汉化
-- [ ] 设置功能
+- [ ] 自定义翻译安装
+- [ ] 基本设置功能
 - [ ] 更多功能...
 
 ## 捐赠
