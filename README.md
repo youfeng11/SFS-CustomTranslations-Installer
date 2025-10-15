@@ -1,7 +1,7 @@
 # SFS汉化安装器
 
 > [!WARNING]
-> 本项目目前处于 **Alpha 阶段**，功能尚未完善，可能存在严重 BUG！
+> 本项目目前处于 **Alpha 阶段**，许多功能尚未完善，且可能存在严重 BUG！  
 > 开发者正在努力开发中，敬请关注！
 
 为 [Spaceflight Simulator](https://spaceflightsimulator.com/) 提供**自定义翻译（Custom Translations）**的便捷安装工具，旨在简化 SFS 汉化流程，降低使用门槛。
@@ -47,6 +47,7 @@ SFS 汉化安装器支持在应用内选择多种自定义翻译包。您可以�
 ## 捐赠
 
 支持项目开发，欢迎通过以下方式捐赠：
+
 <img src="https://pan.tenire.com/view.php/40a71c2ac20505ac131046925d138129.png" width="300" alt="微信支付">
 
 ## 开源协议
