@@ -4,7 +4,7 @@
 > 本项目目前处于 **Alpha 阶段**，许多功能尚未完善，且可能存在严重 BUG！  
 > 开发者正在努力开发中，敬请关注！
 
-为 [Spaceflight Simulator](https://spaceflightsimulator.com/) 提供**自定义翻译（Custom Translations）**的便捷安装工具，旨在简化 SFS 汉化流程，降低使用门槛。
+为 [Spaceflight Simulator](https://spaceflightsimulator.com/) 提供 **自定义翻译（Custom Translations）** 的便捷安装工具，旨在简化 SFS 汉化流程，降低使用门槛。
 
 *如果您喜欢本项目，请点个 Star 支持一下 :)*
 
