@@ -1,49 +1,57 @@
 # SFS汉化安装器
 
 > [!WARNING]
-> 该项目目前处于Alpha阶段，许多功能尚未完成且可能存在严重BUG！  
-> 开发者正在努力开发中，敬请关注
+> 本项目目前处于 **Alpha 阶段**，功能尚未完善，可能存在严重 BUG！
+> 开发者正在努力开发中，敬请关注！
 
-用于 [Spaceflight Simulator](https://spaceflightsimulator.com/) 的 **自定义翻译（Custom Translations）** 的便捷式安装器。
+为 [Spaceflight Simulator](https://spaceflightsimulator.com/) 提供**自定义翻译（Custom Translations）**的便捷安装工具，旨在简化 SFS 汉化流程，降低使用门槛。
 
-旨在简化SFS汉化过程，降低安装门槛。
+*如果您喜欢本项目，请点个 Star 支持一下 :)*
 
 > ~~*由于开发者水平有限，本项目在代码质量与项目架构上可能存在一些问题。*~~
 > 
 > 欢迎提出PR！
 
-*喜欢请点个 Star :)*
+### 功能亮点
 
-### 下载
+- **简单易用**：一键安装汉化包，降低汉化门槛。
+- **多平台支持**：兼容多种 Android 版本及权限授权方式。
+- **开放生态**：支持社区贡献的自定义翻译，欢迎接入您的翻译包！
 
-> 目前只提供 CI版本
-- [GitHub Actions（CI版）](https://github.com/youfeng11/SFS-CustomTranslations-Installer/actions/workflows/android.yml)
+## 下载
 
-### 接入本项目
+> 当前仅提供 CI 构建版本，正式版敬请期待！
 
-- 请阅读 **[自定义语言接入指南](INTEGRATE.md)**
+- [GitHub Actions（CI 版）](https://github.com/youfeng11/SFS-CustomTranslations-Installer/actions/workflows/android.yml)
 
-## 计划
+## 接入本项目
 
-- [x] 常见授权方式
+SFS 汉化安装器支持在应用内选择多种自定义翻译包。您可以将自己的翻译包接入我们的平台，在应用中展示！我们致力于打造一个高质量、合规的翻译集合，感谢每位贡献者的支持。
+
+- 详情请阅读 **[自定义翻译接入指南](INTEGRATE.md)**。
+
+## 开发计划
+
+- [x] 常见授权方式支持
   - Android 10-
     - [x] 存储权限授权
   - Android 11+
-    - [x] 使用SAF授权
-    - [x] 使用漏洞授权
-    - [x] 使用Shizuku/Sui权限授权
-    - [x] 使用ROOT权限授权
-- [ ] 自定义翻译安装
-- [ ] 基本设置功能
-- [ ] 更多功能...
+    - [x] SAF（存储访问框架）授权
+    - [x] 漏洞授权
+    - [x] Shizuku/Sui 权限授权
+    - [x] ROOT 权限授权
+- [ ] 自定义翻译安装功能
+- [ ] 基础设置界面
+- [ ] 更多功能开发中...
 
 ## 捐赠
 
-<img src="https://pan.tenire.com/view.php/40a71c2ac20505ac131046925d138129.png" width="300" alt="微信">
+支持项目开发，欢迎通过以下方式捐赠：
+<img src="https://pan.tenire.com/view.php/40a71c2ac20505ac131046925d138129.png" width="300" alt="微信支付">
 
 ## 开源协议
 
-[**GNU General Public License v3 (GPL-3)**](LICENSE)
+本项目采用 [**GNU General Public License v3 (GPL-3)**](LICENSE)。
 ```
 Copyright (C) 2025  由风
 
