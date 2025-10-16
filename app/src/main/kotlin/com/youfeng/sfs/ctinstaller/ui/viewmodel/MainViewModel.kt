@@ -632,7 +632,7 @@ class MainViewModel @Inject constructor(
                     translationInfo.author ?: throw IllegalArgumentException()
                     val lang = when (translationInfo.lang) {
                         "zh_CN" -> "简体中文"
-                        "zh_TW" -> "繁體中文"
+                        "zh_TW" -> "繁体中文"
                         else -> translationInfo.lang
                     }
                     optionList.add(CTRadioOption(name, "语言: $lang | 作者：${translationInfo.author}"))
