@@ -645,7 +645,7 @@ private fun LazyItemScope.InstallCard(
                 ) {
                     RadioOptionItem(
                         title = "SFS简体中文语言包",
-                        summary = "简体中文 | 默认",
+                        summary = "语言: 简体中文 | 默认",
                         selected = -1 == selectedOption,
                         onClick = { selectedOption = -1 },
                         normal = true
