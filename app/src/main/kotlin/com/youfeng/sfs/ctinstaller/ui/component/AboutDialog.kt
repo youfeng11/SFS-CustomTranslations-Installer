@@ -58,7 +58,7 @@ fun AboutDialog(htmlString: String, onDismissRequest: () -> Unit) {
                         // 可选中的版本号
                         SelectionContainer {
                             Text(
-                                "${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）",
+                                "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 14.sp
