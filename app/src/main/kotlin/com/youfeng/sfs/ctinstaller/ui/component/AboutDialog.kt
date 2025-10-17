@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -39,7 +38,7 @@ fun AboutDialog(htmlString: String, onDismissRequest: () -> Unit) {
                 Row {
                     // 应用图标显示
                     Image(
-                        painter = painterResource(id = R.mipmap.ic_launcher),
+                        painter = adaptiveIconPainterResource(R.mipmap.ic_launcher),
                         contentDescription = null,
                         modifier = Modifier
                             .size(44.dp)
@@ -59,7 +58,7 @@ fun AboutDialog(htmlString: String, onDismissRequest: () -> Unit) {
                         // 可选中的版本号
                         SelectionContainer {
                             Text(
-                                "v${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）",
+                                "${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 14.sp
