@@ -28,14 +28,12 @@ import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.checkStoragePermission
 import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
 import com.youfeng.sfs.ctinstaller.utils.isDirectoryExists
-import com.youfeng.sfs.ctinstaller.utils.isUrl
 import com.youfeng.sfs.ctinstaller.utils.isValidJson
 import com.youfeng.sfs.ctinstaller.utils.openApp
 import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -256,15 +254,18 @@ class MainViewModel @Inject constructor(
                 val textCachePath = if (realOption == -2) {
                     updateInstallationProgress("正在缓存…")
 
-                    val cacheFileName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/') ?: "未命名语言包.txt"
+                    val cacheFileName =
+                        customTranslationsUri?.lastPathSegment?.substringAfterLast('/')
+                            ?: "未命名语言包.txt"
 
                     val cacheFile = File(context.externalCacheDir, cacheFileName)
 
-                    context.contentResolver.openInputStream(customTranslationsUri!!)?.use { inputStream ->
-                        FileOutputStream(cacheFile).use { outputStream ->
-                            inputStream.copyTo(outputStream)
+                    context.contentResolver.openInputStream(customTranslationsUri!!)
+                        ?.use { inputStream ->
+                            FileOutputStream(cacheFile).use { outputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
                         }
-                    }
                     cacheFile.absolutePath
                 } else if (title == null) {
                     val url = Constants.API_URL
@@ -294,12 +295,17 @@ class MainViewModel @Inject constructor(
                     }
 
                     updateInstallationProgress("正在解析API…")
-                    val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
+                    val translationsApi =
+                        json.decodeFromString<Map<String, TranslationsApi>>(result)
 
-                    val translationInfo = translationsApi[title] ?: throw IllegalArgumentException("API异常")
-                    translationInfo.file ?: throw IllegalArgumentException("目标API数据不完整或非法！")
-                    translationInfo.lang ?: throw IllegalArgumentException("目标API数据不完整或非法！")
-                    translationInfo.author ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                    val translationInfo =
+                        translationsApi[title] ?: throw IllegalArgumentException("API异常")
+                    translationInfo.file
+                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                    translationInfo.lang
+                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                    translationInfo.author
+                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
 
                     updateInstallationProgress("正在下载汉化…")
                     try {
@@ -334,7 +340,8 @@ class MainViewModel @Inject constructor(
                             updateInstallationProgress("准备中...")
                             Shell.cmd("mkdir -p \"$target\"").exec()
                             updateInstallationProgress("复制中...")
-                            val shellResult = Shell.cmd("cp -f \"$textCachePath\" \"$target/$fileName\"").exec()
+                            val shellResult =
+                                Shell.cmd("cp -f \"$textCachePath\" \"$target/$fileName\"").exec()
                             if (!shellResult.isSuccess) throw IllegalArgumentException("复制失败：${shellResult.code}")
                             updateInstallationProgress("复制成功")
                         }
@@ -392,11 +399,13 @@ class MainViewModel @Inject constructor(
                             val newFile = customTranslationsDir.createFile("text/plain", fileName)
                                 ?: throw IllegalArgumentException("新建文件失败")
 
-                            context.contentResolver.openInputStream(sourceFile.uri)?.use { inputStream ->
-                                context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
-                                    inputStream.copyTo(outputStream)
+                            context.contentResolver.openInputStream(sourceFile.uri)
+                                ?.use { inputStream ->
+                                    context.contentResolver.openOutputStream(newFile.uri)
+                                        ?.use { outputStream ->
+                                            inputStream.copyTo(outputStream)
+                                        }
                                 }
-                            }
 
                             updateInstallationProgress("复制成功")
                         }
@@ -445,10 +454,13 @@ class MainViewModel @Inject constructor(
                     } catch (_: Exception) {
                         networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
                     }
-                    val translationsApi = json.decodeFromString<Map<String, TranslationsApi>>(result)
+                    val translationsApi =
+                        json.decodeFromString<Map<String, TranslationsApi>>(result)
 
-                    val translationInfo = translationsApi[title] ?: throw IllegalArgumentException("API异常")
-                    translationInfo.file ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                    val translationInfo =
+                        translationsApi[title] ?: throw IllegalArgumentException("API异常")
+                    translationInfo.file
+                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
                 }
 
                 val (textContent, fileName) = try {
@@ -509,7 +521,7 @@ class MainViewModel @Inject constructor(
             }
         }
     }
-    
+
     fun saveToUri(uri: Uri?) {
         viewModelScope.launch {
             try {
@@ -627,7 +639,7 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
-                val customTranslationInfo =  json.decodeFromString<CustomTranslationInfo>(result)
+                val customTranslationInfo = json.decodeFromString<CustomTranslationInfo>(result)
 
                 _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion!!) }
             } catch (_: Exception) {
@@ -667,7 +679,13 @@ class MainViewModel @Inject constructor(
             Intent.FLAG_GRANT_READ_URI_PERMISSION
         )
         customTranslationsUri = uri
-        _uiState.update { it.copy(customTranslationsName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/')) }
+        _uiState.update {
+            it.copy(
+                customTranslationsName = customTranslationsUri?.lastPathSegment?.substringAfterLast(
+                    '/'
+                )
+            )
+        }
         return true
     }
 
@@ -729,7 +747,7 @@ class MainViewModel @Inject constructor(
             Environment.isExternalStorageManager() && ExploitFileUtil.isExploitable -> GrantedType.Bug
 
             Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot -> GrantedType.Su
-            
+
             else -> null
         }
         return tempGrantedType

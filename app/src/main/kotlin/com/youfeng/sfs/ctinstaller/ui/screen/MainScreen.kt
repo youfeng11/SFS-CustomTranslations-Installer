@@ -676,20 +676,23 @@ private fun LazyItemScope.InstallCard(
                         normal = true
                     )
                     HorizontalDivider(modifier = Modifier.padding(12.dp))
-                    Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                    ctRadio?.forEachIndexed { index, option ->
-                        RadioOptionItem(
-                            title = option.title,
-                            summary = option.text,
-                            selected = index == selectedOption,
-                            onClick = { selectedOption = index },
-                            normal = true
-                        )
-                    } ?: run {
-                        selectedOption = -1
-                        realOption = -1
-                        Text("加载失败")
-                    }
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        ctRadio?.forEachIndexed { index, option ->
+                            RadioOptionItem(
+                                title = option.title,
+                                summary = option.text,
+                                selected = index == selectedOption,
+                                onClick = { selectedOption = index },
+                                normal = true
+                            )
+                        } ?: run {
+                            selectedOption = -1
+                            realOption = -1
+                            Text("加载失败")
+                        }
                     }
                 }
             },

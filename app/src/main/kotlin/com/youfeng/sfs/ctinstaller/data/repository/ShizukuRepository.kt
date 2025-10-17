@@ -6,8 +6,8 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import com.youfeng.sfs.ctinstaller.BuildConfig
-import com.youfeng.sfs.ctinstaller.service.ShizukuFileService
 import com.youfeng.sfs.ctinstaller.service.IShizukuFileService
+import com.youfeng.sfs.ctinstaller.service.ShizukuFileService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

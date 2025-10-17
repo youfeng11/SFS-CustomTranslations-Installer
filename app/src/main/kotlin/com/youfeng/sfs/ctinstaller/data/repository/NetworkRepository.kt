@@ -22,28 +22,29 @@ class NetworkRepository @Inject constructor(
 
     private val client = OkHttpClient()
 
-    suspend fun fetchContentFromUrl(url: String): Pair<String, String> = withContext(Dispatchers.IO) {
-        val request = Request.Builder().url(url).build()
+    suspend fun fetchContentFromUrl(url: String): Pair<String, String> =
+        withContext(Dispatchers.IO) {
+            val request = Request.Builder().url(url).build()
 
-        client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("Unexpected code $response")
-            }
-            // 1️⃣ 获取 UTF-8 解码后的文件名
-            val rawFileName = response.header("Content-Disposition")
-                ?.let { parseFileNameFromDisposition(it) }
-                ?: url.substringAfterLast('/').ifBlank { "未命名语言.txt" }
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    throw IOException("Unexpected code $response")
+                }
+                // 1️⃣ 获取 UTF-8 解码后的文件名
+                val rawFileName = response.header("Content-Disposition")
+                    ?.let { parseFileNameFromDisposition(it) }
+                    ?: url.substringAfterLast('/').ifBlank { "未命名语言.txt" }
 
-            // 🔤 确保任何来源的文件名都被 UTF-8 解码
-            val fileName = try {
-                URLDecoder.decode(rawFileName, "UTF-8")
-            } catch (e: Exception) {
-                rawFileName // 解码失败就用原值
+                // 🔤 确保任何来源的文件名都被 UTF-8 解码
+                val fileName = try {
+                    URLDecoder.decode(rawFileName, "UTF-8")
+                } catch (e: Exception) {
+                    rawFileName // 解码失败就用原值
+                }
+
+                response.body.string() to fileName
             }
-            
-            response.body.string() to fileName
         }
-    }
 
     /**
      * 下载文件到缓存目录，自动解析 UTF-8 编码文件名。
