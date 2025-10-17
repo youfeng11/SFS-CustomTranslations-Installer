@@ -2,6 +2,7 @@ package com.youfeng.sfs.ctinstaller.ui.screen
 
 import android.Manifest
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
@@ -140,6 +141,7 @@ fun MainScreen(
             openSfs = viewModel::openSfs,
             onInstallButtonClick = viewModel::onInstallButtonClick,
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
+            filePicker = viewModel::filePicker,
             sfsVersionName = viewModel.sfsVersionName,
             snackbarHostState = snackbarHostState,
             forGameVersion = uiState.forGameVersion,
@@ -301,6 +303,7 @@ private fun MainLayout(
     openSfs: () -> Unit = {},
     onInstallButtonClick: (realOption: Int) -> Unit = {},
     onSaveToButtonClick: (realOption: Int) -> Unit = {},
+    filePicker: (uri: Uri?) -> Boolean = { true },
     sfsVersionName: String = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
@@ -379,6 +382,7 @@ private fun MainLayout(
                     onInstallButtonClick = onInstallButtonClick,
                     onSaveToButtonClick = onSaveToButtonClick,
                     enableInstallButton = uiState is AppState.Granted, // 根据 AppState 判断是否启用
+                    filePicker = filePicker,
                     forGameVersion = forGameVersion,
                     ctRadio = ctRadio
                 )
@@ -622,6 +626,7 @@ private fun LazyItemScope.UpdateCard() {
 private fun LazyItemScope.InstallCard(
     onInstallButtonClick: (realOption: Int) -> Unit,
     onSaveToButtonClick: (realOption: Int) -> Unit,
+    filePicker: (uri: Uri?) -> Boolean,
     enableInstallButton: Boolean,
     forGameVersion: String,
     ctRadio: List<CTRadioOption>?
@@ -629,6 +634,13 @@ private fun LazyItemScope.InstallCard(
     var realOption by remember { mutableStateOf(-1) }
     var selectedOption by remember { mutableStateOf(-1) }
     var openChooseDialog by remember { mutableStateOf(false) }
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (filePicker(uri)) {
+            selectedOption = -2
+        }
+    }
     if (openChooseDialog) {
         AlertDialog(
             onDismissRequest = {
@@ -648,6 +660,15 @@ private fun LazyItemScope.InstallCard(
                         summary = "语言: 简体中文 | 默认",
                         selected = -1 == selectedOption,
                         onClick = { selectedOption = -1 },
+                        normal = true
+                    )
+                    RadioOptionItem(
+                        title = "自定义语言包",
+                        summary = "未指定",
+                        selected = -2 == selectedOption,
+                        onClick = {
+                            filePickerLauncher.launch("text/plain")
+                        },
                         normal = true
                     )
                     HorizontalDivider(modifier = Modifier.padding(12.dp))
@@ -694,10 +715,14 @@ private fun LazyItemScope.InstallCard(
             contentDescription = null
         )
     }) {
-        val translationName = ctRadio?.getOrNull(realOption)?.title ?: "SFS简体中文语言包"
+        val translationName = when (realOption) {
+            -1 -> "SFS简体中文语言包"
+            -2 -> "未定义（本地文件）"
+            else -> ctRadio?.getOrNull(realOption)?.title ?: "未知"
+        }
         Column {
             Text("当前选择：$translationName")
-            if (ctRadio?.getOrNull(realOption) == null)
+            if (realOption == -1)
                 Text("适用版本：$forGameVersion")
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -726,9 +751,12 @@ private fun LazyItemScope.InstallCard(
                         Text("选择汉化")
                     }
                 }
-                TextButton(onClick = {
-                    onSaveToButtonClick(realOption)
-                }) {
+                TextButton(
+                    onClick = {
+                        onSaveToButtonClick(realOption)
+                    },
+                    enabled = selectedOption != -2
+                ) {
                     Text("保存到")
                 }
                 Spacer(Modifier.width(6.dp))

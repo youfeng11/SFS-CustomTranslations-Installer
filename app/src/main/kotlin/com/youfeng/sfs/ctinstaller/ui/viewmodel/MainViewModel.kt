@@ -53,6 +53,7 @@ import rikka.shizuku.Shizuku.OnBinderDeadListener
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.File
+import java.io.FileOutputStream
 import javax.inject.Inject
 
 @HiltViewModel
@@ -79,6 +80,8 @@ class MainViewModel @Inject constructor(
     private var tempGrantedType: GrantedType? = null
 
     private var tempSaveContent: String? = null
+
+    private var customTranslationsUri: Uri? = null
 
     private val optionList = mutableListOf<CTRadioOption>()
 
@@ -250,7 +253,20 @@ class MainViewModel @Inject constructor(
         val fs = FileSystem.SYSTEM
         installSaveJob = viewModelScope.launch {
             try {
-                val textCachePath = if (title == null) {
+                val textCachePath = if (realOption == -2) {
+                    updateInstallationProgress("正在缓存…")
+
+                    val cacheFileName = customTranslationsUri!!.lastPathSegment?.substringAfterLast('/') ?: "未命名语言包.txt"
+
+                    val cacheFile = File(context.externalCacheDir, cacheFileName)
+
+                    context.contentResolver.openInputStream(customTranslationsUri!!)?.use { inputStream ->
+                        FileOutputStream(cacheFile).use { outputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                    cacheFile.absolutePath
+                } else if (title == null) {
                     val url = Constants.API_URL
 
                     updateInstallationProgress("正在获取API…")
@@ -642,6 +658,16 @@ class MainViewModel @Inject constructor(
                 _uiState.update { it.copy(ctRadio = null) }
             }
         }
+    }
+
+    fun filePicker(uri: Uri?): Boolean {
+        uri ?: return false
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
+        customTranslationsUri = uri
+        return true
     }
 
     override fun onCleared() {
