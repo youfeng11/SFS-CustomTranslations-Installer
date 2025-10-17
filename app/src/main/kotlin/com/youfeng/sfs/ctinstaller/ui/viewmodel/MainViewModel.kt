@@ -651,7 +651,7 @@ class MainViewModel @Inject constructor(
                         "zh_TW" -> "繁体中文"
                         else -> translationInfo.lang
                     }
-                    optionList.add(CTRadioOption(name, "语言: $lang | 作者：${translationInfo.author}"))
+                    optionList.add(CTRadioOption(name, "$lang | 作者：${translationInfo.author}"))
                 }
                 _uiState.update { it.copy(ctRadio = optionList) }
             } catch (_: Exception) {
