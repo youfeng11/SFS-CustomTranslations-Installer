@@ -256,7 +256,7 @@ class MainViewModel @Inject constructor(
                 val textCachePath = if (realOption == -2) {
                     updateInstallationProgress("正在缓存…")
 
-                    val cacheFileName = customTranslationsUri!!.lastPathSegment?.substringAfterLast('/') ?: "未命名语言包.txt"
+                    val cacheFileName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/') ?: "未命名语言包.txt"
 
                     val cacheFile = File(context.externalCacheDir, cacheFileName)
 
@@ -667,6 +667,7 @@ class MainViewModel @Inject constructor(
             Intent.FLAG_GRANT_READ_URI_PERMISSION
         )
         customTranslationsUri = uri
+        _uiState.update { it.copy(customTranslationsName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/')) }
         return true
     }
 
@@ -753,6 +754,7 @@ data class MainUiState(
             text = "加载中..."
         )
     ),
+    val customTranslationsName: String? = null,
     val ctRadio: List<CTRadioOption>? = listOf(
         CTRadioOption("加载中...")
     )

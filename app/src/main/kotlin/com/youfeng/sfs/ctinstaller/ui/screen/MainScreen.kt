@@ -143,6 +143,7 @@ fun MainScreen(
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
             filePicker = viewModel::filePicker,
             sfsVersionName = viewModel.sfsVersionName,
+            customTranslationsName = uiState.customTranslationsName,
             snackbarHostState = snackbarHostState,
             forGameVersion = uiState.forGameVersion,
             grantedType = uiState.grantedType,
@@ -305,6 +306,7 @@ private fun MainLayout(
     onSaveToButtonClick: (realOption: Int) -> Unit = {},
     filePicker: (uri: Uri?) -> Boolean = { true },
     sfsVersionName: String = "",
+    customTranslationsName: String? = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
     forGameVersion: String = "",
@@ -384,6 +386,7 @@ private fun MainLayout(
                     enableInstallButton = uiState is AppState.Granted, // 根据 AppState 判断是否启用
                     filePicker = filePicker,
                     forGameVersion = forGameVersion,
+                    customTranslationsName = customTranslationsName,
                     ctRadio = ctRadio
                 )
             }
@@ -629,6 +632,7 @@ private fun LazyItemScope.InstallCard(
     filePicker: (uri: Uri?) -> Boolean,
     enableInstallButton: Boolean,
     forGameVersion: String,
+    customTranslationsName: String?,
     ctRadio: List<CTRadioOption>?
 ) {
     var realOption by remember { mutableStateOf(-1) }
@@ -664,10 +668,10 @@ private fun LazyItemScope.InstallCard(
                     )
                     RadioOptionItem(
                         title = "自定义语言包",
-                        summary = "定义",
+                        summary = if (customTranslationsName == null) "未选择" else "本地文件: $customTranslationsName",
                         selected = -2 == selectedOption,
                         onClick = {
-                            filePickerLauncher.launch("text/plain")
+                            filePickerLauncher.launch(arrayOf("text/plain"))
                         },
                         normal = true
                     )
@@ -717,7 +721,7 @@ private fun LazyItemScope.InstallCard(
     }) {
         val translationName = when (realOption) {
             -1 -> "SFS简体中文语言包"
-            -2 -> "未定义（本地文件）"
+            -2 -> "$customTranslationsName（本地文件）"
             else -> ctRadio?.getOrNull(realOption)?.title ?: "未知"
         }
         Column {
