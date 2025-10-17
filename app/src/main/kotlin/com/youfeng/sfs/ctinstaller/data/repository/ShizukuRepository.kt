@@ -111,16 +111,6 @@ class ShizukuRepository @Inject constructor(
     }
 
     /**
-     * 检查文件是否存在。
-     * 这是一个挂起函数，调用方（ViewModel）可以在协程中安全地调用。
-     * 它会自动等待服务连接成功。
-     */
-    suspend fun isExists(path: String): Boolean {
-        val service = waitForService()
-        return service.isExists(path)
-    }
-
-    /**
      * 复制文件。
      */
     suspend fun copyFile(srcPath: String, destPath: String) {

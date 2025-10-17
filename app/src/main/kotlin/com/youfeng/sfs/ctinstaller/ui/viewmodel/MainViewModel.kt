@@ -509,10 +509,10 @@ class MainViewModel @Inject constructor(
                 is GrantedType.Su -> {
                     if (Shell.isAppGrantedRoot() != true) {
                         Shell.getShell().close()
-                        Shell.getShell({ shell ->
+                        Shell.getShell { shell ->
                             if (!shell.isRoot)
                                 showSnackbar("ROOT请求被拒")
-                        })
+                        }
                     }
                     updateMainState()
                 }
@@ -538,7 +538,7 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 e.printStackTrace()
                 val err = e.message ?: "未知原因"
-                showSnackbar("保存失败: ${err}")
+                showSnackbar("保存失败: $err")
             } finally {
                 tempSaveContent = null
             }
@@ -555,7 +555,6 @@ class MainViewModel @Inject constructor(
     /**
      * 更新安装进度文本和安装完成状态。
      * @param text 要追加的进度文本。
-     * @param isFinished 安装是否完成。
      */
     fun updateInstallationProgress(text: String) {
         _uiState.update { currentState ->

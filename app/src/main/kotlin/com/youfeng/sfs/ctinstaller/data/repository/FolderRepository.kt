@@ -43,16 +43,4 @@ class FolderRepository @Inject constructor(
             contentResolver.takePersistableUriPermission(uri, flags)
         }
     }
-
-    /**
-     * 清除/撤销权限。
-     */
-    suspend fun clearPersistedUri(uri: Uri) {
-        withContext(Dispatchers.IO) {
-            // 释放持久化权限
-            val flags =
-                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-            context.contentResolver.releasePersistableUriPermission(uri, flags)
-        }
-    }
 }

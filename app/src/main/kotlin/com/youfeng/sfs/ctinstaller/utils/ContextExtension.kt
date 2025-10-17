@@ -1,7 +1,5 @@
 package com.youfeng.sfs.ctinstaller.utils
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -54,10 +52,3 @@ fun Context.openApp(packageName: String) {
         e.printStackTrace()
     }
 }
-
-fun Context.copyToClipboard(text: String) {
-    val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-    val cd = ClipData.newPlainText("label", text)
-    cm.setPrimaryClip(cd)
-}
-
