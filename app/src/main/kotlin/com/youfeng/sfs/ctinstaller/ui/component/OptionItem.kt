@@ -4,6 +4,7 @@ import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -73,7 +74,7 @@ fun RadioOptionItem(
 }
 
 @Composable
-fun SwitchItem(
+fun LazyItemScope.SwitchItem(
     icon: ImageVector? = null,
     title: String,
     summary: String? = null,
@@ -92,7 +93,8 @@ fun SwitchItem(
                 enabled = enabled,
                 indication = LocalIndication.current,
                 onValueChange = onCheckedChange
-            ),
+            )
+            .animateItem(),
         headlineContent = {
             Text(
                 text = title,

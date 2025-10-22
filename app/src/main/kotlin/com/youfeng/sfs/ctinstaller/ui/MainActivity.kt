@@ -7,7 +7,12 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.youfeng.sfs.ctinstaller.ui.theme.MainTheme
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -22,8 +27,12 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            MainTheme {
-                MainNavigation()
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
+            val settingsUiState by settingsViewModel.uiState.collectAsState()
+            val darkTheme = if (settingsUiState.isFollowingSystem) isSystemInDarkTheme()
+                else settingsUiState.isDarkThemeEnabled
+            MainTheme(darkTheme) {
+                MainNavigation(settingsViewModel)
             }
         }
     }

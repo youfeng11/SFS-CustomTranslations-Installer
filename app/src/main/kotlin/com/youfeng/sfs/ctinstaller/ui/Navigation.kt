@@ -21,9 +21,10 @@ import androidx.navigation.compose.rememberNavController
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
 import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
 
 @Composable
-fun MainNavigation(navController: NavHostController = rememberNavController()) {
+fun MainNavigation(settingsViewModel: SettingsViewModel, navController: NavHostController = rememberNavController()) {
     Box {
         NavHost(navController = navController, startDestination = "main") {
             composable("main") {

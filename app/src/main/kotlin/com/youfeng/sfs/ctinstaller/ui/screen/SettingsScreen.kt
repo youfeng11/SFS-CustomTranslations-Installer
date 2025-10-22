@@ -2,6 +2,7 @@ package com.youfeng.sfs.ctinstaller.ui.screen
 
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -94,9 +95,17 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onNavigatorTo
             ) {
 
                 // 添加设置项
-                item {
+                item("AutoDarkTheme") {
                     SwitchItem(
-                        title = "启用深色主题",
+                        title = "深色主题跟随系统",
+                        checked = uiState.isFollowingSystem,
+                        onCheckedChange = { viewModel.setFollowingSystem(it) }
+                    )
+                }
+                if (!uiState.isFollowingSystem)
+                item("DarkTheme") {
+                    SwitchItem(
+                        title = "深色主题",
                         checked = uiState.isDarkThemeEnabled,
                         onCheckedChange = { viewModel.setDarkTheme(it) }
                     )
