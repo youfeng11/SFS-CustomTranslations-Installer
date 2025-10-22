@@ -10,10 +10,14 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
@@ -65,5 +69,57 @@ fun RadioOptionItem(
             }
         },
         colors = ListItemDefaults.colors(containerColor = AlertDialogDefaults.containerColor)
+    )
+}
+
+@Composable
+fun SwitchItem(
+    icon: ImageVector? = null,
+    title: String,
+    summary: String? = null,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    ListItem(
+        modifier = Modifier
+            .toggleable(
+                value = checked,
+                interactionSource = interactionSource,
+                role = Role.Switch,
+                enabled = enabled,
+                indication = LocalIndication.current,
+                onValueChange = onCheckedChange
+            ),
+        headlineContent = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        leadingContent = icon?.let {
+            {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title
+                )
+            }
+        },
+        trailingContent = {
+            Switch(
+                checked = checked,
+                enabled = enabled,
+                onCheckedChange = onCheckedChange,
+                interactionSource = interactionSource
+            )
+        },
+        supportingContent = summary?.let {
+            {
+                Text(it)
+            }
+        }
     )
 }

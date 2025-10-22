@@ -31,21 +31,26 @@ fun MainNavigation(navController: NavHostController = rememberNavController()) {
                     onNavigatorToDetails = { navController.navigate("settings") }
                 )
             }
-            composable("settings") { SettingsScreen() }
-        }
-        Text(
-            "内测版本：${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})，仅供演示，不代表最终效果",
-            style = MaterialTheme.typography.titleSmall,
-            modifier = Modifier
-                .padding(
-                    start = 2.dp,
-                    end = 2.dp,
-                    bottom = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
-                        .asPaddingValues().calculateBottomPadding()
+            composable("settings") {
+                SettingsScreen(
+                    onNavigatorToDetails = { navController.popBackStack() }
                 )
-                .align(Alignment.BottomCenter),
-            color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
-            textAlign = TextAlign.Center
-        )
+            }
+        }
+        if (BuildConfig.DEBUG)
+            Text(
+                "测试版本：${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})，仅供演示，不代表最终效果",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier
+                    .padding(
+                        start = 2.dp,
+                        end = 2.dp,
+                        bottom = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)
+                            .asPaddingValues().calculateBottomPadding()
+                    )
+                    .align(Alignment.BottomCenter),
+                color = MaterialTheme.colorScheme.error.copy(alpha = 0.7f),
+                textAlign = TextAlign.Center
+            )
     }
 }
