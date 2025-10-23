@@ -1,6 +1,7 @@
 package com.youfeng.sfs.ctinstaller.ui.theme
 
 import android.app.Activity
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -42,12 +43,15 @@ fun MainTheme(
     }
     // 设置状态栏颜色及其亮度
     val view = LocalView.current
+    val background = if (darkTheme) 0xFF121212 else 0xFFFFFFFF
     SideEffect {
         val window = (view.context as Activity).window
         WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
             !darkTheme
         WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars =
             !darkTheme
+
+        window.setBackgroundDrawable(ColorDrawable(background.toInt()))
     }
 
     // 使用 MaterialTheme 包裹 UI 内容
