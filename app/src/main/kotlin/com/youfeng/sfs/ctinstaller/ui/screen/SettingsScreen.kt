@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,11 +30,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.youfeng.sfs.ctinstaller.ui.component.SwitchItem
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
+import com.youfeng.sfs.ctinstaller.R
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.ListItem
@@ -98,14 +102,19 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel(), onNavigatorTo
                 item("AutoDarkTheme") {
                     SwitchItem(
                         title = "深色主题跟随系统",
+                        summary = "跟随系统设置深色主题",
+                        icon = ImageVector.vectorResource(id = R.drawable.ic_night_sight_auto),
                         checked = uiState.isFollowingSystem,
                         onCheckedChange = { viewModel.setFollowingSystem(it) }
                     )
                 }
+                val themeName = if (uiState.isDarkThemeEnabled) "深色主题" else "浅色主题"
                 if (!uiState.isFollowingSystem)
                 item("DarkTheme") {
                     SwitchItem(
                         title = "深色主题",
+                        summary = "当前: $themeName",
+                        icon = Icons.Filled.DarkMode,
                         checked = uiState.isDarkThemeEnabled,
                         onCheckedChange = { viewModel.setDarkTheme(it) }
                     )
