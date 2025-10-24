@@ -38,7 +38,7 @@ fun AboutDialog(htmlString: String, onDismissRequest: () -> Unit) {
                 Row {
                     // 应用图标显示
                     Image(
-                        painter = AdaptiveIconPainterResource(R.mipmap.ic_launcher),
+                        painter = adaptiveIconPainterResource(R.mipmap.ic_launcher),
                         contentDescription = null,
                         modifier = Modifier
                             .size(44.dp)

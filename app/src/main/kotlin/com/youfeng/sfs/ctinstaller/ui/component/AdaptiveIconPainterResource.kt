@@ -21,7 +21,7 @@ import androidx.core.graphics.drawable.toBitmap
  * 则将其转换为 BitmapPainter。否则，回退到标准的 painterResource()。
  */
 @Composable
-fun AdaptiveIconPainterResource(@DrawableRes id: Int): Painter {
+fun adaptiveIconPainterResource(@DrawableRes id: Int): Painter {
     val context = LocalContext.current
     val res = LocalResources.current
     val theme = context.theme

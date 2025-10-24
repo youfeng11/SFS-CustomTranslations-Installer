@@ -37,6 +37,7 @@ fun MainNavigation(
             }
             composable("settings") {
                 SettingsScreen(
+                    viewModel = settingsViewModel,
                     onNavigatorToDetails = { navController.popBackStack() }
                 )
             }
