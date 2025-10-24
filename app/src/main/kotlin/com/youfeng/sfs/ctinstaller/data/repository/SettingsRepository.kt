@@ -24,6 +24,7 @@ class SettingsRepository @Inject constructor(
 
     private object PreferencesKeys {
         val IS_DARK_THEME = booleanPreferencesKey("is_dark_theme")
+
         // 1. (新增) "跟随系统" 的 Key
         val IS_FOLLOWING_SYSTEM = booleanPreferencesKey("is_following_system")
     }
@@ -36,7 +37,7 @@ class SettingsRepository @Inject constructor(
         .map { preferences ->
             preferences[PreferencesKeys.IS_DARK_THEME] ?: false
         }
-    
+
     // 2. (新增) “跟随系统”的 Flow
     //    请注意: 默认值我们设为 true, 这是一个更友好的默认行为
     val isFollowingSystem: Flow<Boolean> = context.dataStore.data
@@ -44,7 +45,7 @@ class SettingsRepository @Inject constructor(
             if (exception is IOException) emit(emptyPreferences()) else throw exception
         }
         .map { preferences ->
-            preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] ?: true 
+            preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] ?: true
         }
 
     // 写入“启用深色主题”

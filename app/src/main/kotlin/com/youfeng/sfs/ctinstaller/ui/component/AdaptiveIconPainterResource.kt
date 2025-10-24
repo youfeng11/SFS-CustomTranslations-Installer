@@ -9,10 +9,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.painterResource
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toBitmap
-import androidx.compose.ui.res.painterResource // 用于兼容旧版本
-import androidx.compose.ui.platform.LocalResources
 
 /**
  * 加载自适应图标的 Painter 资源。

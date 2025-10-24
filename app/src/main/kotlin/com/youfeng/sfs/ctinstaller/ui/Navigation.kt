@@ -24,7 +24,10 @@ import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
 
 @Composable
-fun MainNavigation(settingsViewModel: SettingsViewModel, navController: NavHostController = rememberNavController()) {
+fun MainNavigation(
+    settingsViewModel: SettingsViewModel,
+    navController: NavHostController = rememberNavController()
+) {
     Box {
         NavHost(navController = navController, startDestination = "main") {
             composable("main") {

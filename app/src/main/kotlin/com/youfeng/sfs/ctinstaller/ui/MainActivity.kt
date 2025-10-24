@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settingsUiState by settingsViewModel.uiState.collectAsState()
             val darkTheme = if (settingsUiState.isFollowingSystem) isSystemInDarkTheme()
-                else settingsUiState.isDarkThemeEnabled
+            else settingsUiState.isDarkThemeEnabled
             MainTheme(darkTheme) {
                 MainNavigation(settingsViewModel)
             }

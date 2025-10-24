@@ -2,12 +2,11 @@ package com.youfeng.sfs.ctinstaller.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository // <-- 1. (新增) 导入仓库
+import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.combine // <-- 1. (新增) 导入 combine
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -34,11 +33,11 @@ class SettingsViewModel @Inject constructor(
             // 当任一 Flow 发出新值时, 创建一个新的 UiState
             SettingsUiState(isDarkTheme, isFollowingSystem)
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = SettingsUiState() // 使用默认构造函数
-        )
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = SettingsUiState() // 使用默认构造函数
+            )
 
     /**
      * 4. (修改) 更新深色主题设置
