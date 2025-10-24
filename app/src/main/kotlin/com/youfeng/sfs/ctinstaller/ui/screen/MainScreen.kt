@@ -43,6 +43,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.Block
@@ -646,13 +647,30 @@ private fun LazyItemScope.InstallCard(
             selectedOption = -2
         }
     }
+    val context = LocalContext.current
     if (openChooseDialog) {
         AlertDialog(
             onDismissRequest = {
                 openChooseDialog = false
                 selectedOption = realOption
             },
-            title = { Text("选择要安装的汉化") },
+            title = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("选择要安装的汉化")
+                    IconButton(onClick = {
+                        context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer/blob/main/INTEGRATE.md")
+                    }) {
+                        Icon(
+                            Icons.AutoMirrored.Default.OpenInNew,
+                            contentDescription = null,
+                        )
+                    }
+            }
+                    },
             text = {
                 Column(
                     Modifier
