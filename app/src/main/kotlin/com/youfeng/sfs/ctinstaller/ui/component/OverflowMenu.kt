@@ -1,8 +1,8 @@
 package com.youfeng.sfs.ctinstaller.ui.component
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
@@ -21,7 +21,7 @@ fun OverflowMenu(onNavigatorToDetails: () -> Unit) {
         openAboutDialog = true
     }) {
         Icon(
-            Icons.Outlined.Info,
+            Icons.Default.Info,
             contentDescription = "关于" // 无障碍描述
         )
     }
