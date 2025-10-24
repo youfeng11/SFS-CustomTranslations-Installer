@@ -38,7 +38,7 @@ class NetworkRepository @Inject constructor(
                 // 🔤 确保任何来源的文件名都被 UTF-8 解码
                 val fileName = try {
                     URLDecoder.decode(rawFileName, "UTF-8")
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     rawFileName // 解码失败就用原值
                 }
 
@@ -65,7 +65,7 @@ class NetworkRepository @Inject constructor(
             // 🔤 确保任何来源的文件名都被 UTF-8 解码
             val fileName = try {
                 URLDecoder.decode(rawFileName, "UTF-8")
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 rawFileName // 解码失败就用原值
             }
 
@@ -75,8 +75,7 @@ class NetworkRepository @Inject constructor(
             val targetPath = "${cacheDir.absolutePath}/$fileName".toPath()
 
             // 3️⃣ 写入文件（纯 Okio）
-            val source = response.body?.source()
-                ?: throw IOException("Empty response body")
+            val source = response.body.source()
 
             FileSystem.SYSTEM.sink(targetPath).buffer().use { sink ->
                 sink.writeAll(source)

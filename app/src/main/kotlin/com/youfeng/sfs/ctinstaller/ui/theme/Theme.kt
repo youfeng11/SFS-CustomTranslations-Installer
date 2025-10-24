@@ -1,7 +1,6 @@
 package com.youfeng.sfs.ctinstaller.ui.theme
 
 import android.app.Activity
-import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -14,6 +13,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.core.graphics.drawable.toDrawable
 
 // 通用的主题函数，应用全局主题
 @Composable
@@ -51,7 +51,7 @@ fun MainTheme(
         WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars =
             !darkTheme
 
-        window.setBackgroundDrawable(ColorDrawable(background.toInt()))
+        window.setBackgroundDrawable(background.toInt().toDrawable())
     }
 
     // 使用 MaterialTheme 包裹 UI 内容
