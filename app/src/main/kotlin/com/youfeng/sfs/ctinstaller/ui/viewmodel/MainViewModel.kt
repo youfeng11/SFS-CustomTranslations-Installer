@@ -18,6 +18,7 @@ import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
+import com.youfeng.sfs.ctinstaller.data.model.LatestReleaseApi
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.data.model.TranslationsApi
 import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
@@ -140,7 +141,31 @@ class MainViewModel @Inject constructor(
     }
     private val binderDeadListener = OnBinderDeadListener { shizukuBinder = false }
 
-    fun addShizukuListener() {
+    private fun checkUpdate() {
+        viewModelScope.launch {
+            try {
+                val (result, _) = try {
+                    networkRepository.fetchContentFromUrl(Constants.UPDATE_API_URL)
+                } catch (_: Exception) {
+                    networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.UPDATE_API_URL)
+                }
+                val latestReleaseInfo = json.decodeFromString<LatestReleaseApi>(result)
+                val latestVersionCode = latestReleaseInfo.tagName.toInt()
+                if (latestVersionCode > BuildConfig.VERSION_CODE) {
+                    _uiState.update { it.copy(updateMessage = "${latestReleaseInfo.name} ($latestVersionCode)") }
+                }
+            } catch(e: Exception) {
+                Log.i("SFSCTI", "检查更新失败", e)
+            }
+        }
+    }
+
+    fun activityOnCreate() {
+        addShizukuListener()
+        checkUpdate()
+    }
+
+    private fun addShizukuListener() {
         Shizuku.addBinderReceivedListenerSticky(binderReceivedListener)
         Shizuku.addBinderDeadListener(binderDeadListener)
     }
@@ -774,7 +799,8 @@ data class MainUiState(
     val customTranslationsName: String? = null,
     val ctRadio: List<CTRadioOption>? = listOf(
         CTRadioOption("加载中...")
-    )
+    ),
+    val updateMessage: String? = null
 )
 
 /**

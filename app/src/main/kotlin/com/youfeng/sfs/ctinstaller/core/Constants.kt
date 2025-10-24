@@ -19,5 +19,11 @@ object Constants {
     const val TRANSLATIONS_API_URL =
         "https://raw.githubusercontent.com/youfeng11/SFS-CustomTranslations-Installer/refs/heads/main/api/translations.json"
 
+    const val UPDATE_API_URL =
+        "https://api.github.com/repos/youfeng11/SFS-CustomTranslations-Installer/releases/latest"
+
+    const val LATEST_RELEASE_URL =
+        "https://github.com/youfeng11/SFS-CustomTranslations-Installer/releases/latset"
+
     const val DOWNLOAD_ACCELERATOR_URL = "https://get.2sb.org/"
 }

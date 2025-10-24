@@ -108,6 +108,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.youfeng.sfs.ctinstaller.R
+import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
@@ -149,6 +150,7 @@ fun MainScreen(
             snackbarHostState = snackbarHostState,
             forGameVersion = uiState.forGameVersion,
             grantedType = uiState.grantedType,
+            updateMessage = uiState.updateMessage,
             options = uiState.options,
             ctRadio = uiState.ctRadio
         )
@@ -156,7 +158,7 @@ fun MainScreen(
 
     // 处理生命周期事件，更新 ViewModel 状态
     LifecycleAwareHandler(
-        onCreate = viewModel::addShizukuListener,
+        onCreate = viewModel::activityOnCreate,
         onResume = viewModel::updateMainState,
         onStart = viewModel::updateStateFromRemote,
         onDestroy = viewModel::removeShizukuListener
@@ -312,6 +314,7 @@ private fun MainLayout(
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
     forGameVersion: String = "",
+    updateMessage: String? = null,
     options: List<RadioOption> = emptyList(),
     ctRadio: List<CTRadioOption>? = null
 ) {
@@ -376,9 +379,9 @@ private fun MainLayout(
                     options = options
                 )
             }
-            if (false) {
+            if (updateMessage != null) {
                 item("update") {
-                    UpdateCard()
+                    UpdateCard(updateMessage)
                 }
             }
             item("install") {
@@ -604,19 +607,23 @@ private fun LazyItemScope.StatusCard(
 }
 
 @Composable
-private fun LazyItemScope.UpdateCard() {
+private fun LazyItemScope.UpdateCard(updateMessage: String) {
+    val context = LocalContext.current
     CardWidget(
-        {
+        title = {
             Text("有新的版本可更新！")
         },
-        {
+        icon = {
             Icon(
                 Icons.Default.Update,
                 contentDescription = null
             )
         },
+        onClick = {
+            context.openUrlInBrowser(Constants.LATEST_RELEASE_URL)
+        },
         text = {
-            Text("新版本：9.9.9 (99)")
+            Text("新版本：$updateMessage")
         },
         iconColors = IconButtonDefaults.iconButtonColors(
             containerColor = Color.Transparent
