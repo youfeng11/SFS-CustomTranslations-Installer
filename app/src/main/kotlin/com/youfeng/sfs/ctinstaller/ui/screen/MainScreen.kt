@@ -676,8 +676,8 @@ private fun LazyItemScope.InstallCard(
                             contentDescription = null,
                         )
                     }
-            }
-                    },
+                }
+            },
             text = {
                 Column(
                     Modifier

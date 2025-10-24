@@ -23,6 +23,7 @@ import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.data.model.TranslationsApi
 import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
+import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
 import com.youfeng.sfs.ctinstaller.data.repository.ShizukuRepository
 import com.youfeng.sfs.ctinstaller.utils.DocumentUriUtil
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
@@ -40,6 +41,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -60,7 +62,8 @@ class MainViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val networkRepository: NetworkRepository,
     private val folderRepository: FolderRepository,
-    private val shizukuRepository: ShizukuRepository
+    private val shizukuRepository: ShizukuRepository,
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val requestCodeInit = (Int.MIN_VALUE..Int.MAX_VALUE).random()
@@ -144,6 +147,7 @@ class MainViewModel @Inject constructor(
     private fun checkUpdate() {
         viewModelScope.launch {
             try {
+                if (!settingsRepository.checkUpdate.first()) return@launch
                 val (result, _) = try {
                     networkRepository.fetchContentFromUrl(Constants.UPDATE_API_URL)
                 } catch (_: Exception) {
@@ -154,7 +158,7 @@ class MainViewModel @Inject constructor(
                 if (latestVersionCode > BuildConfig.VERSION_CODE) {
                     _uiState.update { it.copy(updateMessage = "${latestReleaseInfo.name} ($latestVersionCode)") }
                 }
-            } catch(e: Exception) {
+            } catch (e: Exception) {
                 Log.i("SFSCTI", "检查更新失败", e)
             }
         }

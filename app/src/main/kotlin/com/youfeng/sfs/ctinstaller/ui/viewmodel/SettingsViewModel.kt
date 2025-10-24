@@ -14,7 +14,8 @@ import javax.inject.Inject
 // (更新) Data class 保持不变
 data class SettingsUiState(
     val isDarkThemeEnabled: Boolean = false,
-    val isFollowingSystem: Boolean = true // 默认值设为 true
+    val isFollowingSystem: Boolean = true,
+    val checkUpdate: Boolean = true
 )
 
 @HiltViewModel
@@ -28,10 +29,11 @@ class SettingsViewModel @Inject constructor(
     val uiState: StateFlow<SettingsUiState> =
         combine(
             settingsRepository.isDarkThemeEnabled,
-            settingsRepository.isFollowingSystem
-        ) { isDarkTheme, isFollowingSystem ->
+            settingsRepository.isFollowingSystem,
+            settingsRepository.checkUpdate
+        ) { isDarkTheme, isFollowingSystem, checkUpdate ->
             // 当任一 Flow 发出新值时, 创建一个新的 UiState
-            SettingsUiState(isDarkTheme, isFollowingSystem)
+            SettingsUiState(isDarkTheme, isFollowingSystem, checkUpdate)
         }
             .stateIn(
                 scope = viewModelScope,
@@ -52,6 +54,12 @@ class SettingsViewModel @Inject constructor(
     fun setFollowingSystem(isEnabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setFollowingSystem(isEnabled)
+        }
+    }
+
+    fun setCheckUpdate(isEnabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setCheckUpdate(isEnabled)
         }
     }
 }

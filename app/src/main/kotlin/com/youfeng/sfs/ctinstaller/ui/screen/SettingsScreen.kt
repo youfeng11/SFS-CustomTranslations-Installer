@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.Update
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -112,6 +113,15 @@ fun SettingsScreen(
                         )
                     }
 
+                item("CheckUpdate") {
+                    SwitchItem(
+                        title = "检查更新",
+                        summary = "在应用启动后自动检查是否有更新",
+                        icon = Icons.Default.Update,
+                        checked = uiState.checkUpdate,
+                        onCheckedChange = { viewModel.setCheckUpdate(it) }
+                    )
+                }
             }
         }
     }

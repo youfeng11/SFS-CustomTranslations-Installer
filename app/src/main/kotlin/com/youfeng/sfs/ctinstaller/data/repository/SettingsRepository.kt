@@ -15,7 +15,7 @@ import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 @Singleton
 class SettingsRepository @Inject constructor(
@@ -27,6 +27,8 @@ class SettingsRepository @Inject constructor(
 
         // 1. (新增) "跟随系统" 的 Key
         val IS_FOLLOWING_SYSTEM = booleanPreferencesKey("is_following_system")
+
+        val CHECK_UPDATE = booleanPreferencesKey("check_update")
     }
 
     // “启用深色主题”的 Flow (手动设置)
@@ -48,6 +50,14 @@ class SettingsRepository @Inject constructor(
             preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] ?: true
         }
 
+    val checkUpdate: Flow<Boolean> = context.dataStore.data
+        .catch { exception ->
+            if (exception is IOException) emit(emptyPreferences()) else throw exception
+        }
+        .map { preferences ->
+            preferences[PreferencesKeys.CHECK_UPDATE] ?: true
+        }
+
     // 写入“启用深色主题”
     suspend fun setDarkTheme(isEnabled: Boolean) {
         context.dataStore.edit { preferences ->
@@ -59,6 +69,12 @@ class SettingsRepository @Inject constructor(
     suspend fun setFollowingSystem(isEnabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] = isEnabled
+        }
+    }
+
+    suspend fun setCheckUpdate(isEnabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.CHECK_UPDATE] = isEnabled
         }
     }
 }

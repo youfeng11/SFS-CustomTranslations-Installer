@@ -12,8 +12,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
-import androidx.core.view.WindowCompat
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.WindowCompat
 
 // 通用的主题函数，应用全局主题
 @Composable
