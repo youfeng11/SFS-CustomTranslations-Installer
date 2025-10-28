@@ -35,6 +35,8 @@ class MainActivity : ComponentActivity() {
             window.isNavigationBarContrastEnforced = false
         }
 
+        handleIntent(intent)
+
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
             // 2. 获取 Activity 传递过来的 Uri
