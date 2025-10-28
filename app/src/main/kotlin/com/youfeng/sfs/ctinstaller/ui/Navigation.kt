@@ -21,10 +21,12 @@ import androidx.navigation.compose.rememberNavController
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
 import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
 
 @Composable
 fun MainNavigation(
+    mainViewModel: MainViewModel,
     settingsViewModel: SettingsViewModel,
     navController: NavHostController = rememberNavController()
 ) {
@@ -32,6 +34,7 @@ fun MainNavigation(
         NavHost(navController = navController, startDestination = "main") {
             composable("main") {
                 MainScreen(
+                    viewModel = mainViewModel,
                     onNavigatorToDetails = { navController.navigate("settings") }
                 )
             }

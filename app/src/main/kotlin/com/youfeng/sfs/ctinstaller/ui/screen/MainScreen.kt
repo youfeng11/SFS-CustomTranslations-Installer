@@ -145,7 +145,9 @@ fun MainScreen(
             onInstallButtonClick = viewModel::onInstallButtonClick,
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
             filePicker = viewModel::filePicker,
+            setRealOption = viewModel::setRealOption,
             sfsVersionName = viewModel.sfsVersionName,
+            realOption = uiState.realOption,
             customTranslationsName = uiState.customTranslationsName,
             snackbarHostState = snackbarHostState,
             forGameVersion = uiState.forGameVersion,
@@ -308,8 +310,10 @@ private fun MainLayout(
     openSfs: () -> Unit = {},
     onInstallButtonClick: (realOption: Int) -> Unit = {},
     onSaveToButtonClick: (realOption: Int) -> Unit = {},
-    filePicker: (uri: Uri?) -> Boolean = { true },
+    filePicker: (uri: Uri?) -> Unit = {},
+    setRealOption: (realOption: Int) -> Unit = {},
     sfsVersionName: String = "",
+    realOption: Int = -1,
     customTranslationsName: String? = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
@@ -390,7 +394,9 @@ private fun MainLayout(
                     onSaveToButtonClick = onSaveToButtonClick,
                     enableInstallButton = uiState is AppState.Granted, // 根据 AppState 判断是否启用
                     filePicker = filePicker,
+                    setRealOption = setRealOption,
                     forGameVersion = forGameVersion,
+                    realOption = realOption,
                     customTranslationsName = customTranslationsName,
                     ctRadio = ctRadio
                 )
@@ -638,19 +644,24 @@ private fun LazyItemScope.UpdateCard(updateMessage: String) {
 private fun LazyItemScope.InstallCard(
     onInstallButtonClick: (realOption: Int) -> Unit,
     onSaveToButtonClick: (realOption: Int) -> Unit,
-    filePicker: (uri: Uri?) -> Boolean,
+    filePicker: (uri: Uri?) -> Unit,
+    setRealOption: (realOption: Int) -> Unit,
+    realOption: Int,
     enableInstallButton: Boolean,
     forGameVersion: String,
     customTranslationsName: String?,
     ctRadio: List<CTRadioOption>?
 ) {
-    var realOption by remember { mutableIntStateOf(-1) }
-    var selectedOption by remember { mutableIntStateOf(-1) }
+    var selectedOption by remember { mutableIntStateOf(realOption) }
+    LaunchedEffect(realOption) {
+        selectedOption = realOption
+    }
     var openChooseDialog by remember { mutableStateOf(false) }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        if (filePicker(uri)) {
+        filePicker(uri)
+        uri?.let {
             selectedOption = -2
         }
     }
@@ -716,7 +727,7 @@ private fun LazyItemScope.InstallCard(
                             )
                         } ?: run {
                             selectedOption = -1
-                            realOption = -1
+                            setRealOption(-1)
                             Text("加载失败")
                         }
                     }
@@ -724,7 +735,7 @@ private fun LazyItemScope.InstallCard(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    realOption = selectedOption
+                    setRealOption(selectedOption)
                     openChooseDialog = false
                 }) {
                     Text("确定")

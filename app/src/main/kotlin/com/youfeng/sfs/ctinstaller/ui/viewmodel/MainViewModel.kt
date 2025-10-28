@@ -255,6 +255,18 @@ class MainViewModel @Inject constructor(
         }
     }
 
+    fun handleFileUri(uri: Uri) {
+        customTranslationsUri = uri
+        _uiState.update {
+            it.copy(
+                customTranslationsName = customTranslationsUri?.lastPathSegment?.substringAfterLast(
+                    '/'
+                )
+            )
+        }
+        setRealOption(-2)
+    }
+
     /**
      * 取消当前的安装或保存任务。
      */
@@ -700,8 +712,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun filePicker(uri: Uri?): Boolean {
-        uri ?: return false
+    fun filePicker(uri: Uri?) {
+        uri ?: return
         context.contentResolver.takePersistableUriPermission(
             uri,
             Intent.FLAG_GRANT_READ_URI_PERMISSION
@@ -714,7 +726,6 @@ class MainViewModel @Inject constructor(
                 )
             )
         }
-        return true
     }
 
     override fun onCleared() {
@@ -738,6 +749,10 @@ class MainViewModel @Inject constructor(
      */
     fun setInstallingDialogVisible(isVisible: Boolean) {
         _uiState.update { it.copy(showInstallingDialog = isVisible) }
+    }
+    
+    fun setRealOption(realOption: Int) {
+        _uiState.update { it.copy(realOption = realOption) }
     }
 
     /**
@@ -787,6 +802,7 @@ class MainViewModel @Inject constructor(
  */
 data class MainUiState(
     val appState: AppState = AppState.Loading,
+    val realOption: Int = -1,
     val showInstallingDialog: Boolean = false,
     val showGoToSettingsDialog: Boolean = false,
     val installationProgressText: String = "",

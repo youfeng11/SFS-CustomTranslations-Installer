@@ -27,12 +27,28 @@
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|navigation|uiMode|layoutDirection"
             android:exported="true"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity-alias
+            android:name=".FileViewerAlias"
+            android:targetActivity=".ui.MainActivity"
+            android:exported="true"
+            android:label="@string/install_from_external">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+        
+                <data android:scheme="content" android:mimeType="text/plain" />
+                <data android:scheme="file" android:mimeType="text/plain" />
+                <data android:scheme="content" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
+                <data android:scheme="file" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
+            </intent-filter>
+        </activity-alias>
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
