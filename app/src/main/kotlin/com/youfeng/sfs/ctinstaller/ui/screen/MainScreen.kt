@@ -830,7 +830,7 @@ private fun LazyItemScope.DonateCard() {
     }, text = {
         Text("SFS汉化安装器 将保持免费开源，向开发者捐赠以表示支持。")
     }, onClick = {
-        context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer#%E6%8D%90%E8%B5%A0")
+        context.openUrlInBrowser("https://afdian.com/a/youfeng")
     })
 }
 
