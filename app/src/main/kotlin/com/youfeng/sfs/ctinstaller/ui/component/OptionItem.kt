@@ -1,6 +1,7 @@
 package com.youfeng.sfs.ctinstaller.ui.component
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.selection.toggleable
@@ -117,6 +118,40 @@ fun LazyItemScope.SwitchItem(
                 onCheckedChange = onCheckedChange,
                 interactionSource = interactionSource
             )
+        },
+        supportingContent = summary?.let {
+            {
+                Text(it)
+            }
+        }
+    )
+}
+
+@Composable
+fun LazyItemScope.Item(
+    icon: ImageVector? = null,
+    title: String,
+    summary: String? = null,
+    onClick: () -> Unit
+) {
+    ListItem(
+        modifier = Modifier
+            .clickable(onClick = onClick)
+            .animateItem(),
+        headlineContent = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+        },
+        leadingContent = icon?.let {
+            {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title
+                )
+            }
         },
         supportingContent = summary?.let {
             {

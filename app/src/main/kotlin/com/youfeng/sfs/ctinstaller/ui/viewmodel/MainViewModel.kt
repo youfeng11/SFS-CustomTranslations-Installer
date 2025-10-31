@@ -44,6 +44,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map // (关键变更) 只需要 map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
@@ -89,13 +92,34 @@ class MainViewModel @Inject constructor(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    private val customSuCommand: StateFlow<String> = settingsRepository.userSettings
+        .map { it.customSuCommand } // 只映射你关心的那一个值
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ""
+        )
+
     init {
         Shell.enableVerboseLogging = BuildConfig.DEBUG
-        Shell.setDefaultBuilder(
-            Shell.Builder.create()
+        
+        // 确保 Shell.setDefaultBuilder 只在 init 时设置一次，使用 customSuCommand 的初始值
+        // 移除了对 customSuCommand.collect 的观察
+        viewModelScope.launch {
+            val command = customSuCommand.first() // 使用 first() 获取初始值并完成
+            val builder = Shell.Builder.create()
                 .setFlags(Shell.FLAG_MOUNT_MASTER)
                 .setTimeout(10)
-        )
+
+            // 使用 .isNotEmpty() 更符合 Kotlin 习惯
+            if (command.isNotEmpty()) {
+                builder.setCommands(command)
+            }
+            
+            // 只需要设置一次 libsu 的默认 Builder
+            Log.d("SFSCTI", "Shell default builder set once with command: $command")
+            Shell.setDefaultBuilder(builder)
+        }
     }
 
     fun onFolderSelected(uri: Uri?) {
@@ -147,7 +171,7 @@ class MainViewModel @Inject constructor(
     private fun checkUpdate() {
         viewModelScope.launch {
             try {
-                if (!settingsRepository.checkUpdate.first()) return@launch
+                if (!settingsRepository.userSettings.first().checkUpdate) return@launch
                 val (result, _) = try {
                     networkRepository.fetchContentFromUrl(Constants.UPDATE_API_URL)
                 } catch (_: Exception) {
@@ -183,7 +207,13 @@ class MainViewModel @Inject constructor(
         return try {
             // 检查是否存在 su 二进制文件
             Log.d("SFSCTI", "su二进制检查")
-            val process = Runtime.getRuntime().exec("which su")
+            val suCommand = customSuCommand.value
+                .takeIf { it.isNotEmpty() }
+                ?: "su"
+            val process = Runtime.getRuntime().exec("which ${suCommand}")
+            val output = process.inputStream.bufferedReader().use { it.readText().trim() }
+            process.waitFor()
+            Log.d("SFSCTI", "su二进制检查：$suCommand，$output")
             process.waitFor() == 0
         } catch (e: Exception) {
             Log.d("SFSCTI", "su二进制检查出错${e.message}")
@@ -789,7 +819,7 @@ class MainViewModel @Inject constructor(
 
             Environment.isExternalStorageManager() && ExploitFileUtil.isExploitable -> GrantedType.Bug
 
-            Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot -> GrantedType.Su
+            hasSu() && (Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot) -> GrantedType.Su
 
             else -> null
         }
