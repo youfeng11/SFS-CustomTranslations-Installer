@@ -48,7 +48,7 @@ SFS 汉化安装器支持在应用内选择多种自定义翻译包。您可以�
 
 支持项目开发，欢迎通过以下方式捐赠：
 
-<img src="https://pan.tenire.com/view.php/40a71c2ac20505ac131046925d138129.png" width="300" alt="微信支付">
+- [**爱发电**](https://afdian.com/a/youfeng)
 
 ## 开源协议
 
