@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.youfeng.sfs.ctinstaller.di
 
 import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository

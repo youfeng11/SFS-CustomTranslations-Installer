@@ -6,6 +6,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import com.youfeng.sfs.ctinstaller.BuildConfig
+import com.youfeng.sfs.ctinstaller.core.TAG
 import com.youfeng.sfs.ctinstaller.service.IShizukuFileService
 import com.youfeng.sfs.ctinstaller.service.ShizukuFileService
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -40,13 +41,13 @@ class ShizukuRepository @Inject constructor(
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Log.d("ShizukuRepository", "Service connected")
+            Log.d(TAG, "Service connected")
             fileService = IShizukuFileService.Stub.asInterface(service)
             _connectionStatus.value = ConnectionStatus.Connected
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            Log.d("ShizukuRepository", "Service disconnected")
+            Log.d(TAG, "Service disconnected")
             fileService = null
             _connectionStatus.value = ConnectionStatus.Disconnected
         }
@@ -72,14 +73,14 @@ class ShizukuRepository @Inject constructor(
         try {
             Shizuku.bindUserService(args, serviceConnection)
         } catch (e: Exception) {
-            Log.e("ShizukuRepository", "Failed to bind UserService", e)
+            Log.e(TAG, "Failed to bind UserService", e)
             _connectionStatus.value = ConnectionStatus.Error(e)
         }
     }
 
     // 释放服务连接
     fun cleanup() {
-        Log.d("ShizukuRepository", "Cleaning up UserService")
+        Log.d(TAG, "Cleaning up UserService")
         Shizuku.unbindUserService(args, serviceConnection, true)
         fileService = null
         _connectionStatus.value = ConnectionStatus.Disconnected
@@ -96,8 +97,7 @@ class ShizukuRepository @Inject constructor(
             delay(100) // 等待一小段时间
         }
 
-        val currentStatus = _connectionStatus.value
-        return@withContext when (currentStatus) {
+        return@withContext when (val currentStatus = _connectionStatus.value) {
             is ConnectionStatus.Connected -> fileService
                 ?: throw IllegalStateException("Service is connected but fileService is null")
 

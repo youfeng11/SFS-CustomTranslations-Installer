@@ -16,6 +16,7 @@ import androidx.lifecycle.viewModelScope
 import com.topjohnwu.superuser.Shell
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.core.Constants
+import com.youfeng.sfs.ctinstaller.core.TAG
 import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
 import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.model.LatestReleaseApi
@@ -117,15 +118,15 @@ class MainViewModel @Inject constructor(
             }
 
             // 只需要设置一次 libsu 的默认 Builder
-            Log.d("SFSCTI", "Shell default builder set once with command: $command")
+            Log.d(TAG, "Shell default builder set once with command: $command")
             Shell.setDefaultBuilder(builder)
         }
     }
 
     fun onFolderSelected(uri: Uri?) {
         viewModelScope.launch {
-            Log.d("SFSCTI", uri.toString())
-            Log.d("SFSCTI", sfsDataUri.toString())
+            Log.d(TAG, uri.toString())
+            Log.d(TAG, sfsDataUri.toString())
             if (
                 uri != null
                 && DocumentsContract.isTreeUri(uri)
@@ -183,7 +184,7 @@ class MainViewModel @Inject constructor(
                     _uiState.update { it.copy(updateMessage = "${latestReleaseInfo.name} ($latestVersionCode)") }
                 }
             } catch (e: Exception) {
-                Log.i("SFSCTI", "检查更新失败", e)
+                Log.i(TAG, "检查更新失败", e)
             }
         }
     }
@@ -206,17 +207,17 @@ class MainViewModel @Inject constructor(
     private fun hasSu(): Boolean {
         return try {
             // 检查是否存在 su 二进制文件
-            Log.d("SFSCTI", "su二进制检查")
+            Log.d(TAG, "su二进制检查")
             val suCommand = customSuCommand.value
                 .takeIf { it.isNotEmpty() }
                 ?: "su"
-            val process = Runtime.getRuntime().exec("which ${suCommand}")
+            val process = Runtime.getRuntime().exec(arrayOf("which", suCommand))
             val output = process.inputStream.bufferedReader().use { it.readText().trim() }
             process.waitFor()
-            Log.d("SFSCTI", "su二进制检查：$suCommand，$output")
+            Log.d(TAG, "su二进制检查：$suCommand，$output")
             process.waitFor() == 0
         } catch (e: Exception) {
-            Log.d("SFSCTI", "su二进制检查出错${e.message}")
+            Log.d(TAG, "su二进制检查出错${e.message}")
             false
         }
     }

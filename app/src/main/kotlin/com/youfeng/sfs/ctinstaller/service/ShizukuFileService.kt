@@ -1,6 +1,7 @@
 package com.youfeng.sfs.ctinstaller.service
 
 import android.util.Log
+import com.youfeng.sfs.ctinstaller.core.TAG
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import kotlin.system.exitProcess
@@ -27,7 +28,7 @@ class ShizukuFileService : IShizukuFileService.Stub() {
     }
 
     override fun destroy() {
-        Log.i("FileService", "destroy")
+        Log.i(TAG, "destroy")
         exitProcess(0)
     }
 
