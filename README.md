@@ -44,12 +44,6 @@ SFS 汉化安装器支持在应用内选择多种自定义翻译包。您可以�
 - [ ] 基础设置界面
 - [ ] 更多功能开发中...
 
-## 捐赠
-
-支持项目开发，欢迎通过以下方式捐赠：
-
-- [**爱发电**](https://afdian.com/a/youfeng)
-
 ## 开源协议
 
 本项目采用 [**GNU General Public License v3 (GPL-3)**](LICENSE)。
