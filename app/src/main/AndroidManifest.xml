@@ -9,7 +9,7 @@
         tools:ignore="AllFilesAccessPolicy,ScopedStorage" />
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29"/>
+        android:maxSdkVersion="29" />
     <uses-permission
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="29" />
@@ -31,9 +31,8 @@
             android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden|screenLayout|smallestScreenSize|navigation|uiMode|layoutDirection"
             android:exported="true"
-            android:label="@string/app_name"
-            android:windowSoftInputMode="adjustResize"
-            android:launchMode="singleTask">
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -41,25 +40,26 @@
         </activity>
         <activity-alias
             android:name=".FileViewerAlias"
-            android:targetActivity=".ui.MainActivity"
             android:exported="true"
-            android:label="@string/install_from_external">
+            android:label="@string/install_from_external"
+            android:targetActivity=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
-        
-                <data android:scheme="content" android:mimeType="text/plain" />
-                <data android:scheme="file" android:mimeType="text/plain" />
-                <data android:scheme="content" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
-                <data android:scheme="file" android:mimeType="*/*" android:pathPattern=".*\\.txt" />
+
+                <data android:scheme="content" />
+                <data android:scheme="file" />
+                <data android:host="*" />
+                <data android:mimeType="text/plain" />
+                <data android:pathPattern=".*\\.txt" />
             </intent-filter>
         </activity-alias>
         <provider
             android:name="rikka.shizuku.ShizukuProvider"
             android:authorities="${applicationId}.shizuku"
-            android:multiprocess="false"
             android:enabled="true"
             android:exported="true"
+            android:multiprocess="false"
             android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
     </application>
 </manifest>

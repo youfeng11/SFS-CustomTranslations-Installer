@@ -47,10 +47,10 @@ class MainActivity : ComponentActivity() {
                 uriToProcess?.let {
                     mainViewModel.handleFileUri(uriToProcess)
                     // 4. 清除 Uri，防止配置更改（如旋转屏幕）时重复加载
-                    intentUri = null 
+                    intentUri = null
                 }
             }
-        
+
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settingsUiState by settingsViewModel.uiState.collectAsState()
             val darkTheme = if (settingsUiState.isFollowingSystem) isSystemInDarkTheme()

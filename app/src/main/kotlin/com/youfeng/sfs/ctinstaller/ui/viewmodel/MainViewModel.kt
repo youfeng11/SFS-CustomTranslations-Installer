@@ -102,7 +102,7 @@ class MainViewModel @Inject constructor(
 
     init {
         Shell.enableVerboseLogging = BuildConfig.DEBUG
-        
+
         // 确保 Shell.setDefaultBuilder 只在 init 时设置一次，使用 customSuCommand 的初始值
         // 移除了对 customSuCommand.collect 的观察
         viewModelScope.launch {
@@ -115,7 +115,7 @@ class MainViewModel @Inject constructor(
             if (command.isNotEmpty()) {
                 builder.setCommands(command)
             }
-            
+
             // 只需要设置一次 libsu 的默认 Builder
             Log.d("SFSCTI", "Shell default builder set once with command: $command")
             Shell.setDefaultBuilder(builder)
@@ -780,7 +780,7 @@ class MainViewModel @Inject constructor(
     fun setInstallingDialogVisible(isVisible: Boolean) {
         _uiState.update { it.copy(showInstallingDialog = isVisible) }
     }
-    
+
     fun setRealOption(realOption: Int) {
         _uiState.update { it.copy(realOption = realOption) }
     }

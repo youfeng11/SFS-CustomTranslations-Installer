@@ -74,7 +74,7 @@ class SettingsRepositoryImpl @Inject constructor(
             val isFollowingSystem = preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] ?: true
             val checkUpdate = preferences[PreferencesKeys.CHECK_UPDATE] ?: true
             val customSuCommand = preferences[PreferencesKeys.CUSTOM_SU_COMMAND] ?: ""
-            
+
             UserSettings(
                 isDarkThemeEnabled = isDarkTheme,
                 isFollowingSystem = isFollowingSystem,
@@ -101,7 +101,7 @@ class SettingsRepositoryImpl @Inject constructor(
             preferences[PreferencesKeys.CHECK_UPDATE] = isEnabled
         }
     }
-    
+
     override suspend fun setCustomSuCommand(command: String) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.CUSTOM_SU_COMMAND] = command
