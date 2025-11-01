@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,13 +78,13 @@ fun SettingsScreen(
                         }) {
                             Icon(
                                 Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "返回"
+                                contentDescription = stringResource(R.string.back)
                             )
                         }
                     },
                     title = {
                         Text(
-                            "设置",
+                            stringResource(R.string.title_settings),
                             fontWeight = FontWeight.Black
                         )
                     },
@@ -111,30 +112,37 @@ fun SettingsScreen(
                 // 添加设置项
                 item("AutoDarkTheme") {
                     SwitchItem(
-                        title = "深色主题跟随系统",
-                        summary = "跟随系统设置深色主题",
+                        title = stringResource(R.string.settings_item_dark_mode_follow_system),
+                        summary = stringResource(R.string.settings_item_dark_mode_follow_system_description),
                         icon = ImageVector.vectorResource(id = R.drawable.ic_night_sight_auto),
                         checked = uiState.isFollowingSystem,
                         onCheckedChange = { viewModel.setFollowingSystem(it) }
                     )
                 }
-                val themeName = if (uiState.isDarkThemeEnabled) "深色主题" else "浅色主题"
-                if (!uiState.isFollowingSystem)
+                if (!uiState.isFollowingSystem) {
                     item("DarkTheme") {
+                        val themeName =
+                            if (uiState.isDarkThemeEnabled) stringResource(R.string.mode_dark) else stringResource(
+                                R.string.mode_light
+                            )
                         SwitchItem(
-                            title = "深色主题",
-                            summary = "当前: $themeName",
+                            title = stringResource(R.string.settings_item_dark_mode),
+                            summary = stringResource(
+                                R.string.settings_item_dark_mode_description,
+                                themeName
+                            ),
                             icon = Icons.Filled.DarkMode,
                             checked = uiState.isDarkThemeEnabled,
                             onCheckedChange = { viewModel.setDarkTheme(it) }
                         )
                     }
+                }
 
                 item("CustomSuCommand") {
                     Item(
-                        title = "自定义 su 命令",
+                        title = stringResource(R.string.settings_item_custom_su_command),
                         icon = Icons.Default.Numbers,
-                        summary = "请求ROOT权限的命令，通常无需修改"
+                        summary = stringResource(R.string.settings_item_custom_su_command_description)
                     ) {
                         // 点击时显示对话框
                         showCustomSuCommandDialog = true
@@ -143,8 +151,8 @@ fun SettingsScreen(
 
                 item("CheckUpdate") {
                     SwitchItem(
-                        title = "检查更新",
-                        summary = "在应用启动后自动检查是否有更新",
+                        title = stringResource(R.string.settings_item_check_update),
+                        summary = stringResource(R.string.settings_item_check_update_description),
                         icon = Icons.Default.Update,
                         checked = uiState.checkUpdate,
                         onCheckedChange = { viewModel.setCheckUpdate(it) }
@@ -181,7 +189,7 @@ fun CustomSuCommandDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text(text = "自定义 su 命令")
+            Text(text = stringResource(R.string.settings_item_custom_su_command))
         },
         text = {
             Column(
@@ -191,13 +199,13 @@ fun CustomSuCommandDialog(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    label = { Text("su 命令") },
-                    placeholder = { Text("默认") },
+                    label = { Text(stringResource(R.string.custom_su_command_text_field_label)) },
+                    placeholder = { Text(stringResource(R.string.default_text)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 Text(
-                    text = "留空则为默认。修改后需要重启才能生效",
+                    text = stringResource(R.string.custom_su_command_text_field_tip),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
@@ -206,14 +214,14 @@ fun CustomSuCommandDialog(
             TextButton(
                 onClick = { onConfirm(text.trim()) }
             ) {
-                Text("确定")
+                Text(stringResource(R.string.ok))
             }
         },
         dismissButton = {
             TextButton(
                 onClick = onDismiss
             ) {
-                Text("取消")
+                Text(stringResource(R.string.cancel))
             }
         },
         modifier = Modifier.padding(16.dp)

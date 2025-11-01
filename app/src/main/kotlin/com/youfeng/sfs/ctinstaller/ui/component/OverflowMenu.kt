@@ -22,7 +22,7 @@ fun OverflowMenu(onNavigatorToDetails: () -> Unit) {
     }) {
         Icon(
             Icons.Default.Info,
-            contentDescription = "关于" // 无障碍描述
+            contentDescription = stringResource(R.string.menu_about) // 无障碍描述
         )
     }
     if (openAboutDialog)
@@ -33,7 +33,7 @@ fun OverflowMenu(onNavigatorToDetails: () -> Unit) {
     IconButton(onClick = { onNavigatorToDetails() }) {
         Icon(
             Icons.Default.Settings,
-            contentDescription = "设置" // 无障碍描述
+            contentDescription = stringResource(R.string.menu_settings) // 无障碍描述
         )
     }
 }

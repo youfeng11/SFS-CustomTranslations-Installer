@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.topjohnwu.superuser.Shell
 import com.youfeng.sfs.ctinstaller.BuildConfig
+import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.core.TAG
 import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
@@ -132,11 +133,14 @@ class MainViewModel @Inject constructor(
                 && DocumentsContract.isTreeUri(uri)
                 && uri == DocumentUriUtil.buildAndroidData(Constants.SFS_PACKAGE_NAME)
             ) {
-                showSnackbar("授权成功")
+                showSnackbar(context.getString(R.string.permissions_granted))
                 updateMainState()
                 folderRepository.persistFolderUri(uri)
             } else {
-                showSnackbar("授权失败", "重试") {
+                showSnackbar(
+                    context.getString(R.string.no_permissions_granted),
+                    context.getString(R.string.retry)
+                ) {
                     onRequestPermissionsClicked(GrantedType.Saf)
                 }
             }
@@ -151,7 +155,7 @@ class MainViewModel @Inject constructor(
         if (requestCode == requestCodeInit && grantResult == PackageManager.PERMISSION_GRANTED) {
             updateMainState()
             shizukuRepository.startUserService()
-        } else showSnackbar("授权失败")
+        } else showSnackbar(context.getString(R.string.no_permissions_granted))
         // Do stuff based on the result and the request code
     }
 
@@ -226,7 +230,7 @@ class MainViewModel @Inject constructor(
         when {
             Shizuku.isPreV11() -> {
                 // Pre-v11 is unsupported
-                showSnackbar("请更新Shizuku/Sui至最新版本")
+                showSnackbar(context.getString(R.string.outdated_shizuku))
                 return false
             }
 
@@ -238,7 +242,7 @@ class MainViewModel @Inject constructor(
 
             Shizuku.shouldShowRequestPermissionRationale() -> {
                 // Users choose "Deny and don't ask again"
-                showSnackbar("已被永久拒绝")
+                showSnackbar(context.getString(R.string.permanently_deny_permissions))
                 return false
             }
 
@@ -258,7 +262,7 @@ class MainViewModel @Inject constructor(
         get() = try {
             context.packageManager.getPackageInfo(Constants.SFS_PACKAGE_NAME, 0).versionName!!
         } catch (_: Exception) {
-            "获取失败"
+            context.getString(R.string.failed_to_retrieve)
         }
 
     fun permissionRequestCheck() {
@@ -274,10 +278,15 @@ class MainViewModel @Inject constructor(
         shouldShowRationale ?: return
         if (isGranted) {
             updateMainState()
-            showSnackbar("授权成功")
+            showSnackbar(context.getString(R.string.permissions_granted))
         } else {
             if (shouldShowRationale) {
-                showSnackbar("您拒绝了 存储 权限请求", "重试") {
+                showSnackbar(
+                    context.getString(
+                        R.string.permission_request_denied,
+                        context.getString(R.string.permission_storage)
+                    ), context.getString(R.string.retry)
+                ) {
                     permissionRequestCheck()
                 }
             } else {
@@ -324,11 +333,11 @@ class MainViewModel @Inject constructor(
         installSaveJob = viewModelScope.launch {
             try {
                 val textCachePath = if (realOption == -2) {
-                    updateInstallationProgress("正在缓存…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_cached))
 
                     val cacheFileName =
                         customTranslationsUri?.lastPathSegment?.substringAfterLast('/')
-                            ?: "未命名语言包.txt"
+                            ?: (context.getString(R.string.unnamed_translation_file_name) + ".txt")
 
                     val cacheFile = File(context.externalCacheDir, cacheFileName)
 
@@ -342,51 +351,52 @@ class MainViewModel @Inject constructor(
                 } else if (title == null) {
                     val url = Constants.API_URL
 
-                    updateInstallationProgress("正在获取API…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_api_retrieving))
                     val (result, _) = networkRepository.fetchContentFromUrl(url)
-                    updateInstallationProgress("正在解析API…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_api_parsing))
                     val customTranslationInfo = if (result.isValidJson()) {
                         json.decodeFromString<CustomTranslationInfo>(result)
-                    } else throw IllegalArgumentException("无法解析API！")
+                    } else throw IllegalArgumentException(context.getString(R.string.installing_api_parsing_failed))
 
                     // 检查必要字段
                     if (customTranslationInfo.url.isNullOrBlank() ||
                         customTranslationInfo.compatibleVersion.isNullOrBlank()
                     ) {
-                        throw IllegalArgumentException("目标API数据不完整或非法！")
+                        throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     }
 
-                    updateInstallationProgress("正在下载汉化…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_downloading))
                     networkRepository.downloadFileToCache(customTranslationInfo.url)
                 } else {
-                    updateInstallationProgress("正在获取API…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_api_retrieving))
                     val (result, _) = try {
                         networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
                     } catch (_: Exception) {
                         networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
                     }
 
-                    updateInstallationProgress("正在解析API…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_api_parsing))
                     val translationsApi =
                         json.decodeFromString<Map<String, TranslationsApi>>(result)
 
                     val translationInfo =
-                        translationsApi[title] ?: throw IllegalArgumentException("API异常")
+                        translationsApi[title]
+                            ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     translationInfo.file
-                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                        ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     translationInfo.lang
-                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                        ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     translationInfo.author
-                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                        ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
 
-                    updateInstallationProgress("正在下载汉化…")
+                    updateInstallationProgress(context.getString(R.string.installing_process_downloading))
                     try {
                         networkRepository.downloadFileToCache(translationInfo.file)
                     } catch (_: Exception) {
                         networkRepository.downloadFileToCache(Constants.DOWNLOAD_ACCELERATOR_URL + translationInfo.file)
                     }
                 }
-                updateInstallationProgress("正在安装汉化…")
+                updateInstallationProgress(context.getString(R.string.installing_process_installing))
 
                 val target =
                     "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
@@ -395,62 +405,71 @@ class MainViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     when (uiState.value.grantedType) {
                         GrantedType.Shizuku -> {
-                            updateInstallationProgress("验证中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_verification))
                             if (shizukuRepository.connectionStatus.value
                                         is ShizukuRepository.ConnectionStatus.Connecting
                             ) {
-                                updateInstallationProgress("等待FileService连接...")
+                                updateInstallationProgress(context.getString(R.string.installing_process_shizuku_waiting))
                             }
-                            updateInstallationProgress("准备中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_preparing))
                             shizukuRepository.mkdirs(target)
-                            updateInstallationProgress("复制中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_copying))
                             shizukuRepository.copyFile(textCachePath, "${target}/$fileName")
-                            updateInstallationProgress("复制成功")
+                            updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
 
                         GrantedType.Su -> {
-                            updateInstallationProgress("准备中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_preparing))
                             Shell.cmd("mkdir -p \"$target\"").exec()
-                            updateInstallationProgress("复制中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_copying))
                             val shellResult =
                                 Shell.cmd("cp -f \"$textCachePath\" \"$target/$fileName\"").exec()
-                            if (!shellResult.isSuccess) throw IllegalArgumentException("复制失败：${shellResult.code}")
-                            updateInstallationProgress("复制成功")
+                            if (!shellResult.isSuccess) throw IllegalArgumentException(
+                                context.getString(
+                                    R.string.copy_failed, shellResult.code.toString()
+                                )
+                            )
+                            updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
 
                         GrantedType.Bug -> {
-                            updateInstallationProgress("准备中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_preparing))
                             fs.createDirectories(target.toPathWithZwsp())
-                            updateInstallationProgress("复制中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_copying))
                             fs.copy(textCachePath.toPath(), "$target/$fileName".toPathWithZwsp())
-                            updateInstallationProgress("复制成功")
+                            updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
 
                         GrantedType.Old -> {
-                            updateInstallationProgress("准备中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_preparing))
                             fs.createDirectories(target.toPath())
-                            updateInstallationProgress("复制中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_copying))
                             fs.copy(textCachePath.toPath(), "$target/$fileName".toPath())
-                            updateInstallationProgress("复制成功")
+                            updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
 
                         GrantedType.Saf -> {
-                            updateInstallationProgress("验证中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_verification))
                             val sfsDataDirUri = folderRepository.getPersistedFolderUri()
-                                ?: throw IllegalArgumentException("请检测授权状况并重试")
+                                ?: throw IllegalArgumentException(context.getString(R.string.installing_get_persistent_uri_failed))
 
                             val sourceFile = DocumentFile.fromFile(File(textCachePath))
                             val rootDir = DocumentFile.fromTreeUri(context, sfsDataDirUri)
-                                ?: throw IllegalArgumentException("获取DocumentFile失败")
+                                ?: throw IllegalArgumentException(context.getString(R.string.installing_get_persistent_documentfile_failed))
 
-                            updateInstallationProgress("准备中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_preparing))
 
                             val filesDir = rootDir.findFile("files")
                                 ?.takeIf { it.isDirectory }
                                 ?: run {
                                     rootDir.findFile("files")?.delete()
                                     rootDir.createDirectory("files")
-                                        ?: throw IllegalArgumentException("无法创建 files 目录")
+                                        ?: throw IllegalArgumentException(
+                                            context.getString(
+                                                R.string.installing_create_directory_unable,
+                                                "files"
+                                            )
+                                        )
                                 }
 
                             val customTranslationsDir = filesDir.findFile("Custom Translations")
@@ -458,18 +477,23 @@ class MainViewModel @Inject constructor(
                                 ?: run {
                                     filesDir.findFile("Custom Translations")?.delete()
                                     filesDir.createDirectory("Custom Translations")
-                                        ?: throw IllegalArgumentException("无法创建 Custom Translations 目录")
+                                        ?: throw IllegalArgumentException(
+                                            context.getString(
+                                                R.string.installing_create_directory_unable,
+                                                "Custom Translations"
+                                            )
+                                        )
                                 }
 
                             // 检查目标文件是否存在
                             customTranslationsDir.findFile(fileName)?.let {
-                                updateInstallationProgress("删除冲突文件中...")
+                                updateInstallationProgress(context.getString(R.string.installing_process_deleting_conflicting_files))
                                 it.delete()
                             }
 
-                            updateInstallationProgress("开始中...")
+                            updateInstallationProgress(context.getString(R.string.installing_process_starting))
                             val newFile = customTranslationsDir.createFile("text/plain", fileName)
-                                ?: throw IllegalArgumentException("新建文件失败")
+                                ?: throw IllegalArgumentException(context.getString(R.string.installing_create_file_failed))
 
                             context.contentResolver.openInputStream(sourceFile.uri)
                                 ?.use { inputStream ->
@@ -479,19 +503,19 @@ class MainViewModel @Inject constructor(
                                         }
                                 }
 
-                            updateInstallationProgress("复制成功")
+                            updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
                     }
                 }
             } catch (_: CancellationException) {
                 return@launch
             } catch (e: Exception) {
-                val err = e.message ?: "未知错误"
+                val err = e.message ?: context.getString(R.string.unknown_error)
                 e.printStackTrace()
-                updateInstallationProgress("错误：$err")
+                updateInstallationProgress(context.getString(R.string.installing_error, err))
             }
             _uiState.update { it.copy(isInstallComplete = true) }
-            updateInstallationProgress("安装结束")
+            updateInstallationProgress(context.getString(R.string.installing_installation_complete))
         }
     }
 
@@ -500,11 +524,11 @@ class MainViewModel @Inject constructor(
      */
     fun onSaveToButtonClick(realOption: Int) {
         if (!_uiState.value.isSavingComplete) {
-            showSnackbar("保存正在进行中，请勿频繁点击")
+            showSnackbar(context.getString(R.string.saving_in_progress))
             return
         }
         _uiState.update { it.copy(isSavingComplete = false) }
-        showSnackbar("正在下载汉化…")
+        showSnackbar(context.getString(R.string.installing_process_downloading))
 
         val title = optionList.getOrNull(realOption)?.title
         installSaveJob = viewModelScope.launch {
@@ -513,11 +537,11 @@ class MainViewModel @Inject constructor(
                     val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
                     val customTranslationInfo = if (result.isValidJson()) {
                         json.decodeFromString<CustomTranslationInfo>(result)
-                    } else throw IllegalArgumentException("无法解析API！")
+                    } else throw IllegalArgumentException(context.getString(R.string.installing_api_parsing_failed))
 
                     // 检查必要字段
                     if (customTranslationInfo.url.isNullOrBlank()) {
-                        throw IllegalArgumentException("目标API数据不完整或非法！")
+                        throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     }
                     customTranslationInfo.url
                 } else {
@@ -530,9 +554,10 @@ class MainViewModel @Inject constructor(
                         json.decodeFromString<Map<String, TranslationsApi>>(result)
 
                     val translationInfo =
-                        translationsApi[title] ?: throw IllegalArgumentException("API异常")
+                        translationsApi[title]
+                            ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     translationInfo.file
-                        ?: throw IllegalArgumentException("目标API数据不完整或非法！")
+                        ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                 }
 
                 val (textContent, fileName) = try {
@@ -545,8 +570,8 @@ class MainViewModel @Inject constructor(
             } catch (_: CancellationException) {
                 return@launch
             } catch (e: Exception) {
-                val err = e.message ?: "未知错误"
-                showSnackbar("无法保存汉化：$err")
+                val err = e.message ?: context.getString(R.string.unknown_error)
+                showSnackbar(context.getString(R.string.saving_failed, err))
             } finally {
                 _uiState.update { it.copy(isSavingComplete = true) }
             }
@@ -583,7 +608,12 @@ class MainViewModel @Inject constructor(
                         Shell.getShell().close()
                         Shell.getShell { shell ->
                             if (!shell.isRoot)
-                                showSnackbar("ROOT请求被拒")
+                                showSnackbar(
+                                    context.getString(
+                                        R.string.permission_request_denied,
+                                        "ROOT"
+                                    )
+                                )
                         }
                     }
                     updateMainState()
@@ -599,18 +629,18 @@ class MainViewModel @Inject constructor(
             try {
                 tempSaveContent?.let { content ->
                     uri ?: run {
-                        showSnackbar("保存取消")
+                        showSnackbar(context.getString(R.string.save_cancel))
                         return@launch
                     }
                     context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
                         writer.write(content)
                     }
-                    showSnackbar("汉化已保存")
+                    showSnackbar(context.getString(R.string.save_successful))
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                val err = e.message ?: "未知原因"
-                showSnackbar("保存失败: $err")
+                val err = e.message ?: context.getString(R.string.unknown_error)
+                showSnackbar(context.getString(R.string.saving_failed, err))
             } finally {
                 tempSaveContent = null
             }
@@ -664,25 +694,25 @@ class MainViewModel @Inject constructor(
             val optionList = listOf(
                 RadioOption(
                     GrantedType.Shizuku,
-                    "Shizuku/Sui授权",
+                    context.getString(R.string.permissions_shizuku),
                     if (!shizukuBinder)
-                        "Shizuku/Sui不可用"
+                        context.getString(R.string.permissions_shizuku_not_available)
                     else null
                 ),
                 RadioOption(
                     GrantedType.Bug,
-                    "漏洞授权",
-                    if (!ExploitFileUtil.isExploitable) "您的设备不支持此方式" else null
+                    context.getString(R.string.permissions_exploit),
+                    if (!ExploitFileUtil.isExploitable) context.getString(R.string.permissions_unavailable) else null
                 ),
                 RadioOption(
                     GrantedType.Saf,
-                    "SAF授权",
+                    context.getString(R.string.permissions_saf),
                     null
                 ),
                 RadioOption(
                     GrantedType.Su,
-                    "ROOT授权",
-                    if (!hasSu()) "超级用户不可用" else null
+                    context.getString(R.string.permissions_root),
+                    if (!hasSu()) context.getString(R.string.permissions_su_not_available) else null
                 )
             )
             val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
@@ -714,7 +744,7 @@ class MainViewModel @Inject constructor(
 
                 _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion!!) }
             } catch (_: Exception) {
-                _uiState.update { it.copy(forGameVersion = "获取失败") }
+                _uiState.update { it.copy(forGameVersion = context.getString(R.string.failed_to_retrieve)) }
             }
             try {
                 val (result, _) = try {
@@ -730,11 +760,20 @@ class MainViewModel @Inject constructor(
                     translationInfo.lang ?: throw IllegalArgumentException()
                     translationInfo.author ?: throw IllegalArgumentException()
                     val lang = when (translationInfo.lang) {
-                        "zh_CN" -> "简体中文"
-                        "zh_TW" -> "繁体中文"
+                        "zh_CN" -> context.getString(R.string.language_simplified_chinese)
+                        "zh_TW" -> context.getString(R.string.language_traditional_chinese)
                         else -> translationInfo.lang
                     }
-                    optionList.add(CTRadioOption(name, "$lang | 作者：${translationInfo.author}"))
+                    optionList.add(
+                        CTRadioOption(
+                            name,
+                            context.getString(
+                                R.string.language_pack_info,
+                                lang,
+                                translationInfo.author
+                            )
+                        )
+                    )
                 }
                 _uiState.update { it.copy(ctRadio = optionList) }
             } catch (_: Exception) {
@@ -791,7 +830,7 @@ class MainViewModel @Inject constructor(
      * @param isVisible 是否可见。
      */
     fun setGoToSettingsDialogVisible(isVisible: Boolean) {
-        _uiState.update { it.copy(showGoToSettingsDialog = isVisible) }
+        _uiState.update { it.copy(showSettingsRedirectDialog = isVisible) }
     }
 
     /**
@@ -835,21 +874,21 @@ data class MainUiState(
     val appState: AppState = AppState.Loading,
     val realOption: Int = -1,
     val showInstallingDialog: Boolean = false,
-    val showGoToSettingsDialog: Boolean = false,
+    val showSettingsRedirectDialog: Boolean = false,
     val installationProgressText: String = "",
     val isInstallComplete: Boolean = false,
     val isSavingComplete: Boolean = true,
     val grantedType: GrantedType = GrantedType.Saf,
-    val forGameVersion: String = "加载中...",
+    val forGameVersion: String = "Loading...",
     val options: List<RadioOption> = listOf(
         RadioOption(
             id = GrantedType.Old,
-            text = "加载中..."
+            text = "Loading..."
         )
     ),
     val customTranslationsName: String? = null,
     val ctRadio: List<CTRadioOption>? = listOf(
-        CTRadioOption("加载中...")
+        CTRadioOption("Loading...")
     ),
     val updateMessage: String? = null
 )

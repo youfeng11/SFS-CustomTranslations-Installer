@@ -1,6 +1,7 @@
 package com.youfeng.sfs.ctinstaller.data.repository
 
 import android.content.Context
+import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.utils.md5
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -28,12 +29,13 @@ class NetworkRepository @Inject constructor(
 
             client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    throw IOException("Unexpected code $response")
+                    throw IOException(context.getString(R.string.error_unexpected_code, response))
                 }
                 // 1️⃣ 获取 UTF-8 解码后的文件名
                 val rawFileName = response.header("Content-Disposition")
                     ?.let { parseFileNameFromDisposition(it) }
-                    ?: url.substringAfterLast('/').ifBlank { "未命名语言.txt" }
+                    ?: url.substringAfterLast('/')
+                        .ifBlank { context.getString(R.string.unnamed_translation_file_name) + ".txt" }
 
                 // 🔤 确保任何来源的文件名都被 UTF-8 解码
                 val fileName = try {
@@ -54,7 +56,7 @@ class NetworkRepository @Inject constructor(
 
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw IOException("Unexpected code $response")
+                throw IOException(context.getString(R.string.error_unexpected_code, response))
             }
 
             // 1️⃣ 获取 UTF-8 解码后的文件名
@@ -71,7 +73,7 @@ class NetworkRepository @Inject constructor(
 
             // 2️⃣ 目标路径
             val cacheDir = context.externalCacheDir
-                ?: throw IOException("External cache directory not available")
+                ?: throw IOException(context.getString(R.string.error_external_cache_directory_not_available))
             val targetPath = "${cacheDir.absolutePath}/$fileName".toPath()
 
             // 3️⃣ 写入文件（纯 Okio）

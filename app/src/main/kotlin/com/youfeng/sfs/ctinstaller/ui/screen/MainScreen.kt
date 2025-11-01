@@ -173,21 +173,21 @@ fun MainScreen(
         snackbarHostState
     )
 
-    if (uiState.showGoToSettingsDialog) {
+    if (uiState.showSettingsRedirectDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.setGoToSettingsDialogVisible(false) },
-            title = { Text("要前往设置授权吗？") },
-            text = { Text("由于您不再允许 SFS汉化安装器 请求 存储 权限申请。\n而安装汉化需要 存储 权限，因此您必须在授予 SFS汉化安装器 的 存储 权限后才能安装汉化。\n\n请在接下来的页面中，进入权限页面，并授予 SFS汉化安装器 存储 权限，完成后返回") },
+            title = { Text(stringResource(R.string.settings_redirect_dialog_title)) },
+            text = { Text(stringResource(R.string.settings_redirect_dialog_text)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.setGoToSettingsDialogVisible(false)
                     viewModel.redirectToSystemSettings()
-                }) { Text("前往授权") }
+                }) { Text(stringResource(R.string.settings_redirect_dialog_confirm)) }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.setGoToSettingsDialogVisible(false) }) {
                     Text(
-                        "取消"
+                        stringResource(R.string.cancel)
                     )
                 }
             }
@@ -441,11 +441,11 @@ private fun LazyItemScope.StatusCard(
             ) { appState ->
                 Text(
                     when (appState) {
-                        is AppState.Loading -> "加载中..."
-                        is AppState.Uninstalled -> "未安装"
-                        is AppState.NeverOpened -> "未创建数据目录"
-                        is AppState.Granted -> "已授权"
-                        else -> "未授权"
+                        is AppState.Loading -> stringResource(R.string.loading)
+                        is AppState.Uninstalled -> stringResource(R.string.state_type_uninstalled)
+                        is AppState.NeverOpened -> stringResource(R.string.state_type_never_opened)
+                        is AppState.Granted -> stringResource(R.string.state_type_granted)
+                        else -> stringResource(R.string.state_type_ungranted)
                     }
                 )
             }
@@ -493,17 +493,17 @@ private fun LazyItemScope.StatusCard(
             ) { appState ->
                 Text(
                     when (appState) {
-                        is AppState.Loading -> "加载中..."
-                        is AppState.Uninstalled -> "你未安装SFS，因此无法安装汉化"
-                        is AppState.NeverOpened -> "点击此处打开SFS"
-                        is AppState.Ungranted -> "点击此处前往授权"
+                        is AppState.Loading -> stringResource(R.string.loading)
+                        is AppState.Uninstalled -> stringResource(R.string.state_uninstalled_title)
+                        is AppState.NeverOpened -> stringResource(R.string.state_neveropened_title)
+                        is AppState.Ungranted -> stringResource(R.string.state_ungranted_title)
                         is AppState.Granted -> {
                             val type = when (grantedType) {
-                                is GrantedType.Saf -> "SAF授权"
-                                is GrantedType.Old -> "存储权限授权"
-                                is GrantedType.Bug -> "漏洞授权"
-                                is GrantedType.Shizuku -> "Shizuku/Sui授权"
-                                is GrantedType.Su -> "ROOT授权"
+                                is GrantedType.Saf -> stringResource(R.string.permissions_saf)
+                                is GrantedType.Old -> stringResource(R.string.permissions_old)
+                                is GrantedType.Bug -> stringResource(R.string.permissions_exploit)
+                                is GrantedType.Shizuku -> stringResource(R.string.permissions_shizuku)
+                                is GrantedType.Su -> stringResource(R.string.permissions_root)
                             }
                             "$type | $sfsVersionName"
                         }
@@ -539,7 +539,7 @@ private fun LazyItemScope.StatusCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = "请选择授权方式")
+                    Text(text = stringResource(R.string.permission_request_dialog_title))
 
                     TooltipBox(
                         positionProvider =
@@ -549,9 +549,9 @@ private fun LazyItemScope.StatusCard(
                             ),
                         tooltip = {
                             RichTooltip(
-                                title = { Text("为什么需要授权？") },
+                                title = { Text(stringResource(R.string.permission_request_dialog_help_title)) },
                                 caretShape = TooltipDefaults.caretShape()
-                            ) { Text("SFS的自定义语言文件夹位于其 Android/data 下的数据目录内。但是，从 Android 11 开始，系统为保障用户隐私而限制第三方应用使其不可访问 Android/data 及其子目录。\n因此，您必须在授权后才能安装汉化。") }
+                            ) { Text(stringResource(R.string.permission_request_dialog_text)) }
                         },
                         state = tooltipState,
                     ) {
@@ -564,7 +564,7 @@ private fun LazyItemScope.StatusCard(
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.HelpOutline,
-                                contentDescription = "了解授权原因"
+                                contentDescription = stringResource(R.string.permission_request_help)
                             )
                         }
                     }
@@ -600,12 +600,12 @@ private fun LazyItemScope.StatusCard(
                         selectedOption?.id?.let { onRequestPermissionsClicked(it) }
                     }
                 ) {
-                    Text("确定")
+                    Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { openDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -617,7 +617,7 @@ private fun LazyItemScope.UpdateCard(updateMessage: String) {
     val context = LocalContext.current
     CardWidget(
         title = {
-            Text("有新的版本可更新！")
+            Text(stringResource(R.string.card_item_update_title))
         },
         icon = {
             Icon(
@@ -629,7 +629,7 @@ private fun LazyItemScope.UpdateCard(updateMessage: String) {
             context.openUrlInBrowser(Constants.LATEST_RELEASE_URL)
         },
         text = {
-            Text("新版本：$updateMessage")
+            Text(context.getString(R.string.card_item_update_text, updateMessage))
         },
         iconColors = IconButtonDefaults.iconButtonColors(
             containerColor = Color.Transparent
@@ -678,7 +678,7 @@ private fun LazyItemScope.InstallCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("选择要安装的汉化")
+                    Text(stringResource(R.string.select_translation_dialog_title))
                     IconButton(onClick = {
                         context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer/blob/main/INTEGRATE.md")
                     }) {
@@ -697,15 +697,22 @@ private fun LazyItemScope.InstallCard(
                         .animateContentSize()
                 ) {
                     RadioOptionItem(
-                        title = "SFS简体中文语言包",
-                        summary = "简体中文 | 默认",
+                        title = stringResource(R.string.default_translation),
+                        summary = "${stringResource(R.string.language_simplified_chinese)} | ${
+                            stringResource(
+                                R.string.default_text
+                            )
+                        }",
                         selected = -1 == selectedOption,
                         onClick = { selectedOption = -1 },
                         normal = true
                     )
                     RadioOptionItem(
-                        title = "自定义语言包",
-                        summary = if (customTranslationsName == null) "未选择" else "本地文件: $customTranslationsName",
+                        title = stringResource(R.string.custom_translation_pack),
+                        summary = if (customTranslationsName == null) stringResource(R.string.not_selected) else stringResource(
+                            R.string.local_file,
+                            customTranslationsName
+                        ),
                         selected = -2 == selectedOption,
                         onClick = {
                             filePickerLauncher.launch(arrayOf("text/plain"))
@@ -728,7 +735,7 @@ private fun LazyItemScope.InstallCard(
                         } ?: run {
                             selectedOption = -1
                             setRealOption(-1)
-                            Text("加载失败")
+                            Text(stringResource(R.string.loading_failed))
                         }
                     }
                 }
@@ -738,7 +745,7 @@ private fun LazyItemScope.InstallCard(
                     setRealOption(selectedOption)
                     openChooseDialog = false
                 }) {
-                    Text("确定")
+                    Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
@@ -746,13 +753,13 @@ private fun LazyItemScope.InstallCard(
                     openChooseDialog = false
                     selectedOption = realOption
                 }) {
-                    Text("取消")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
     }
     CardWidget({
-        Text("安装汉化")
+        Text(stringResource(R.string.card_item_install_title))
     }, {
         Icon(
             Icons.Default.Archive,
@@ -760,14 +767,19 @@ private fun LazyItemScope.InstallCard(
         )
     }) {
         val translationName = when (realOption) {
-            -1 -> "SFS简体中文语言包"
-            -2 -> "$customTranslationsName（本地文件）"
-            else -> ctRadio?.getOrNull(realOption)?.title ?: "未知"
+            -1 -> stringResource(R.string.default_translation)
+            -2 -> context.getString(R.string.local_translation_name, customTranslationsName)
+            else -> ctRadio?.getOrNull(realOption)?.title ?: context.getString(R.string.unknown)
         }
         Column {
-            Text("当前选择：$translationName")
+            Text(context.getString(R.string.card_item_install_current_choice, translationName))
             if (realOption == -1)
-                Text("适用版本：$forGameVersion")
+                Text(
+                    context.getString(
+                        R.string.card_item_install_supported_version,
+                        forGameVersion
+                    )
+                )
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -775,7 +787,7 @@ private fun LazyItemScope.InstallCard(
                     contentDescription = null
                 )
                 Spacer(Modifier.width(16.dp))
-                Text("请先确保您已正确完成授权等操作，且设备能够正常连接至互联网。")
+                Text(context.getString(R.string.card_item_install_tip))
             }
             Spacer(Modifier.height(8.dp))
             Row(
@@ -792,7 +804,7 @@ private fun LazyItemScope.InstallCard(
                             modifier = Modifier.size(ButtonDefaults.IconSize)
                         )
                         Spacer(Modifier.width(4.dp))
-                        Text("选择汉化")
+                        Text(stringResource(R.string.card_item_install_button_choice))
                     }
                 }
                 TextButton(
@@ -801,7 +813,7 @@ private fun LazyItemScope.InstallCard(
                     },
                     enabled = selectedOption != -2
                 ) {
-                    Text("保存到")
+                    Text(stringResource(R.string.card_item_install_button_save))
                 }
                 Spacer(Modifier.width(6.dp))
                 Button(
@@ -810,7 +822,7 @@ private fun LazyItemScope.InstallCard(
                     },
                     enabled = enableInstallButton
                 ) {
-                    Text("安装")
+                    Text(stringResource(R.string.card_item_install_button_install))
                 }
             }
         }
@@ -821,14 +833,14 @@ private fun LazyItemScope.InstallCard(
 private fun LazyItemScope.DonateCard() {
     val context = LocalContext.current
     CardWidget({
-        Text("支持开发")
+        Text(stringResource(R.string.card_item_donate_title))
     }, {
         Icon(
             Icons.Default.AttachMoney,
             contentDescription = null
         )
     }, text = {
-        Text("SFS汉化安装器 将保持免费开源，向开发者捐赠以表示支持。")
+        Text(context.getString(R.string.card_item_donate_text))
     }, onClick = {
         context.openUrlInBrowser("https://afdian.com/a/youfeng")
     })
@@ -851,7 +863,11 @@ fun InstallingDialog(
                 targetState = uiState.isInstallComplete,
                 label = "DialogTitleAnimation" // 可选的标签，用于调试
             ) { isComplete ->
-                Text(if (isComplete) "安装结束" else "安装汉化中")
+                Text(
+                    if (isComplete) stringResource(R.string.installing_dialog_end) else stringResource(
+                        R.string.installing_dialog_installing
+                    )
+                )
             }
         },
         text = {
@@ -869,7 +885,13 @@ fun InstallingDialog(
             TextButton(onClick = {
                 setInstallingDialogVisible(false)
                 cancelCurrentTask() // 取消安装任务
-            }) { Text(if (uiState.isInstallComplete) "完成" else "取消") }
+            }) {
+                Text(
+                    if (uiState.isInstallComplete) stringResource(R.string.installing_dialog_button_done) else stringResource(
+                        R.string.cancel
+                    )
+                )
+            }
         }
     )
 }

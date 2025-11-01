@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -19,6 +20,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.youfeng.sfs.ctinstaller.BuildConfig
+import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
 import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
@@ -47,7 +49,11 @@ fun MainNavigation(
         }
         if (BuildConfig.DEBUG)
             Text(
-                "测试版本：${BuildConfig.VERSION_NAME}(${BuildConfig.VERSION_CODE})，仅供演示，不代表最终效果",
+                stringResource(
+                    R.string.debug_warning,
+                    BuildConfig.VERSION_NAME,
+                    BuildConfig.VERSION_CODE
+                ),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier
                     .padding(
