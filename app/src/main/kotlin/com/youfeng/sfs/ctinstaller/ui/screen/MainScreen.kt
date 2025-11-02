@@ -66,6 +66,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Scaffold
@@ -629,7 +630,7 @@ private fun LazyItemScope.UpdateCard(updateMessage: String) {
             context.openUrlInBrowser(Constants.LATEST_RELEASE_URL)
         },
         text = {
-            Text(context.getString(R.string.card_item_update_text, updateMessage))
+            Text(stringResource(R.string.card_item_update_text, updateMessage))
         },
         iconColors = IconButtonDefaults.iconButtonColors(
             containerColor = Color.Transparent
@@ -640,6 +641,7 @@ private fun LazyItemScope.UpdateCard(updateMessage: String) {
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LazyItemScope.InstallCard(
     onInstallButtonClick: (realOption: Int) -> Unit,
@@ -768,14 +770,14 @@ private fun LazyItemScope.InstallCard(
     }) {
         val translationName = when (realOption) {
             -1 -> stringResource(R.string.default_translation)
-            -2 -> context.getString(R.string.local_translation_name, customTranslationsName)
-            else -> ctRadio?.getOrNull(realOption)?.title ?: context.getString(R.string.unknown)
+            -2 -> stringResource(R.string.local_translation_name, customTranslationsName.toString())
+            else -> ctRadio?.getOrNull(realOption)?.title ?: stringResource(R.string.unknown)
         }
         Column {
-            Text(context.getString(R.string.card_item_install_current_choice, translationName))
+            Text(stringResource(R.string.card_item_install_current_choice, translationName))
             if (realOption == -1)
                 Text(
-                    context.getString(
+                    stringResource(
                         R.string.card_item_install_supported_version,
                         forGameVersion
                     )
@@ -787,7 +789,7 @@ private fun LazyItemScope.InstallCard(
                     contentDescription = null
                 )
                 Spacer(Modifier.width(16.dp))
-                Text(context.getString(R.string.card_item_install_tip))
+                Text(stringResource(R.string.card_item_install_tip))
             }
             Spacer(Modifier.height(8.dp))
             Row(
@@ -807,22 +809,52 @@ private fun LazyItemScope.InstallCard(
                         Text(stringResource(R.string.card_item_install_button_choice))
                     }
                 }
-                TextButton(
-                    onClick = {
-                        onSaveToButtonClick(realOption)
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                        TooltipAnchorPosition.Below,
+                        8.dp
+                    ),
+                    tooltip = {
+                        if (selectedOption == -2) {
+                            PlainTooltip {
+                                Text(stringResource(R.string.save_to_button_disabled_tooltip))
+                            }
+                        }
                     },
-                    enabled = selectedOption != -2
+                    state = rememberTooltipState()
                 ) {
-                    Text(stringResource(R.string.card_item_install_button_save))
+                    TextButton(
+                        onClick = {
+                            onSaveToButtonClick(realOption)
+                        },
+                        enabled = selectedOption != -2
+                    ) {
+                        Text(stringResource(R.string.card_item_install_button_save))
+                    }
                 }
                 Spacer(Modifier.width(6.dp))
-                Button(
-                    onClick = {
-                        onInstallButtonClick(realOption)
+                TooltipBox(
+                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                        TooltipAnchorPosition.Below,
+                        8.dp
+                    ),
+                    tooltip = {
+                        if (!enableInstallButton) {
+                            PlainTooltip {
+                                Text(stringResource(R.string.install_button_disabled_tooltip))
+                            }
+                        }
                     },
-                    enabled = enableInstallButton
+                    state = rememberTooltipState()
                 ) {
-                    Text(stringResource(R.string.card_item_install_button_install))
+                    Button(
+                        onClick = {
+                            onInstallButtonClick(realOption)
+                        },
+                        enabled = enableInstallButton
+                    ) {
+                        Text(stringResource(R.string.card_item_install_button_install))
+                    }
                 }
             }
         }
@@ -840,7 +872,7 @@ private fun LazyItemScope.DonateCard() {
             contentDescription = null
         )
     }, text = {
-        Text(context.getString(R.string.card_item_donate_text))
+        Text(stringResource(R.string.card_item_donate_text))
     }, onClick = {
         context.openUrlInBrowser("https://afdian.com/a/youfeng")
     })
