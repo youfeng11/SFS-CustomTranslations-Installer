@@ -64,6 +64,8 @@
     <string name="mode_light">浅色主题</string>
     <string name="settings_item_dark_mode">深色主题</string>
     <string name="settings_item_dark_mode_description">当前: %s</string>
+    <string name="settings_item_dynamic_color">动态配色</string>
+    <string name="settings_item_dynamic_color_description">从壁纸中取色，仅支持 Android 12+</string>
     <string name="settings_item_custom_su_command">自定义 su 命令</string>
     <string name="settings_item_custom_su_command_description">请求ROOT权限的命令，通常无需修改</string>
     <string name="settings_item_check_update">检查更新</string>

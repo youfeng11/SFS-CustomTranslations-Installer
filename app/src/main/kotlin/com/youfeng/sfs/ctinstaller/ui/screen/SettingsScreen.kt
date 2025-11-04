@@ -1,5 +1,6 @@
 package com.youfeng.sfs.ctinstaller.ui.screen
 
+import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Update
+import androidx.compose.material.icons.filled.Colorize
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -137,7 +139,16 @@ fun SettingsScreen(
                         )
                     }
                 }
-
+                item("DynamicColor") {
+                    SwitchItem(
+                        title = stringResource(R.string.settings_item_dynamic_color),
+                        summary = stringResource(R.string.settings_item_dynamic_color_description),
+                        icon = Icons.Default.Colorize,
+                        checked = uiState.isDynamicColor,
+                        enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
+                        onCheckedChange = { viewModel.setDynamicColor(it) }
+                    )
+                }
                 item("CustomSuCommand") {
                     Item(
                         title = stringResource(R.string.settings_item_custom_su_command),

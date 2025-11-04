@@ -1,6 +1,7 @@
 package com.youfeng.sfs.ctinstaller.data.repository
 
 import android.content.Context
+import android.os.Build
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -38,6 +39,11 @@ interface SettingsRepository {
      */
     suspend fun setFollowingSystem(isEnabled: Boolean)
 
+     /**
+     * 写入“动态配色”
+     */
+    suspend fun setDynamicColor(isEnabled: Boolean)
+
     /**
      * 写入“检查更新”
      */
@@ -59,6 +65,7 @@ class SettingsRepositoryImpl @Inject constructor(
     private object PreferencesKeys {
         val IS_DARK_THEME = booleanPreferencesKey("is_dark_theme")
         val IS_FOLLOWING_SYSTEM = booleanPreferencesKey("is_following_system")
+        val IS_DYNAMIC_COLOR = booleanPreferencesKey("is_dynamic_color")
         val CHECK_UPDATE = booleanPreferencesKey("check_update")
         val CUSTOM_SU_COMMAND = stringPreferencesKey("custom_su_command")
     }
@@ -72,12 +79,14 @@ class SettingsRepositoryImpl @Inject constructor(
             // 从 Preferences 映射到 UserSettings 领域模型
             val isDarkTheme = preferences[PreferencesKeys.IS_DARK_THEME] ?: false
             val isFollowingSystem = preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] ?: true
+            val isDynamicColor = preferences[PreferencesKeys.IS_DYNAMIC_COLOR] ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
             val checkUpdate = preferences[PreferencesKeys.CHECK_UPDATE] ?: true
             val customSuCommand = preferences[PreferencesKeys.CUSTOM_SU_COMMAND] ?: ""
 
             UserSettings(
                 isDarkThemeEnabled = isDarkTheme,
                 isFollowingSystem = isFollowingSystem,
+                isDynamicColor = isDynamicColor,
                 checkUpdate = checkUpdate,
                 customSuCommand = customSuCommand
             )
@@ -93,6 +102,12 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setFollowingSystem(isEnabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] = isEnabled
+        }
+    }
+
+    override suspend fun setDynamicColor(isEnabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PreferencesKeys.IS_DYNAMIC_COLOR] = isEnabled
         }
     }
 

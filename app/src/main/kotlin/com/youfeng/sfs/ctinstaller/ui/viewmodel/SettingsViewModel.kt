@@ -15,6 +15,7 @@ import javax.inject.Inject
 data class SettingsUiState(
     val isDarkThemeEnabled: Boolean = false,
     val isFollowingSystem: Boolean = true,
+    val isDynamicColor: Boolean = false,
     val checkUpdate: Boolean = true,
     val customSuCommand: String = ""
 )
@@ -32,6 +33,7 @@ class SettingsViewModel @Inject constructor(
                 SettingsUiState(
                     isDarkThemeEnabled = settings.isDarkThemeEnabled,
                     isFollowingSystem = settings.isFollowingSystem,
+                    isDynamicColor = settings.isDynamicColor,
                     checkUpdate = settings.checkUpdate,
                     customSuCommand = settings.customSuCommand
                 )
@@ -52,6 +54,12 @@ class SettingsViewModel @Inject constructor(
     fun setFollowingSystem(isEnabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setFollowingSystem(isEnabled)
+        }
+    }
+
+    fun setDynamicColor(isEnabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setDynamicColor(isEnabled)
         }
     }
 

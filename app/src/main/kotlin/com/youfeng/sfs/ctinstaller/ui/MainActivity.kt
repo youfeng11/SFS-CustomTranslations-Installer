@@ -55,7 +55,7 @@ class MainActivity : ComponentActivity() {
             val settingsUiState by settingsViewModel.uiState.collectAsState()
             val darkTheme = if (settingsUiState.isFollowingSystem) isSystemInDarkTheme()
             else settingsUiState.isDarkThemeEnabled
-            MainTheme(darkTheme) {
+            MainTheme(darkTheme, settingsUiState.isDynamicColor) {
                 MainNavigation(mainViewModel, settingsViewModel)
             }
         }

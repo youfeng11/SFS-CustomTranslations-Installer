@@ -7,6 +7,7 @@ package com.youfeng.sfs.ctinstaller.data.model
 data class UserSettings(
     val isDarkThemeEnabled: Boolean,
     val isFollowingSystem: Boolean,
+    val isDynamicColor: Boolean,
     val checkUpdate: Boolean,
     val customSuCommand: String
 )
