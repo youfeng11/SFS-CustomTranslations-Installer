@@ -58,6 +58,8 @@
     <string name="language_pack_info">%1$s | 作者：%2$s</string>
     <string name="title_settings">设置</string>
     <string name="back">返回</string>
+    <string name="settings_category_general">通用</string>
+    <string name="settings_category_appearance">外观</string>
     <string name="settings_item_dark_mode_follow_system">深色主题跟随系统</string>
     <string name="settings_item_dark_mode_follow_system_description">跟随系统设置深色主题</string>
     <string name="mode_dark">深色主题</string>

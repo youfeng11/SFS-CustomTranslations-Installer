@@ -32,6 +32,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -41,6 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
@@ -67,8 +69,9 @@ fun SettingsScreen(
 
     // 基础布局容器
     Surface(modifier = Modifier.fillMaxSize()) {
+        val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
         Scaffold(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
             topBar = {
                 TopAppBar(
                     windowInsets = WindowInsets.safeDrawing.only(
@@ -90,6 +93,7 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Black
                         )
                     },
+                    scrollBehavior = scrollBehavior
                 )
             },
             contentWindowInsets = WindowInsets(0, 0, 0, 0)
@@ -111,7 +115,38 @@ fun SettingsScreen(
                     ),
             ) {
 
-                // 添加设置项
+
+                // --- 类别：通用 --- // ADDED
+                item("Header_General") {
+                    SettingsCategoryHeader(title = stringResource(R.string.settings_category_general)) // MODIFIED: (确保 R.string.settings_category_general 在 strings.xml 中定义, 例如 "通用")
+                }
+
+                item("CustomSuCommand") {
+                    Item(
+                        title = stringResource(R.string.settings_item_custom_su_command),
+                        icon = Icons.Default.Numbers,
+                        summary = stringResource(R.string.settings_item_custom_su_command_description)
+                    ) {
+                        // 点击时显示对话框
+                        showCustomSuCommandDialog = true
+                    }
+                }
+
+                item("CheckUpdate") {
+                    SwitchItem(
+                        title = stringResource(R.string.settings_item_check_update),
+                        summary = stringResource(R.string.settings_item_check_update_description),
+                        icon = Icons.Default.Update,
+                        checked = uiState.checkUpdate,
+                        onCheckedChange = { viewModel.setCheckUpdate(it) }
+                    )
+                }
+
+                // --- 类别：外观 --- // ADDED
+                item("Header_Appearance") {
+                    SettingsCategoryHeader(title = stringResource(R.string.settings_category_appearance)) // MODIFIED: (确保 R.string.settings_category_appearance 在 strings.xml 中定义, 例如 "外观")
+                }
+
                 item("AutoDarkTheme") {
                     SwitchItem(
                         title = stringResource(R.string.settings_item_dark_mode_follow_system),
@@ -149,26 +184,6 @@ fun SettingsScreen(
                         onCheckedChange = { viewModel.setDynamicColor(it) }
                     )
                 }
-                item("CustomSuCommand") {
-                    Item(
-                        title = stringResource(R.string.settings_item_custom_su_command),
-                        icon = Icons.Default.Numbers,
-                        summary = stringResource(R.string.settings_item_custom_su_command_description)
-                    ) {
-                        // 点击时显示对话框
-                        showCustomSuCommandDialog = true
-                    }
-                }
-
-                item("CheckUpdate") {
-                    SwitchItem(
-                        title = stringResource(R.string.settings_item_check_update),
-                        summary = stringResource(R.string.settings_item_check_update_description),
-                        icon = Icons.Default.Update,
-                        checked = uiState.checkUpdate,
-                        onCheckedChange = { viewModel.setCheckUpdate(it) }
-                    )
-                }
             }
         }
     }
@@ -184,6 +199,25 @@ fun SettingsScreen(
             }
         )
     }
+}
+
+/**
+ * 设置项的分类标题 Composable。
+ */
+@Composable
+private fun SettingsCategoryHeader(
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.labelLarge, // 使用稍大的标签样式
+        color = MaterialTheme.colorScheme.primary, // 使用主题色以示强调
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 48.dp, vertical = 8.dp)
+            .padding(top = 16.dp) // 顶部留出更多空间以分隔组
+    )
 }
 
 /**
