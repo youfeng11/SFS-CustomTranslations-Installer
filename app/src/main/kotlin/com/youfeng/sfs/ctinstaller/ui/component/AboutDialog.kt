@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -30,7 +31,7 @@ import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.R
 
 @Composable
-fun AboutDialog(htmlString: String, onDismissRequest: () -> Unit) {
+fun AboutDialog(htmlString: String, painter: Painter, onDismissRequest: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = {
@@ -38,7 +39,7 @@ fun AboutDialog(htmlString: String, onDismissRequest: () -> Unit) {
                 Row {
                     // 应用图标显示
                     Image(
-                        painter = adaptiveIconPainterResource(R.mipmap.ic_launcher),
+                        painter = painter,
                         contentDescription = null,
                         modifier = Modifier
                             .size(44.dp)
@@ -113,5 +114,5 @@ fun AnnotatedLinkText(htmlString: String) {
 @Preview
 @Composable
 private fun AboutDialogPreview() {
-    AboutDialog("") { }
+    AboutDialog("", adaptiveIconPainterResource(R.mipmap.ic_launcher)) { }
 }

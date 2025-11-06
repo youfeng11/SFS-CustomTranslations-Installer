@@ -25,8 +25,9 @@ fun OverflowMenu(onNavigatorToDetails: () -> Unit) {
             contentDescription = stringResource(R.string.menu_about) // 无障碍描述
         )
     }
+    val icLauncher = adaptiveIconPainterResource(R.mipmap.ic_launcher)
     if (openAboutDialog)
-        AboutDialog(stringResource(R.string.about_source_code)) {
+        AboutDialog(stringResource(R.string.about_source_code), icLauncher) {
             openAboutDialog = false
         }
 
