@@ -19,7 +19,9 @@
 
 ## 下载
 
-- [Releases](https://github.com/youfeng11/SFS-CustomTranslations-Installer/releases)
+<a href="https://github.com/youfeng11/SFS-CustomTranslations-Installer/releases/latest">
+  <img src="assets/get_it_on_github.svg" alt="Get it on Github" width="200"/>
+</a>
 
 ## 接入本项目
 
