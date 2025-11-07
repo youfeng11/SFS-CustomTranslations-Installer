@@ -1,8 +1,7 @@
 # SFS汉化安装器
 
-> [!WARNING]
-> 本项目目前处于 **Alpha 阶段**，许多功能尚未完善，且可能存在严重 BUG！  
-> 开发者正在努力开发中，敬请关注！
+> [!IMPORTANT]
+> 本项目目前处于 **Beta 阶段**，仍可能存在一些 BUG！
 
 为 [Spaceflight Simulator](https://spaceflightsimulator.com/) 提供 **自定义翻译（Custom Translations）** 的便捷安装工具，旨在简化 SFS 汉化流程，降低使用门槛。
 
@@ -20,9 +19,7 @@
 
 ## 下载
 
-> 当前仅提供 CI 构建版本，正式版敬请期待！
-
-- [GitHub Actions（CI 版）](https://github.com/youfeng11/SFS-CustomTranslations-Installer/actions/workflows/android.yml)
+- [Releases](https://github.com/youfeng11/SFS-CustomTranslations-Installer/releases)
 
 ## 接入本项目
 
@@ -53,7 +50,7 @@ Copyright (C) 2025  由风
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
+any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
