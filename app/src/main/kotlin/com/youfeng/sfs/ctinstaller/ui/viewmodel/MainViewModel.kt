@@ -84,8 +84,6 @@ class MainViewModel @Inject constructor(
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
 
-    private var tempGrantedType: GrantedType? = null
-
     private var tempSaveContent: String? = null
 
     private var customTranslationsUri: Uri? = null
@@ -208,22 +206,20 @@ class MainViewModel @Inject constructor(
         Shizuku.removeBinderDeadListener(binderDeadListener)
     }
 
-    private fun hasSu(): Boolean {
-        return try {
-            // 检查是否存在 su 二进制文件
-            Log.d(TAG, "su二进制检查")
-            val suCommand = customSuCommand.value
-                .takeIf { it.isNotEmpty() }
-                ?: "su"
-            val process = Runtime.getRuntime().exec(arrayOf("which", suCommand))
-            val output = process.inputStream.bufferedReader().use { it.readText().trim() }
-            process.waitFor()
-            Log.d(TAG, "su二进制检查：$suCommand，$output")
-            process.waitFor() == 0
-        } catch (e: Exception) {
-            Log.d(TAG, "su二进制检查出错${e.message}")
-            false
-        }
+    private fun hasSu(): Boolean = try {
+        // 检查是否存在 su 二进制文件
+        Log.d(TAG, "su二进制检查")
+        val suCommand = customSuCommand.value
+            .takeIf { it.isNotEmpty() }
+            ?: "su"
+        val process = Runtime.getRuntime().exec(arrayOf("which", suCommand))
+        val output = process.inputStream.bufferedReader().use { it.readText().trim() }
+        process.waitFor()
+        Log.d(TAG, "su二进制检查：$suCommand，$output")
+        process.waitFor() == 0
+    } catch (e: Exception) {
+        Log.d(TAG, "su二进制检查出错${e.message}")
+        false
     }
 
     private fun checkShizukuPermission(): Boolean {
@@ -718,14 +714,15 @@ class MainViewModel @Inject constructor(
             val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
             val isInstalled = context.isAppInstalled(Constants.SFS_PACKAGE_NAME)
 
+            val grantedType = hasStorageAccess()
             _uiState.update { currentState ->
                 val newAppState = when {
                     !isInstalled -> AppState.Uninstalled
 
                     !isSfsDataDirectoryExists -> AppState.NeverOpened
 
-                    hasStorageAccess() != null -> {
-                        _uiState.update { it.copy(grantedType = tempGrantedType!!) }
+                    grantedType != null -> {
+                        _uiState.update { it.copy(grantedType = grantedType) }
                         AppState.Granted
                     }
 
@@ -846,8 +843,10 @@ class MainViewModel @Inject constructor(
      * 检查是否有存储访问权限。
      * @return 如果有权限，则为返回授权类型；否则为 null。
      */
-    private suspend fun hasStorageAccess(): GrantedType? {
-        tempGrantedType = when {
+    private suspend fun hasStorageAccess(): GrantedType? =
+        when {
+            !isSfsDataDirectoryExists -> null
+
             Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q -> if (checkStoragePermission(context)) GrantedType.Old else null
 
             shizukuBinder && Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED -> {
@@ -863,8 +862,6 @@ class MainViewModel @Inject constructor(
 
             else -> null
         }
-        return tempGrantedType
-    }
 }
 
 /**
