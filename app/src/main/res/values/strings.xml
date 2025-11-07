@@ -11,7 +11,7 @@
     <string name="error_external_cache_directory_not_available">外部缓存目录不可用</string>
     <string name="menu_about">关于</string>
     <string name="menu_settings">设置</string>
-    <string name="debug_warning">测试版本：%1$s(%2$d)，仅供演示，不代表最终效果</string>
+    <string name="debug_warning">Debug版本：%1$s(%2$d)</string>
     <string name="permissions_granted">授权成功</string>
     <string name="retry">重试</string>
     <string name="no_permissions_granted">授权失败</string>
