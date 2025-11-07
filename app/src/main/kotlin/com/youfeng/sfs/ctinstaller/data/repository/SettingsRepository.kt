@@ -39,7 +39,7 @@ interface SettingsRepository {
      */
     suspend fun setFollowingSystem(isEnabled: Boolean)
 
-     /**
+    /**
      * 写入“动态配色”
      */
     suspend fun setDynamicColor(isEnabled: Boolean)
@@ -79,7 +79,8 @@ class SettingsRepositoryImpl @Inject constructor(
             // 从 Preferences 映射到 UserSettings 领域模型
             val isDarkTheme = preferences[PreferencesKeys.IS_DARK_THEME] ?: false
             val isFollowingSystem = preferences[PreferencesKeys.IS_FOLLOWING_SYSTEM] ?: true
-            val isDynamicColor = preferences[PreferencesKeys.IS_DYNAMIC_COLOR] ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+            val isDynamicColor = preferences[PreferencesKeys.IS_DYNAMIC_COLOR]
+                ?: (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
             val checkUpdate = preferences[PreferencesKeys.CHECK_UPDATE] ?: true
             val customSuCommand = preferences[PreferencesKeys.CUSTOM_SU_COMMAND] ?: ""
 

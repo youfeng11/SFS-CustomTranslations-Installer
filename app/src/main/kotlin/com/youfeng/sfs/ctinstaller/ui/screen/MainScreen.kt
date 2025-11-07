@@ -681,6 +681,7 @@ private fun LazyItemScope.InstallCard(
                 selectedOption = realOption
             },
             title = {
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
