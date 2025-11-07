@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import rikka.shizuku.Shizuku
 import java.io.IOException
 import javax.inject.Inject
@@ -87,23 +88,37 @@ class ShizukuRepository @Inject constructor(
     }
 
     /**
-     * 等待服务连接成功或失败。
+     * 等待服务连接成功或失败，带超时机制。
      * 这是一个私有挂起函数，用于处理异步等待逻辑，避免重复代码。
      * @throws IllegalStateException 如果连接失败
+     * @throws java.util.concurrent.TimeoutException 如果连接超时
      */
     private suspend fun waitForService(): IShizukuFileService = withContext(Dispatchers.IO) {
-        // 等待服务连接，直到状态变为 Connected 或 Error
-        while (_connectionStatus.value is ConnectionStatus.Connecting) {
-            delay(100) // 等待一小段时间
+
+        // 使用 withTimeoutOrNull 包装等待逻辑
+        val result = withTimeoutOrNull(10000L) {
+            // 只有在连接中时才进行等待循环
+            while (_connectionStatus.value is ConnectionStatus.Connecting) {
+                delay(100) // 等待一小段时间
+            }
+            // 当状态改变后，返回当前状态
+            _connectionStatus.value
         }
 
-        return@withContext when (val currentStatus = _connectionStatus.value) {
+        when (result) {
+            null -> {
+                // 超时退出，result 为 null
+                throw java.util.concurrent.TimeoutException(
+                    "Shizuku service connection timed out after 10000 ms"
+                )
+            }
+
             is ConnectionStatus.Connected -> fileService
                 ?: throw IllegalStateException("Service is connected but fileService is null")
 
             is ConnectionStatus.Error -> throw IOException(
-                "Shizuku service connection failed: ${currentStatus.throwable.message}",
-                currentStatus.throwable
+                "Shizuku service connection failed: ${result.throwable.message}",
+                result.throwable
             )
 
             else -> throw IllegalStateException("Shizuku service is not connecting or connected.")
