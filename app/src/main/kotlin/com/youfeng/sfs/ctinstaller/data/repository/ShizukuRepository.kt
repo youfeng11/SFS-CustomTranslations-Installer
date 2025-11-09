@@ -6,6 +6,7 @@ import android.content.ServiceConnection
 import android.os.IBinder
 import android.util.Log
 import com.youfeng.sfs.ctinstaller.BuildConfig
+import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.TAG
 import com.youfeng.sfs.ctinstaller.service.IShizukuFileService
 import com.youfeng.sfs.ctinstaller.service.ShizukuFileService
@@ -20,6 +21,7 @@ import rikka.shizuku.Shizuku
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.util.concurrent.TimeoutException
 
 @Singleton
 class ShizukuRepository @Inject constructor(
@@ -108,9 +110,7 @@ class ShizukuRepository @Inject constructor(
         when (result) {
             null -> {
                 // 超时退出，result 为 null
-                throw java.util.concurrent.TimeoutException(
-                    "Shizuku service connection timed out after 10000 ms"
-                )
+                throw TimeoutException(context.getString(R.string.installing_shizuku_timeout))
             }
 
             is ConnectionStatus.Connected -> fileService

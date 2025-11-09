@@ -38,6 +38,7 @@
     <string name="installing_create_directory_unable">无法创建 %s 目录</string>
     <string name="installing_create_file_failed">创建文件失败</string>
     <string name="installing_process_deleting_conflicting_files">删除冲突文件中…</string>
+    <string name="installing_shizuku_timeout">Shizuku 服务连接超时。有测试显示，在部分设备上使用最新版本的 Shizuku 时会出现无法连接至 Shizuku 服务的问题。因此，你可能需要使用旧版本的 Shizuku 才能解决该问题！</string>
     <string name="unknown_error">未知错误</string>
     <string name="installing_installation_complete">安装结束</string>
     <string name="installing_error">错误：%s</string>
