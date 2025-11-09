@@ -83,13 +83,11 @@ fun LazyItemScope.SwitchItem(
     enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
     ListItem(
         modifier = Modifier
             .toggleable(
                 value = checked,
-                interactionSource = interactionSource,
+                interactionSource = remember { MutableInteractionSource() },
                 role = Role.Switch,
                 enabled = enabled,
                 indication = LocalIndication.current,
@@ -115,8 +113,7 @@ fun LazyItemScope.SwitchItem(
             Switch(
                 checked = checked,
                 enabled = enabled,
-                onCheckedChange = onCheckedChange,
-                interactionSource = interactionSource
+                onCheckedChange = onCheckedChange
             )
         },
         supportingContent = summary?.let {
