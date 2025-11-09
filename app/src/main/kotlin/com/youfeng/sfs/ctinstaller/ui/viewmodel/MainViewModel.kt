@@ -430,9 +430,14 @@ class MainViewModel @Inject constructor(
 
                         GrantedType.Bug -> {
                             updateInstallationProgress(context.getString(R.string.installing_process_preparing))
-                            fs.createDirectories(target.toPathWithZwsp())
+                            val targetDirPath = target.toPathWithZwsp()
+                            val targetFile = targetDirPath / fileName
+                            fs.createDirectories(targetDirPath)
                             updateInstallationProgress(context.getString(R.string.installing_process_copying))
-                            fs.copy(textCachePath.toPath(), "$target/$fileName".toPathWithZwsp())
+                            if (fs.exists(targetFile)) {
+                                fs.delete(targetFile)
+                            }
+                            fs.copy(textCachePath.toPath(), targetFile)
                             updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
 
