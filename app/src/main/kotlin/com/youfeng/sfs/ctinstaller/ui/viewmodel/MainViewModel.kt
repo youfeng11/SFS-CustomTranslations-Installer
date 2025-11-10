@@ -434,9 +434,7 @@ class MainViewModel @Inject constructor(
                             val targetFile = targetDirPath / fileName
                             fs.createDirectories(targetDirPath)
                             updateInstallationProgress(context.getString(R.string.installing_process_copying))
-                            if (fs.exists(targetFile)) {
-                                fs.delete(targetFile)
-                            }
+                            fs.delete(targetFile, mustExist = false)
                             fs.copy(textCachePath.toPath(), targetFile)
                             updateInstallationProgress(context.getString(R.string.installing_copy_successful))
                         }
