@@ -107,6 +107,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
@@ -536,6 +537,7 @@ private fun LazyItemScope.StatusCard(
     val scope = rememberCoroutineScope()
     val tooltipState = rememberTooltipState(isPersistent = true)
     if (openDialog) {
+        val scrollState = rememberScrollState()
         AlertDialog(
             onDismissRequest = { openDialog = false },
             title = {
@@ -576,23 +578,43 @@ private fun LazyItemScope.StatusCard(
                 }
             },
             text = {
-                Column(
-                    Modifier
-                        .selectableGroup()
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    if (options[1].disableInfo != null)
-                        ErrorCard(
-                            text = {
-                                AnnotatedLinkText(stringResource(R.string.all_options_unavailable_warning_text))
-                            }
+                Box {
+                    Column(
+                        Modifier
+                            .selectableGroup()
+                            .verticalScroll(scrollState)
+                    ) {
+                        if (options[1].disableInfo != null)
+                            ErrorCard(
+                                text = {
+                                    AnnotatedLinkText(stringResource(R.string.all_options_unavailable_warning_text))
+                                }
+                            )
+                        options.forEach { option ->
+                            RadioOptionItem(
+                                title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
+                                summary = option.disableInfo,
+                                selected = option == selectedOption,
+                                onClick = { selectedOption = option }
+                            )
+                        }
+                    }
+                    
+                    // 浮动分割线：不参与布局
+                    if (scrollState.value > 0) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .zIndex(1f)
                         )
-                    options.forEach { option ->
-                        RadioOptionItem(
-                            title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
-                            summary = option.disableInfo,
-                            selected = option == selectedOption,
-                            onClick = { selectedOption = option }
+                    }
+                    if (scrollState.value < scrollState.maxValue) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .zIndex(1f)
                         )
                     }
                 }
@@ -675,6 +697,7 @@ private fun LazyItemScope.InstallCard(
     }
     val context = LocalContext.current
     if (openChooseDialog) {
+        val scrollState = rememberScrollState()
         AlertDialog(
             onDismissRequest = {
                 openChooseDialog = false
@@ -699,53 +722,74 @@ private fun LazyItemScope.InstallCard(
                 }
             },
             text = {
-                Column(
-                    Modifier
-                        .selectableGroup()
-                        .verticalScroll(rememberScrollState())
-                        .animateContentSize()
-                ) {
-                    RadioOptionItem(
-                        title = stringResource(R.string.default_translation),
-                        summary = "${stringResource(R.string.language_simplified_chinese)} | ${
-                            stringResource(
-                                R.string.default_text
-                            )
-                        }",
-                        selected = -1 == selectedOption,
-                        onClick = { selectedOption = -1 },
-                        normal = true
-                    )
-                    RadioOptionItem(
-                        title = stringResource(R.string.custom_translation_pack),
-                        summary = if (customTranslationsName == null) stringResource(R.string.not_selected) else stringResource(
-                            R.string.local_file,
-                            customTranslationsName
-                        ),
-                        selected = -2 == selectedOption,
-                        onClick = {
-                            filePickerLauncher.launch(arrayOf("text/plain"))
-                        },
-                        normal = true
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(12.dp))
+                Box {
+                    // 内容滚动区
                     Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        Modifier
+                            .selectableGroup()
+                            .verticalScroll(scrollState)
+                            .animateContentSize()
                     ) {
-                        ctRadio?.forEachIndexed { index, option ->
-                            RadioOptionItem(
-                                title = option.title,
-                                summary = option.text,
-                                selected = index == selectedOption,
-                                onClick = { selectedOption = index },
-                                normal = true
+                        RadioOptionItem(
+                            title = stringResource(R.string.default_translation),
+                            summary = "${stringResource(R.string.language_simplified_chinese)} | ${
+                                stringResource(R.string.default_text)
+                            }",
+                            selected = -1 == selectedOption,
+                            onClick = { selectedOption = -1 },
+                            normal = true
+                        )
+                        RadioOptionItem(
+                            title = stringResource(R.string.custom_translation_pack),
+                            summary = if (customTranslationsName == null)
+                                stringResource(R.string.not_selected)
+                            else
+                                stringResource(R.string.local_file, customTranslationsName),
+                            selected = -2 == selectedOption,
+                            onClick = {
+                                filePickerLauncher.launch(arrayOf("text/plain"))
+                            },
+                            normal = true
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(12.dp))
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            ctRadio?.forEachIndexed { index, option ->
+                                RadioOptionItem(
+                                    title = option.title,
+                                    summary = option.text,
+                                    selected = index == selectedOption,
+                                    onClick = { selectedOption = index },
+                                    normal = true
                             )
                         } ?: run {
                             selectedOption = -1
                             setRealOption(-1)
                             Text(stringResource(R.string.loading_failed))
+                            }
                         }
+                    }
+
+                    // 浮动分割线：不参与布局
+                    if (scrollState.value > 0) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .zIndex(1f)
+                        )
+                    }
+                    if (scrollState.value < scrollState.maxValue) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .zIndex(1f)
+                        )
                     }
                 }
             },
@@ -891,6 +935,7 @@ fun InstallingDialog(
     setInstallingDialogVisible: (Boolean) -> Unit,
     cancelCurrentTask: () -> Unit
 ) {
+    val scrollState = rememberScrollState()
     AlertDialog(
         onDismissRequest = {
             if (uiState.isInstallComplete) setInstallingDialogVisible(
@@ -913,10 +958,30 @@ fun InstallingDialog(
             Column {
                 if (!uiState.isInstallComplete)
                     LinearProgressIndicator(Modifier.wrapContentWidth())
-                Box(
-                    modifier = Modifier.verticalScroll(rememberScrollState())
-                ) {
-                    Text(uiState.installationProgressText, Modifier.animateContentSize())
+                Box {
+                    Box(
+                        modifier = Modifier.verticalScroll(scrollState)
+                    ) {
+                        Text(uiState.installationProgressText, Modifier.animateContentSize())
+                    }
+
+                    // 浮动分割线：不参与布局
+                    if (scrollState.value > 0) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.TopCenter)
+                                .zIndex(1f)
+                        )
+                    }
+                    if (scrollState.value < scrollState.maxValue) {
+                        HorizontalDivider(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.BottomCenter)
+                                .zIndex(1f)
+                        )
+                    }
                 }
             }
         },
