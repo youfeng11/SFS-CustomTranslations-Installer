@@ -9,6 +9,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -426,7 +427,7 @@ private fun LazyItemScope.StatusCard(
     options: List<RadioOption>
 ) {
     var openDialog by remember { mutableStateOf(false) } // 仅用于 SAF 权限说明的对话框
-    var selectedOption by remember { mutableStateOf(options.getOrNull(0)) }
+    var selectedOption by remember { mutableStateOf(options[0]) }
     val color by animateColorAsState(
         targetValue = if (appState is AppState.Granted)
             MaterialTheme.colorScheme.primaryContainer
@@ -584,18 +585,21 @@ private fun LazyItemScope.StatusCard(
                             .selectableGroup()
                             .verticalScroll(scrollState)
                     ) {
-                        if (options[1].disableInfo != null)
-                            ErrorCard(
-                                text = {
-                                    AnnotatedLinkText(stringResource(R.string.all_options_unavailable_warning_text))
-                                }
-                            )
                         options.forEach { option ->
                             RadioOptionItem(
                                 title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
                                 summary = option.disableInfo,
                                 selected = option == selectedOption,
                                 onClick = { selectedOption = option }
+                            )
+                        }
+                        AnimatedVisibility(
+                            visible = selectedOption.id is GrantedType.Saf
+                        ) {
+                            ErrorCard(
+                                text = {
+                                    AnnotatedLinkText(stringResource(R.string.permissions_saf_warning_text))
+                                }
                             )
                         }
                     }
@@ -621,10 +625,10 @@ private fun LazyItemScope.StatusCard(
             },
             confirmButton = {
                 TextButton(
-                    enabled = selectedOption?.disableInfo == null,
+                    enabled = selectedOption.disableInfo == null,
                     onClick = {
                         openDialog = false
-                        selectedOption?.id?.let { onRequestPermissionsClicked(it) }
+                        onRequestPermissionsClicked(selectedOption.id)
                     }
                 ) {
                     Text(stringResource(R.string.ok))

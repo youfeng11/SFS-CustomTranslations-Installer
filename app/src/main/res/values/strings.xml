@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">SFS汉化安装器</string>
     <string name="about_source_code"><![CDATA[在 <a href="https://github.com/youfeng11/SFS-CustomTranslations-Installer">GitHub</a> 查看源码<br/>加入我们的 <a href="mqqapi://card/show_pslcard?src_type=internal&version=1&card_type=group&uin=539945982">QQ群</a><br/>特别鸣谢 <a href="https://izako.cc/">重铬酸钠</a>]]></string>
-    <string name="all_options_unavailable_warning_text"><![CDATA[你的设备目前可能无法完成授权，请尝试SAF授权以确认最终情况。<br/>若确认无法完成授权，我们则建议您激活 <a href="https://shizuku.rikka.app/zh-hans/">Shizuku</a> 以使用 Shizuku/Sui授权。]]></string>
+    <string name="permissions_saf_warning_text"><![CDATA[该授权方式在部分设备上不可用！<br/>表现为底部“使用此文件夹”按钮被禁用，提示“无法使用此文件夹”<br/>若无其他可用授权方式，则建议尝试 <a href="https://shizuku.rikka.app/zh-hans/">Shizuku</a>]]></string>
     <string name="install_from_external">安装SFS语言包</string>
     <string name="loading">加载中…</string>
     <string name="ok">确定</string>
