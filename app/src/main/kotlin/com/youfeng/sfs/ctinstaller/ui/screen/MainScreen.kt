@@ -603,7 +603,7 @@ private fun LazyItemScope.StatusCard(
                             )
                         }
                     }
-                    
+
                     // 浮动分割线：不参与布局
                     if (scrollState.value > 0) {
                         HorizontalDivider(
@@ -769,11 +769,11 @@ private fun LazyItemScope.InstallCard(
                                     selected = index == selectedOption,
                                     onClick = { selectedOption = index },
                                     normal = true
-                            )
-                        } ?: run {
-                            selectedOption = -1
-                            setRealOption(-1)
-                            Text(stringResource(R.string.loading_failed))
+                                )
+                            } ?: run {
+                                selectedOption = -1
+                                setRealOption(-1)
+                                Text(stringResource(R.string.loading_failed))
                             }
                         }
                     }
