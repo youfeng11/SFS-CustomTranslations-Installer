@@ -26,6 +26,7 @@ import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
 import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
 import com.youfeng.sfs.ctinstaller.data.repository.ShizukuRepository
+import com.youfeng.sfs.ctinstaller.timber.FileLoggingTree
 import com.youfeng.sfs.ctinstaller.utils.DocumentUriUtil
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.checkStoragePermission
@@ -67,7 +68,8 @@ class MainViewModel @Inject constructor(
     private val networkRepository: NetworkRepository,
     private val folderRepository: FolderRepository,
     private val shizukuRepository: ShizukuRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val fileLoggingTree: FileLoggingTree
 ) : ViewModel() {
 
     private val requestCodeInit = (Int.MIN_VALUE..Int.MAX_VALUE).random()

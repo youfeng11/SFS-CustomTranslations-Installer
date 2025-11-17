@@ -18,10 +18,22 @@ class FileLoggingTree @Inject constructor(
 
     private val logFile: File
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault())
+    private val maxLogAgeMs = 7 * 24 * 60 * 60 * 1000L  // 保留 7 天
+    private val logDir = File(context.getExternalFilesDir(null), "logs").apply { mkdirs() }
 
     init {
-        val logDir = File(context.getExternalFilesDir(null), "logs").apply { mkdirs() }
         logFile = File(logDir, "app_log_${System.currentTimeMillis()}.txt")
+        cleanOldLogs()
+    }
+
+    private fun cleanOldLogs() {
+        val now = System.currentTimeMillis()
+        logDir.listFiles()?.forEach { file ->
+            if (file.isFile && now - file.lastModified() > maxLogAgeMs) {
+                val deleted = file.delete()
+                Timber.i("自动清理旧日志: ${file.name} ${if (deleted) "成功" else "失败"}")
+            }
+        }
     }
 
     private fun createTag(): String {
