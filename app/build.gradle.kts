@@ -107,35 +107,34 @@ dependencies {
     implementation(platform(libs.androidx.compose.bom))
 
     implementation(libs.androidx.activity.compose)
-
+    implementation(libs.compose.ui)
     implementation(libs.compose.material3)
     implementation(libs.compose.materialIcons)
+
     implementation(libs.compose.uiToolingPreview)
+    debugImplementation(libs.compose.uiTooling)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
+
     implementation(libs.androidx.core)
-    implementation(libs.compose.ui)
     implementation(libs.compose.navigation)
 
     implementation(libs.androidx.lifecycle)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
 
-    implementation(libs.kotlinx.serialization.json)
-
-    implementation(libs.datastore.preferences)
-
     implementation(libs.hilt.android)
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
-    debugImplementation(libs.androidx.compose.ui.test.manifest)
-    debugImplementation(libs.compose.uiTooling)
-
-    implementation(libs.okio)
     implementation(libs.okhttp)
+    implementation(libs.okio)
+    implementation(libs.kotlinx.serialization.json)
 
-    implementation(libs.shizuku.api)
-    implementation(libs.shizuku.provider)
-
-    implementation(libs.libsu.core)
+    implementation(libs.datastore.preferences)
 
     implementation(libs.documentfile)
+    implementation(libs.shizuku.api)
+    implementation(libs.shizuku.provider)
+    implementation(libs.libsu.core)
+
+    implementation(libs.timber)
 }
