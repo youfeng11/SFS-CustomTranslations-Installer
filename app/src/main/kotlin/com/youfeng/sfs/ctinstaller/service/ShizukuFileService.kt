@@ -1,6 +1,6 @@
 package com.youfeng.sfs.ctinstaller.service
 
-import android.util.Log
+import timber.log.Timber
 import com.youfeng.sfs.ctinstaller.core.TAG
 import okio.FileSystem
 import okio.Path.Companion.toPath
@@ -28,7 +28,7 @@ class ShizukuFileService : IShizukuFileService.Stub() {
     }
 
     override fun destroy() {
-        Log.i(TAG, "destroy")
+        Timber.i("Shizuku destroy")
         exitProcess(0)
     }
 

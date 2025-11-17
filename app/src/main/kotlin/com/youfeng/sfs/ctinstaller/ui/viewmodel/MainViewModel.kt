@@ -8,7 +8,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.Settings
-import android.util.Log
+import timber.log.Timber
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
@@ -61,6 +61,7 @@ import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
+import com.youfeng.sfs.ctinstaller.timber.FileLoggingTree
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -68,7 +69,8 @@ class MainViewModel @Inject constructor(
     private val networkRepository: NetworkRepository,
     private val folderRepository: FolderRepository,
     private val shizukuRepository: ShizukuRepository,
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val fileLoggingTree: FileLoggingTree
 ) : ViewModel() {
 
     private val requestCodeInit = (Int.MIN_VALUE..Int.MAX_VALUE).random()
@@ -101,6 +103,9 @@ class MainViewModel @Inject constructor(
         )
 
     init {
+        Timber.i("MainViewModel 初始化")
+        Timber.i("应用版本：${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）")
+        Timber.i("设备信息：${Build.MANUFACTURER} ${Build.BRAND} ${Build.MODEL} ${Build.VERSION.SDK_INT}")
         Shell.enableVerboseLogging = BuildConfig.DEBUG
 
         // 确保 Shell.setDefaultBuilder 只在 init 时设置一次，使用 customSuCommand 的初始值
@@ -117,15 +122,15 @@ class MainViewModel @Inject constructor(
             }
 
             // 只需要设置一次 libsu 的默认 Builder
-            Log.d(TAG, "Shell default builder set once with command: $command")
+            Timber.d("Shell default builder set once with command: $command")
             Shell.setDefaultBuilder(builder)
         }
     }
 
     fun onFolderSelected(uri: Uri?) {
         viewModelScope.launch {
-            Log.d(TAG, uri.toString())
-            Log.d(TAG, sfsDataUri.toString())
+            Timber.v(uri.toString())
+            Timber.v(sfsDataUri.toString())
             if (
                 uri != null
                 && DocumentsContract.isTreeUri(uri)
@@ -186,7 +191,7 @@ class MainViewModel @Inject constructor(
                     _uiState.update { it.copy(updateMessage = "${latestReleaseInfo.name} ($latestVersionCode)") }
                 }
             } catch (e: Exception) {
-                Log.i(TAG, "检查更新失败", e)
+                Timber.i(e, "检查更新失败")
             }
         }
     }
@@ -208,17 +213,17 @@ class MainViewModel @Inject constructor(
 
     private fun hasSu(): Boolean = try {
         // 检查是否存在 su 二进制文件
-        Log.d(TAG, "su二进制检查")
+        Timber.d("su二进制检查中")
         val suCommand = customSuCommand.value
             .takeIf { it.isNotEmpty() }
             ?: "su"
         val process = Runtime.getRuntime().exec(arrayOf("which", suCommand))
         val output = process.inputStream.bufferedReader().use { it.readText().trim() }
         process.waitFor()
-        Log.d(TAG, "su二进制检查：$suCommand，$output")
+        Timber.d("检查命令：$suCommand，输出：$output")
         process.waitFor() == 0
     } catch (e: Exception) {
-        Log.d(TAG, "su二进制检查出错${e.message}")
+        Timber.d(e, "su二进制检查出错")
         false
     }
 
@@ -398,6 +403,7 @@ class MainViewModel @Inject constructor(
                     "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
                 val fileName = textCachePath.toPath().name
 
+                Timber.i("汉化安装授权方式：${uiState.value.grantedType.toString()}")
                 withContext(Dispatchers.IO) {
                     when (uiState.value.grantedType) {
                         GrantedType.Shizuku -> {
@@ -510,7 +516,7 @@ class MainViewModel @Inject constructor(
                 return@launch
             } catch (e: Exception) {
                 val err = e.message ?: context.getString(R.string.unknown_error)
-                e.printStackTrace()
+                Timber.i(e, "安装汉化错误")
                 updateInstallationProgress(context.getString(R.string.installing_error, err))
             }
             _uiState.update { it.copy(isInstallComplete = true) }
@@ -637,7 +643,7 @@ class MainViewModel @Inject constructor(
                     showSnackbar(context.getString(R.string.save_successful))
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Timber.i(e, "保存汉化错误")
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
             } finally {
@@ -658,6 +664,7 @@ class MainViewModel @Inject constructor(
      * @param text 要追加的进度文本。
      */
     fun updateInstallationProgress(text: String) {
+        Timber.d("安装进度：$text")
         _uiState.update { currentState ->
             val updatedText = if (currentState.installationProgressText.isNotEmpty()) {
                 "${currentState.installationProgressText}\n$text"
@@ -690,6 +697,7 @@ class MainViewModel @Inject constructor(
      */
     fun updateMainState() {
         viewModelScope.launch(Dispatchers.IO) {
+            val isSu = hasSu()
             val optionList = listOf(
                 RadioOption(
                     GrantedType.Shizuku,
@@ -711,13 +719,13 @@ class MainViewModel @Inject constructor(
                 RadioOption(
                     GrantedType.Su,
                     context.getString(R.string.permissions_root),
-                    if (!hasSu()) context.getString(R.string.permissions_su_not_available) else null
+                    if (!isSu) context.getString(R.string.permissions_su_not_available) else null
                 )
             )
             val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
             val isInstalled = context.isAppInstalled(Constants.SFS_PACKAGE_NAME)
 
-            val grantedType = hasStorageAccess()
+            val grantedType = hasStorageAccess(isSu)
             _uiState.update { currentState ->
                 val newAppState = when {
                     !isInstalled -> AppState.Uninstalled
@@ -810,6 +818,7 @@ class MainViewModel @Inject constructor(
      * @param action Snackbar 动作被点击时执行的回调。
      */
     fun showSnackbar(text: String, actionLabel: String? = null, action: (() -> Unit)? = null) {
+        Timber.d("Snackbar：$text")
         _uiEvent.trySend(UiEvent.ShowSnackbar(text, actionLabel, action))
     }
 
@@ -846,7 +855,7 @@ class MainViewModel @Inject constructor(
      * 检查是否有存储访问权限。
      * @return 如果有权限，则为返回授权类型；否则为 null。
      */
-    private suspend fun hasStorageAccess(): GrantedType? =
+    private suspend fun hasStorageAccess(isSu: Boolean): GrantedType? =
         when {
             !isSfsDataDirectoryExists -> null
 
@@ -861,7 +870,7 @@ class MainViewModel @Inject constructor(
 
             Environment.isExternalStorageManager() && ExploitFileUtil.isExploitable -> GrantedType.Bug
 
-            hasSu() && (Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot) -> GrantedType.Su
+            isSu && (Shell.isAppGrantedRoot() == true || Shell.getShell().isRoot) -> GrantedType.Su
 
             else -> null
         }

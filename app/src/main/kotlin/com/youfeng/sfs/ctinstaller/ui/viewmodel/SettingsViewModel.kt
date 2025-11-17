@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.map // (关键变更) 只需要 map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import timber.log.Timber
 
 // UiState 保持不变
 data class SettingsUiState(
@@ -24,6 +25,10 @@ data class SettingsUiState(
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository // <-- (关键变更) 注入接口
 ) : ViewModel() {
+
+    init {
+        Timber.i("SettingsViewModel 初始化")
+    }
 
     // (关键变更) ViewModel 变得非常简洁
     val uiState: StateFlow<SettingsUiState> =

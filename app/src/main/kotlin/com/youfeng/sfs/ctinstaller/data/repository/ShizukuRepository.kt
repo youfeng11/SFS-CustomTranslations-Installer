@@ -4,7 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.os.IBinder
-import android.util.Log
+import timber.log.Timber
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.TAG
@@ -44,13 +44,13 @@ class ShizukuRepository @Inject constructor(
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            Log.d(TAG, "Service connected")
+            Timber.d("Service connected")
             fileService = IShizukuFileService.Stub.asInterface(service)
             _connectionStatus.value = ConnectionStatus.Connected
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            Log.d(TAG, "Service disconnected")
+            Timber.d("Service disconnected")
             fileService = null
             _connectionStatus.value = ConnectionStatus.Disconnected
         }
@@ -76,14 +76,14 @@ class ShizukuRepository @Inject constructor(
         try {
             Shizuku.bindUserService(args, serviceConnection)
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to bind UserService", e)
+            Timber.e(e, "Failed to bind UserService")
             _connectionStatus.value = ConnectionStatus.Error(e)
         }
     }
 
     // 释放服务连接
     fun cleanup() {
-        Log.d(TAG, "Cleaning up UserService")
+        Timber.d("Cleaning up UserService")
         Shizuku.unbindUserService(args, serviceConnection, true)
         fileService = null
         _connectionStatus.value = ConnectionStatus.Disconnected
