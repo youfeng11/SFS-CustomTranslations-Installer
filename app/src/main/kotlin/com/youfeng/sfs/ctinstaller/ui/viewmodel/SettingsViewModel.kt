@@ -1,15 +1,22 @@
 package com.youfeng.sfs.ctinstaller.ui.viewmodel
 
+import android.content.Context
+import android.content.Intent
+import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository // <-- (关键变更) 导入接口
+import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
+import com.youfeng.sfs.ctinstaller.timber.FileLoggingTree
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map // (关键变更) 只需要 map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import java.util.Date
+import java.text.SimpleDateFormat
 import timber.log.Timber
 
 // UiState 保持不变
@@ -23,7 +30,9 @@ data class SettingsUiState(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val settingsRepository: SettingsRepository // <-- (关键变更) 注入接口
+    @param:ApplicationContext private val context: Context,
+    private val settingsRepository: SettingsRepository,
+    private val fileLoggingTree: FileLoggingTree
 ) : ViewModel() {
 
     init {
@@ -78,5 +87,28 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             settingsRepository.setCustomSuCommand(command)
         }
+    }
+
+    fun onShareLog() {
+        val file = fileLoggingTree.getLatestLogFile()
+        
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
+
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "应用日志 - ${SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())}")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        context.startActivity(
+            Intent.createChooser(intent, "分享日志").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) // ⭐Chooser 也要加
+            }
+        )
     }
 }

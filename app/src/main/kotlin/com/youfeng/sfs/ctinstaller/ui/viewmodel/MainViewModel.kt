@@ -60,7 +60,6 @@ import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
-import com.youfeng.sfs.ctinstaller.timber.FileLoggingTree
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -68,8 +67,7 @@ class MainViewModel @Inject constructor(
     private val networkRepository: NetworkRepository,
     private val folderRepository: FolderRepository,
     private val shizukuRepository: ShizukuRepository,
-    private val settingsRepository: SettingsRepository,
-    private val fileLoggingTree: FileLoggingTree
+    private val settingsRepository: SettingsRepository
 ) : ViewModel() {
 
     private val requestCodeInit = (Int.MIN_VALUE..Int.MAX_VALUE).random()

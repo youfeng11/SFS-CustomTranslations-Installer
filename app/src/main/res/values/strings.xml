@@ -61,6 +61,7 @@
     <string name="back">返回</string>
     <string name="settings_category_general">通用</string>
     <string name="settings_category_appearance">外观</string>
+    <string name="settings_category_debug">调试</string>
     <string name="settings_item_dark_mode_follow_system">深色主题跟随系统</string>
     <string name="settings_item_dark_mode_follow_system_description">跟随系统设置深色主题</string>
     <string name="mode_dark">深色主题</string>
@@ -73,6 +74,7 @@
     <string name="settings_item_custom_su_command_description">请求ROOT权限的命令，通常无需修改</string>
     <string name="settings_item_check_update">检查更新</string>
     <string name="settings_item_check_update_description">在应用启动后自动检查是否有更新</string>
+    <string name="settings_item_share_log">分享日志</string>
     <string name="default_text">默认</string>
     <string name="cancel">取消</string>
     <string name="custom_su_command_text_field_label">su 命令</string>

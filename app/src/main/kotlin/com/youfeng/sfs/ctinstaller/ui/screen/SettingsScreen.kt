@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.Update
@@ -183,6 +184,19 @@ fun SettingsScreen(
                         enabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S,
                         onCheckedChange = { viewModel.setDynamicColor(it) }
                     )
+                }
+
+                item("Header_Debug") {
+                    SettingsCategoryHeader(title = stringResource(R.string.settings_category_debug))
+                }
+
+                item("ShareLog") {
+                    Item(
+                        title = stringResource(R.string.settings_item_share_log),
+                        icon = Icons.Default.BugReport,
+                    ) {
+                        viewModel.onShareLog()
+                    }
                 }
             }
         }
