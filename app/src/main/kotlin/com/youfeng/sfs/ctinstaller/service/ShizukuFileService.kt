@@ -1,7 +1,6 @@
 package com.youfeng.sfs.ctinstaller.service
 
 import timber.log.Timber
-import com.youfeng.sfs.ctinstaller.core.TAG
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import kotlin.system.exitProcess

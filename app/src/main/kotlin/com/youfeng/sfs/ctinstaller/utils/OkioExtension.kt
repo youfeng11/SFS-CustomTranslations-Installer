@@ -1,7 +1,6 @@
 package com.youfeng.sfs.ctinstaller.utils
 
 import timber.log.Timber
-import com.youfeng.sfs.ctinstaller.core.TAG
 import okio.FileSystem
 import okio.Path
 import java.io.IOException

@@ -2,8 +2,6 @@ package com.youfeng.sfs.ctinstaller.core
 
 import android.os.Environment
 
-const val TAG = "SFSCTI"
-
 object Constants {
     val externalStorage: String =
         Environment.getExternalStorageDirectory().absolutePath

@@ -7,7 +7,6 @@ import android.os.IBinder
 import timber.log.Timber
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.R
-import com.youfeng.sfs.ctinstaller.core.TAG
 import com.youfeng.sfs.ctinstaller.service.IShizukuFileService
 import com.youfeng.sfs.ctinstaller.service.ShizukuFileService
 import dagger.hilt.android.qualifiers.ApplicationContext
