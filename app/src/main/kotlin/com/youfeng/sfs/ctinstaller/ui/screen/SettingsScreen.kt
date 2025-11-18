@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
@@ -219,7 +220,7 @@ fun SettingsScreen(
  * 设置项的分类标题 Composable。
  */
 @Composable
-private fun SettingsCategoryHeader(
+private fun LazyItemScope.SettingsCategoryHeader(
     title: String,
     modifier: Modifier = Modifier
 ) {
@@ -230,7 +231,8 @@ private fun SettingsCategoryHeader(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 48.dp, vertical = 8.dp)
-            .padding(top = 16.dp) // 顶部留出更多空间以分隔组
+            .padding(top = 16.dp)
+            .animateItem()
     )
 }
 
