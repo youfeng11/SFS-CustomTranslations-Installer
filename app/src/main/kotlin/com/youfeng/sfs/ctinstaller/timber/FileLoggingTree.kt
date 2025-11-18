@@ -10,6 +10,9 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Singleton
 class FileLoggingTree @Inject constructor(
@@ -26,12 +29,12 @@ class FileLoggingTree @Inject constructor(
         cleanOldLogs()
     }
 
-    private fun cleanOldLogs() {
+    private fun cleanOldLogs() = CoroutineScope(Dispatchers.IO).launch {
         val now = System.currentTimeMillis()
         logDir.listFiles()?.forEach { file ->
             if (file.isFile && now - file.lastModified() > maxLogAgeMs) {
                 val deleted = file.delete()
-                Timber.i("自动清理旧日志: ${file.name} ${if (deleted) "成功" else "失败"}")
+                Log.i("FileLoggingTree", "自动清理旧日志: ${file.name} ${if (deleted) "成功" else "失败"}")
             }
         }
     }
