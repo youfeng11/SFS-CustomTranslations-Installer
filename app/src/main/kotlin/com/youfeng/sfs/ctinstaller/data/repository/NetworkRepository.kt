@@ -11,6 +11,7 @@ import okhttp3.Request
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
+import java.io.File
 import java.io.IOException
 import java.net.URLDecoder
 import javax.inject.Inject
@@ -23,6 +24,9 @@ class NetworkRepository @Inject constructor(
 
     private val client = OkHttpClient()
 
+    /**
+     * 从 URL 获取内容和 UTF-8 解码后的文件名。
+     */
     suspend fun fetchContentFromUrl(url: String): Pair<String, String> =
         withContext(Dispatchers.IO) {
             val request = Request.Builder().url(url).build()
@@ -31,25 +35,28 @@ class NetworkRepository @Inject constructor(
                 if (!response.isSuccessful) {
                     throw IOException(context.getString(R.string.error_unexpected_code, response))
                 }
-                // 1️⃣ 获取 UTF-8 解码后的文件名
-                val rawFileName = response.header("Content-Disposition")
+
+                // 1️⃣ 优先从 Content-Disposition 获取已解码的文件名。
+                val fileName = response.header("Content-Disposition")
                     ?.let { parseFileNameFromDisposition(it) }
+                    // 2️⃣ 否则，使用 URL 路径的最后一段，并进行一次 URL 解码。
                     ?: url.substringAfterLast('/')
                         .ifBlank { context.getString(R.string.unnamed_translation_file_name) + ".txt" }
-
-                // 🔤 确保任何来源的文件名都被 UTF-8 解码
-                val fileName = try {
-                    URLDecoder.decode(rawFileName, "UTF-8")
-                } catch (_: Exception) {
-                    rawFileName // 解码失败就用原值
-                }
+                        .let { rawName ->
+                            try {
+                                // URL 路径中的文件名是 URL 编码的
+                                URLDecoder.decode(rawName, "UTF-8")
+                            } catch (_: Exception) {
+                                rawName
+                            }
+                        }
 
                 response.body.string() to fileName
             }
         }
 
     /**
-     * 下载文件到缓存目录，自动解析 UTF-8 编码文件名。
+     * 下载文件到缓存目录，自动解析文件名。
      */
     suspend fun downloadFileToCache(url: String): String = withContext(Dispatchers.IO) {
         val request = Request.Builder().url(url).build()
@@ -59,28 +66,32 @@ class NetworkRepository @Inject constructor(
                 throw IOException(context.getString(R.string.error_unexpected_code, response))
             }
 
-            // 1️⃣ 获取 UTF-8 解码后的文件名
-            val rawFileName = response.header("Content-Disposition")
+            // 1️⃣ 优先从 Content-Disposition 获取已解码的文件名。
+            val fileName = response.header("Content-Disposition")
                 ?.let { parseFileNameFromDisposition(it) }
-                ?: url.substringAfterLast('/').ifBlank { "${url.md5()}.txt" }
+                // 2️⃣ 否则，使用 URL 路径的最后一段（使用 MD5 作为后备名，避免重复）
+                ?: url.substringAfterLast('/')
+                    .ifBlank { "${url.md5()}.txt" }
+                    .let { rawName ->
+                        try {
+                            // URL 路径中的文件名是 URL 编码的
+                            URLDecoder.decode(rawName, "UTF-8")
+                        } catch (_: Exception) {
+                            rawName
+                        }
+                    }
 
-            // 🔤 确保任何来源的文件名都被 UTF-8 解码
-            val fileName = try {
-                URLDecoder.decode(rawFileName, "UTF-8")
-            } catch (_: Exception) {
-                rawFileName // 解码失败就用原值
-            }
-
-            // 2️⃣ 目标路径
+            // 3️⃣ 目标路径
             val cacheDir = context.externalCacheDir
                 ?: throw IOException(context.getString(R.string.error_external_cache_directory_not_available))
-            val targetPath = "${cacheDir.absolutePath}/$fileName".toPath()
+            // 注意：此时 fileName 已经是完全解码且可用的文件名
+            val targetPath = File(cacheDir, fileName).absolutePath.toPath()
 
-            // 3️⃣ 写入文件（纯 Okio）
-            val source = response.body.source()
-
-            FileSystem.SYSTEM.sink(targetPath).buffer().use { sink ->
-                sink.writeAll(source)
+            // 4️⃣ 写入文件（纯 Okio）
+            response.body.source().use { source ->
+                FileSystem.SYSTEM.sink(targetPath).buffer().use { sink ->
+                    sink.writeAll(source)
+                }
             }
 
             targetPath.toString()
@@ -88,25 +99,30 @@ class NetworkRepository @Inject constructor(
     }
 
     /**
-     * 从 Content-Disposition 中提取 UTF-8 或普通文件名。
+     * 从 Content-Disposition 中提取文件名，并进行 URL/UTF-8 解码。
+     * 优先解析 filename* (RFC 6266 推荐的 UTF-8 编码)。
+     * 返回完全解码后的文件名，可以直接使用。
      */
     private fun parseFileNameFromDisposition(header: String): String? {
-        // filename*=UTF-8''encoded
-        val utf8Match = Regex("filename\\*=(?:UTF-8'')?([^;]+)").find(header)
+        // 1. 尝试匹配 filename*=UTF-8''encodedname 或 filename*=encodedname (如果缺少 UTF-8'')
+        // 匹配 filename*=charset''value 或 filename*=value
+        val utf8Match = Regex("filename\\*=(?:[^']++'')?([^;]+)").find(header)
         if (utf8Match != null) {
             val encodedName = utf8Match.groupValues[1]
-            return URLDecoder.decode(encodedName, "UTF-8")
-        }
-
-        // 普通 filename="..."，也可能是 URL 编码
-        val simpleMatch = Regex("filename=\"?([^\";]+)\"?").find(header)
-        val name = simpleMatch?.groupValues?.getOrNull(1)
-        return name?.let {
-            try {
-                URLDecoder.decode(it, "UTF-8")
+            // filename* 的值是 URL 编码的，需要解码
+            return try {
+                URLDecoder.decode(encodedName, "UTF-8")
             } catch (_: Exception) {
-                it
+                encodedName // 解码失败用原值
             }
         }
+
+        // 2. 回退到简单的 filename="name" 或 filename=name (通常是 ASCII/ISO-8859-1)
+        val simpleMatch = Regex("filename=\"?([^\";]+)\"?").find(header)
+        val name = simpleMatch?.groupValues?.getOrNull(1)
+
+        // 对于 filename 参数，通常不应进行 URL 解码，因为 RFC 并没有保证它是 URL 编码的。
+        // 它应该只是一个普通的文件名字符串（可能带引号），我们只返回它，不尝试解码，以避免双重解码错误。
+        return name?.trim('"') // 确保移除两侧的引号
     }
 }
