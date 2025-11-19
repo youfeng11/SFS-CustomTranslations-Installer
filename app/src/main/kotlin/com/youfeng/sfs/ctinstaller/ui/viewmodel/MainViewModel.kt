@@ -299,7 +299,7 @@ class MainViewModel @Inject constructor(
                 )
             )
         }
-        setRealOption(-2)
+        setRealOption(TranslationOptionIndices.CUSTOM_FILE)
     }
 
     /**
@@ -361,7 +361,7 @@ class MainViewModel @Inject constructor(
      */
     private suspend fun prepareSourceFile(realOption: Int): Pair<String, String> {
         // 情况 1: 本地文件 (Custom Translations Uri)
-        if (realOption == -2) {
+        if (realOption == TranslationOptionIndices.CUSTOM_FILE) {
             updateInstallationProgress(context.getString(R.string.installing_process_cached))
             val fileName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/')
                 ?: (context.getString(R.string.unnamed_translation_file_name) + ".txt")
@@ -783,7 +783,7 @@ class MainViewModel @Inject constructor(
  */
 data class MainUiState(
     val appState: AppState = AppState.Loading,
-    val realOption: Int = -1,
+    val realOption: Int = TranslationOptionIndices.DEFAULT_TRANSLATION,
     val showInstallingDialog: Boolean = false,
     val showSettingsRedirectDialog: Boolean = false,
     val installationProgressText: String = "",
@@ -840,4 +840,12 @@ sealed class GrantedType {
     data object Bug : GrantedType()
     data object Shizuku : GrantedType()
     data object Su : GrantedType()
+}
+
+object TranslationOptionIndices {
+    // 默认翻译（-1）
+    const val DEFAULT_TRANSLATION = -1
+    // 本地文件（-2）
+    const val CUSTOM_FILE = -2
+    // 在线翻译列表中的索引 (>= 0)
 }

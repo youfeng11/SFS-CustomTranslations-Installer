@@ -126,6 +126,7 @@ import com.youfeng.sfs.ctinstaller.ui.viewmodel.AppState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainUiState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
+import com.youfeng.sfs.ctinstaller.ui.viewmodel.TranslationOptionIndices
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
@@ -320,7 +321,7 @@ private fun MainLayout(
     filePicker: (uri: Uri?) -> Unit = {},
     setRealOption: (realOption: Int) -> Unit = {},
     sfsVersionName: String = "",
-    realOption: Int = -1,
+    realOption: Int = TranslationOptionIndices.DEFAULT_TRANSLATION,
     customTranslationsName: String? = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
     grantedType: GrantedType = GrantedType.Saf,
@@ -696,7 +697,7 @@ private fun LazyItemScope.InstallCard(
     ) { uri: Uri? ->
         filePicker(uri)
         uri?.let {
-            selectedOption = -2
+            selectedOption = TranslationOptionIndices.CUSTOM_FILE
         }
     }
     val context = LocalContext.current
@@ -739,8 +740,8 @@ private fun LazyItemScope.InstallCard(
                             summary = "${stringResource(R.string.language_simplified_chinese)} | ${
                                 stringResource(R.string.default_text)
                             }",
-                            selected = -1 == selectedOption,
-                            onClick = { selectedOption = -1 },
+                            selected = TranslationOptionIndices.DEFAULT_TRANSLATION == selectedOption,
+                            onClick = { selectedOption = TranslationOptionIndices.DEFAULT_TRANSLATION },
                             normal = true
                         )
                         RadioOptionItem(
@@ -749,7 +750,7 @@ private fun LazyItemScope.InstallCard(
                                 stringResource(R.string.not_selected)
                             else
                                 stringResource(R.string.local_file, customTranslationsName),
-                            selected = -2 == selectedOption,
+                            selected = TranslationOptionIndices.CUSTOM_FILE == selectedOption,
                             onClick = {
                                 filePickerLauncher.launch(arrayOf("text/plain"))
                             },
@@ -771,8 +772,8 @@ private fun LazyItemScope.InstallCard(
                                     normal = true
                                 )
                             } ?: run {
-                                selectedOption = -1
-                                setRealOption(-1)
+                                selectedOption = TranslationOptionIndices.DEFAULT_TRANSLATION
+                                setRealOption(TranslationOptionIndices.DEFAULT_TRANSLATION)
                                 Text(stringResource(R.string.loading_failed))
                             }
                         }
@@ -824,13 +825,13 @@ private fun LazyItemScope.InstallCard(
         )
     }) {
         val translationName = when (realOption) {
-            -1 -> stringResource(R.string.default_translation)
-            -2 -> stringResource(R.string.local_translation_name, customTranslationsName.toString())
+            TranslationOptionIndices.DEFAULT_TRANSLATION -> stringResource(R.string.default_translation)
+            TranslationOptionIndices.CUSTOM_FILE -> stringResource(R.string.local_translation_name, customTranslationsName.toString())
             else -> ctRadio?.getOrNull(realOption)?.title ?: stringResource(R.string.unknown)
         }
         Column {
             Text(stringResource(R.string.card_item_install_current_choice, translationName))
-            if (realOption == -1)
+            if (realOption == TranslationOptionIndices.DEFAULT_TRANSLATION)
                 Text(
                     stringResource(
                         R.string.card_item_install_supported_version,
@@ -870,7 +871,7 @@ private fun LazyItemScope.InstallCard(
                         8.dp
                     ),
                     tooltip = {
-                        if (selectedOption == -2) {
+                        if (selectedOption == TranslationOptionIndices.CUSTOM_FILE) {
                             PlainTooltip {
                                 Text(stringResource(R.string.save_to_button_disabled_tooltip))
                             }
@@ -882,7 +883,7 @@ private fun LazyItemScope.InstallCard(
                         onClick = {
                             onSaveToButtonClick(realOption)
                         },
-                        enabled = selectedOption != -2
+                        enabled = selectedOption != TranslationOptionIndices.CUSTOM_FILE
                     ) {
                         Text(stringResource(R.string.card_item_install_button_save))
                     }
