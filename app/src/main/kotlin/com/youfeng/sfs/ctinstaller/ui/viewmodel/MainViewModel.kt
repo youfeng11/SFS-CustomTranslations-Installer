@@ -75,7 +75,7 @@ class MainViewModel @Inject constructor(
     private val installationRepository: InstallationRepository
 ) : ViewModel() {
 
-    private val requestCodeInit = (Int.MIN_VALUE..Int.MAX_VALUE).random()
+    private val requestCodeInit = (1..0xFFFF).random()
 
     // UI 事件，用于触发一次性操作，如显示 Snackbar、启动 Activity 等
     private val _uiEvent = Channel<UiEvent>()
@@ -150,7 +150,8 @@ class MainViewModel @Inject constructor(
             DocumentUriUtil.buildAndroidDataInit(Constants.SFS_PACKAGE_NAME)
 
     private fun onRequestPermissionsResult(requestCode: Int, grantResult: Int) {
-        if (requestCode == requestCodeInit && grantResult == PackageManager.PERMISSION_GRANTED) {
+        if (requestCode != requestCodeInit) return
+        if (grantResult == PackageManager.PERMISSION_GRANTED) {
             updateMainState()
             shizukuRepository.startUserService()
         } else showSnackbar(context.getString(R.string.no_permissions_granted))
