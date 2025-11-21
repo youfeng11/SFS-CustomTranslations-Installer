@@ -118,5 +118,5 @@
     <string name="default_translation" translatable="false">SFS简体中文语言包</string>
     <string name="save_to_button_disabled_tooltip">当前选择了本地文件，已在存在本地中，不允许保存</string>
     <string name="install_button_disabled_tooltip">您必须在授权后才能使用安装功能</string>
-    <string name="installing_process_saving">保存中...</string>
+    <string name="installing_process_saving">保存中…</string>
 </resources>

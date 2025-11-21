@@ -1,22 +1,22 @@
 package com.youfeng.sfs.ctinstaller.timber
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
-import dagger.hilt.android.qualifiers.ApplicationContext
-import javax.inject.Inject
-import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class FileLoggingTree @Inject constructor(
-    private val context: Context
+    context: Context
 ) : Timber.Tree() {
 
     private val logFile: File
@@ -29,6 +29,7 @@ class FileLoggingTree @Inject constructor(
         cleanOldLogs()
     }
 
+    @SuppressLint("LogNotTimber")
     private fun cleanOldLogs() = CoroutineScope(Dispatchers.IO).launch {
         val now = System.currentTimeMillis()
         logDir.listFiles()?.forEach { file ->
@@ -60,6 +61,7 @@ class FileLoggingTree @Inject constructor(
     }
 
 
+    @SuppressLint("LogNotTimber")
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
         try {
             val realTag = tag ?: createTag()

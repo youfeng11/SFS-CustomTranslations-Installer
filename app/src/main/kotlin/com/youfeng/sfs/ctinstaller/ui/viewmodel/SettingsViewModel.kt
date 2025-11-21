@@ -18,6 +18,7 @@ import javax.inject.Inject
 import java.util.Date
 import java.text.SimpleDateFormat
 import timber.log.Timber
+import java.util.Locale
 
 // UiState 保持不变
 data class SettingsUiState(
@@ -103,7 +104,12 @@ class SettingsViewModel @Inject constructor(
             putExtra(Intent.EXTRA_STREAM, uri)
             putExtra(
                 Intent.EXTRA_SUBJECT,
-                "应用日志 - ${SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())}"
+                "应用日志 - ${
+                    SimpleDateFormat(
+                        "yyyyMMdd_HHmmss",
+                        Locale.getDefault()
+                    ).format(Date())
+                }"
             )
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
