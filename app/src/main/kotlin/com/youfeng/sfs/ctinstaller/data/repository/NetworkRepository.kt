@@ -13,6 +13,7 @@ import okio.Path.Companion.toPath
 import okio.buffer
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.net.URLDecoder
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,7 +40,7 @@ class NetworkRepository @Inject constructor(
                 // 1️⃣ 优先从 Content-Disposition 获取已解码的文件名。
                 val fileName = response.header("Content-Disposition")
                     ?.let { parseFileNameFromDisposition(it) }
-                    // 2️⃣ 否则，使用 URL 路径的最后一段，并进行一次 URL 解码。
+                // 2️⃣ 否则，使用 URL 路径的最后一段，并进行一次 URL 解码。
                     ?: url.substringAfterLast('/')
                         .ifBlank { context.getString(R.string.unnamed_translation_file_name) + ".txt" }
                         .let { rawName ->
@@ -69,7 +70,7 @@ class NetworkRepository @Inject constructor(
             // 1️⃣ 优先从 Content-Disposition 获取已解码的文件名。
             val fileName = response.header("Content-Disposition")
                 ?.let { parseFileNameFromDisposition(it) }
-                // 2️⃣ 否则，使用 URL 路径的最后一段（使用 MD5 作为后备名，避免重复）
+            // 2️⃣ 否则，使用 URL 路径的最后一段（使用 MD5 作为后备名，避免重复）
                 ?: url.substringAfterLast('/')
                     .ifBlank { "${url.md5()}.txt" }
                     .let { rawName ->
@@ -96,6 +97,19 @@ class NetworkRepository @Inject constructor(
 
             targetPath.toString()
         }
+    }
+
+    // 在 NetworkRepository 中
+    fun openDownloadStream(url: String): InputStream {
+        val request = Request.Builder().url(url).build()
+        val response = client.newCall(request).execute() // 注意：这里同步执行，需在 IO 线程调用
+        if (!response.isSuccessful) throw IOException(
+            context.getString(
+                R.string.error_unexpected_code,
+                response
+            )
+        )
+        return response.body.byteStream() // 返回流
     }
 
     /**

@@ -10,7 +10,6 @@ import android.provider.DocumentsContract
 import android.provider.Settings
 import timber.log.Timber
 import androidx.core.net.toUri
-import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.topjohnwu.superuser.Shell
@@ -42,19 +41,13 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.map // (关键变更) 只需要 map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import okio.FileSystem
 import okio.Path.Companion.toPath
 import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderDeadListener
@@ -88,7 +81,8 @@ class MainViewModel @Inject constructor(
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
 
-    private var tempSaveContent: String? = null
+    // 用于暂存等待下载的 URL
+    private var pendingDownloadUrl: String? = null
 
     private var customTranslationsUri: Uri? = null
 
@@ -106,7 +100,8 @@ class MainViewModel @Inject constructor(
         // 确保 Shell.setDefaultBuilder 只在 init 时设置一次，使用 customSuCommand 的初始值
         // 移除了对 customSuCommand.collect 的观察
         viewModelScope.launch {
-            val command = settingsRepository.userSettings.first().customSuCommand // 使用 first() 获取初始值并完成
+            val command =
+                settingsRepository.userSettings.first().customSuCommand // 使用 first() 获取初始值并完成
             val builder = Shell.Builder.create()
                 .setFlags(Shell.FLAG_MOUNT_MASTER)
                 .setTimeout(10)
@@ -312,8 +307,8 @@ class MainViewModel @Inject constructor(
     }
 
     /**
-    * 点击安装按钮时的处理逻辑。
-    */
+     * 点击安装按钮时的处理逻辑。
+     */
     fun onInstallButtonClick(realOption: Int) {
         if (_uiState.value.showInstallingDialog) return
         _uiState.update {
@@ -334,7 +329,7 @@ class MainViewModel @Inject constructor(
 
                 // 2. 调用 Repository 执行安装
                 updateInstallationProgress(context.getString(R.string.installing_process_installing))
-                
+
                 // ✨ 核心变化：一行代码调用 Repository，通过 lambda 更新进度
                 installationRepository.installPackage(
                     sourcePath = sourcePath,
@@ -366,9 +361,9 @@ class MainViewModel @Inject constructor(
             updateInstallationProgress(context.getString(R.string.installing_process_cached))
             val fileName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/')
                 ?: (context.getString(R.string.unnamed_translation_file_name) + ".txt")
-            
+
             val cacheFile = File(context.externalCacheDir, fileName)
-            
+
             context.contentResolver.openInputStream(customTranslationsUri!!)?.use { input ->
                 FileOutputStream(cacheFile).use { output ->
                     input.copyTo(output)
@@ -384,18 +379,18 @@ class MainViewModel @Inject constructor(
         if (title == null) {
             updateInstallationProgress(context.getString(R.string.installing_process_api_retrieving))
             val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
-            
+
             updateInstallationProgress(context.getString(R.string.installing_process_api_parsing))
             if (!result.isValidJson()) {
                 throw IllegalArgumentException(context.getString(R.string.installing_api_parsing_failed))
             }
-            
+
             val info = json.decodeFromString<CustomTranslationInfo>(result)
             if (info.url.isNullOrBlank() || info.compatibleVersion.isNullOrBlank()) {
                 throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
             }
             downloadUrl = info.url
-        } 
+        }
         // 情况 3: 从特定翻译列表获取下载链接
         else {
             updateInstallationProgress(context.getString(R.string.installing_process_api_retrieving))
@@ -407,8 +402,9 @@ class MainViewModel @Inject constructor(
 
             updateInstallationProgress(context.getString(R.string.installing_process_api_parsing))
             val apiMap = json.decodeFromString<Map<String, TranslationsApi>>(result)
-            val info = apiMap[title] ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
-            
+            val info = apiMap[title]
+                ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
+
             if (info.file == null || info.lang == null || info.author == null) {
                 throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
             }
@@ -423,7 +419,7 @@ class MainViewModel @Inject constructor(
             // 尝试使用加速器镜像
             networkRepository.downloadFileToCache(Constants.DOWNLOAD_ACCELERATOR_URL + downloadUrl)
         }
-        
+
         return Pair(downloadedPath, downloadedPath.toPath().name)
     }
 
@@ -431,57 +427,68 @@ class MainViewModel @Inject constructor(
      * 点击保存到按钮时的处理逻辑。
      */
     fun onSaveToButtonClick(realOption: Int) {
+        // 如果正在保存中（虽然这里不再预下载，但防止重复点击仍有必要），可以保留状态检查
         if (!_uiState.value.isSavingComplete) {
             showSnackbar(context.getString(R.string.saving_in_progress))
             return
         }
+
+        showSnackbar(context.getString(R.string.installing_process_saving))
+
         _uiState.update { it.copy(isSavingComplete = false) }
-        showSnackbar(context.getString(R.string.installing_process_downloading))
 
         val title = optionList.getOrNull(realOption)?.title
-        installSaveJob = viewModelScope.launch {
-            try {
-                val url = if (title == null) {
-                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
-                    val customTranslationInfo = if (result.isValidJson()) {
-                        json.decodeFromString<CustomTranslationInfo>(result)
-                    } else throw IllegalArgumentException(context.getString(R.string.installing_api_parsing_failed))
 
-                    // 检查必要字段
-                    if (customTranslationInfo.url.isNullOrBlank()) {
+        // 使用 viewModelScope 仅仅为了解析 API 获取 URL
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // === 保持原有的 URL 解析逻辑 (省略部分代码，保持你原有的 API 解析逻辑不变) ===
+                val url = if (title == null) {
+                    // ... 解析 API_URL ...
+                    val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
+                    if (!result.isValidJson()) {
+                        throw IllegalArgumentException(context.getString(R.string.installing_api_parsing_failed))
+                    }
+                    val info = json.decodeFromString<CustomTranslationInfo>(result)
+
+                    if (info.url.isNullOrBlank()) {
                         throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                     }
-                    customTranslationInfo.url
+                    info.url
                 } else {
+                    // ... 解析 TRANSLATIONS_API_URL ...
                     val (result, _) = try {
                         networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
                     } catch (_: Exception) {
                         networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
                     }
-                    val translationsApi =
-                        json.decodeFromString<Map<String, TranslationsApi>>(result)
-
-                    val translationInfo =
-                        translationsApi[title]
-                            ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
-                    translationInfo.file
+                    val apiMap = json.decodeFromString<Map<String, TranslationsApi>>(result)
+                    apiMap[title]?.file
                         ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                 }
 
-                val (textContent, fileName) = try {
-                    networkRepository.fetchContentFromUrl(url)
+                // === 关键修改点 ===
+
+                // 1. 暂存 URL，而不是下载它
+                pendingDownloadUrl = url
+
+                // 2. 计算文件名 (从 URL 截取，或者从 header 猜，这里简单从 URL 截取)
+                // 之前的代码是在 downloadFileToCache 后获取文件名的，现在我们需要提前猜
+                // 如果 URL 很乱，你可能需要保留之前的逻辑先 HEAD 请求一下，或者简单处理：
+                val fileName = try {
+                    url.toUri().lastPathSegment ?: "translation.txt"
                 } catch (_: Exception) {
-                    networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + url)
+                    "translation.txt"
                 }
-                tempSaveContent = textContent
+
+                // 3. 直接触发 UI 事件让用户选位置
                 _uiEvent.send(UiEvent.SaveTo(fileName))
-            } catch (_: CancellationException) {
-                return@launch
+
             } catch (e: Exception) {
+                _uiState.update { it.copy(isSavingComplete = true) }
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
-            } finally {
-                _uiState.update { it.copy(isSavingComplete = true) }
+                pendingDownloadUrl = null
             }
         }
     }
@@ -533,24 +540,43 @@ class MainViewModel @Inject constructor(
     }
 
     fun saveToUri(uri: Uri?) {
-        viewModelScope.launch {
+        val downloadUrl = pendingDownloadUrl ?: run {
+            showSnackbar("Download URL lost, please try again.")
+            _uiState.update { it.copy(isSavingComplete = true) }
+            return
+        }
+
+        // 1. 处理用户取消的情况
+        uri ?: run {
+            showSnackbar(context.getString(R.string.save_cancel))
+            pendingDownloadUrl = null
+            _uiState.update { it.copy(isSavingComplete = true) }
+            return
+        }
+
+        showSnackbar(context.getString(R.string.installing_process_downloading))
+
+        viewModelScope.launch(Dispatchers.IO) {
             try {
-                tempSaveContent?.let { content ->
-                    uri ?: run {
-                        showSnackbar(context.getString(R.string.save_cancel))
-                        return@launch
+                // 2. 打开目标文件的输出流 (SAF)
+                context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    networkRepository.openDownloadStream(downloadUrl).use { inputStream ->
+                        // 3. 【核心】流对接：从网络直接复制到文件
+                        // 这一步是阻塞的，会持续到下载完成
+                        inputStream.copyTo(outputStream)
                     }
-                    context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { writer ->
-                        writer.write(content)
-                    }
-                    showSnackbar(context.getString(R.string.save_successful))
                 }
+
+                showSnackbar(context.getString(R.string.save_successful))
+
             } catch (e: Exception) {
-                Timber.i(e, "保存汉化错误")
+                Timber.e(e, "直连保存失败")
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
             } finally {
-                tempSaveContent = null
+                // 清理状态
+                pendingDownloadUrl = null
+                _uiState.update { it.copy(isSavingComplete = true) }
             }
         }
     }
@@ -846,6 +872,7 @@ sealed class GrantedType {
 object TranslationOptionIndices {
     // 默认翻译（-1）
     const val DEFAULT_TRANSLATION = -1
+
     // 本地文件（-2）
     const val CUSTOM_FILE = -2
     // 在线翻译列表中的索引 (>= 0)
