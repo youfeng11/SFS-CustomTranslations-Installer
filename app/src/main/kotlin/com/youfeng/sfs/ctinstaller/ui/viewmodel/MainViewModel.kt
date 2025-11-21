@@ -55,6 +55,8 @@ import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.File
 import java.io.FileOutputStream
+import java.time.ZonedDateTime
+import java.util.TimeZone
 import javax.inject.Inject
 
 @HiltViewModel
@@ -64,7 +66,7 @@ class MainViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
     private val shizukuRepository: ShizukuRepository,
     private val settingsRepository: SettingsRepository,
-    private val fileLoggingTree: FileLoggingTree,
+    fileLoggingTree: FileLoggingTree,
     private val installationRepository: InstallationRepository
 ) : ViewModel() {
 
@@ -91,10 +93,20 @@ class MainViewModel @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true }
 
     init {
-        //Timber.i(fileLoggingTree.getLatestLogFile().absolutePath)
+        Timber.i(fileLoggingTree.getLatestLogFile().absolutePath)
         Timber.i("MainViewModel 初始化")
         Timber.i("应用版本：${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）")
         Timber.i("设备信息：${Build.MANUFACTURER} ${Build.BRAND} ${Build.MODEL} ${Build.VERSION.SDK_INT}")
+        Timber.i(
+            "时区：${
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    "${ZonedDateTime.now().zone.id} UTC${ZonedDateTime.now().offset}"
+                } else {
+                    TimeZone.getDefault().id
+                }
+            }"
+        )
+
         Shell.enableVerboseLogging = BuildConfig.DEBUG
 
         // 确保 Shell.setDefaultBuilder 只在 init 时设置一次，使用 customSuCommand 的初始值
