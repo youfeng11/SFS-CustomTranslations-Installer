@@ -39,7 +39,7 @@ class InstallationRepository @Inject constructor(
         onProgress: (String) -> Unit
     ) = withContext(Dispatchers.IO) {
         val targetDir = "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
-        
+
         Timber.i("Repository: 开始安装，授权方式：$grantedType")
 
         when (grantedType) {
@@ -51,7 +51,12 @@ class InstallationRepository @Inject constructor(
         }
     }
 
-    private suspend fun installWithShizuku(source: String, targetDir: String, fileName: String, onProgress: (String) -> Unit) {
+    private suspend fun installWithShizuku(
+        source: String,
+        targetDir: String,
+        fileName: String,
+        onProgress: (String) -> Unit
+    ) {
         onProgress(context.getString(R.string.installing_process_verification))
         if (shizukuRepository.connectionStatus.value is ShizukuRepository.ConnectionStatus.Connecting) {
             onProgress(context.getString(R.string.installing_process_shizuku_waiting))
@@ -64,7 +69,12 @@ class InstallationRepository @Inject constructor(
         onProgress(context.getString(R.string.installing_copy_successful))
     }
 
-    private fun installWithSu(source: String, targetDir: String, fileName: String, onProgress: (String) -> Unit) {
+    private fun installWithSu(
+        source: String,
+        targetDir: String,
+        fileName: String,
+        onProgress: (String) -> Unit
+    ) {
         onProgress(context.getString(R.string.installing_process_preparing))
         Shell.cmd("mkdir -p \"$targetDir\"").exec()
 
@@ -72,12 +82,22 @@ class InstallationRepository @Inject constructor(
         val shellResult = Shell.cmd("cp -f \"$source\" \"$targetDir/$fileName\"").exec()
 
         if (!shellResult.isSuccess) {
-            throw IllegalArgumentException(context.getString(R.string.copy_failed, shellResult.code.toString()))
+            throw IllegalArgumentException(
+                context.getString(
+                    R.string.copy_failed,
+                    shellResult.code.toString()
+                )
+            )
         }
         onProgress(context.getString(R.string.installing_copy_successful))
     }
 
-    private fun installWithExploit(source: String, targetDir: String, fileName: String, onProgress: (String) -> Unit) {
+    private fun installWithExploit(
+        source: String,
+        targetDir: String,
+        fileName: String,
+        onProgress: (String) -> Unit
+    ) {
         onProgress(context.getString(R.string.installing_process_preparing))
         val targetDirPath = targetDir.toPathWithZwsp()
         val targetFile = targetDirPath / fileName
@@ -90,7 +110,12 @@ class InstallationRepository @Inject constructor(
         onProgress(context.getString(R.string.installing_copy_successful))
     }
 
-    private fun installWithLegacyStorage(source: String, targetDir: String, fileName: String, onProgress: (String) -> Unit) {
+    private fun installWithLegacyStorage(
+        source: String,
+        targetDir: String,
+        fileName: String,
+        onProgress: (String) -> Unit
+    ) {
         onProgress(context.getString(R.string.installing_process_preparing))
         FileSystem.SYSTEM.createDirectories(targetDir.toPath())
 
@@ -99,7 +124,11 @@ class InstallationRepository @Inject constructor(
         onProgress(context.getString(R.string.installing_copy_successful))
     }
 
-    private suspend fun installWithSaf(sourcePath: String, fileName: String, onProgress: (String) -> Unit) {
+    private suspend fun installWithSaf(
+        sourcePath: String,
+        fileName: String,
+        onProgress: (String) -> Unit
+    ) {
         onProgress(context.getString(R.string.installing_process_verification))
         val sfsDataDirUri = folderRepository.getPersistedFolderUri()
             ?: throw IllegalArgumentException(context.getString(R.string.installing_get_persistent_uri_failed))
@@ -113,15 +142,26 @@ class InstallationRepository @Inject constructor(
             ?: run {
                 rootDir.findFile("files")?.delete()
                 rootDir.createDirectory("files")
-                    ?: throw IllegalArgumentException(context.getString(R.string.installing_create_directory_unable, "files"))
+                    ?: throw IllegalArgumentException(
+                        context.getString(
+                            R.string.installing_create_directory_unable,
+                            "files"
+                        )
+                    )
             }
 
-        val customTranslationsDir = filesDir.findFile("Custom Translations")?.takeIf { it.isDirectory }
-            ?: run {
-                filesDir.findFile("Custom Translations")?.delete()
-                filesDir.createDirectory("Custom Translations")
-                    ?: throw IllegalArgumentException(context.getString(R.string.installing_create_directory_unable, "Custom Translations"))
-            }
+        val customTranslationsDir =
+            filesDir.findFile("Custom Translations")?.takeIf { it.isDirectory }
+                ?: run {
+                    filesDir.findFile("Custom Translations")?.delete()
+                    filesDir.createDirectory("Custom Translations")
+                        ?: throw IllegalArgumentException(
+                            context.getString(
+                                R.string.installing_create_directory_unable,
+                                "Custom Translations"
+                            )
+                        )
+                }
 
         customTranslationsDir.findFile(fileName)?.let {
             onProgress(context.getString(R.string.installing_process_deleting_conflicting_files))

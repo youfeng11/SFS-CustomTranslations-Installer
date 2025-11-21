@@ -10,7 +10,7 @@ fun Path.isDirectoryExists(): Boolean {
     return try {
         fileSystem.exists(this) && fileSystem.metadata(this).isDirectory
     } catch (e: IOException) {
-        Timber.i(e, "文件不存在或非文件夹",)
+        Timber.i(e, "文件不存在或非文件夹")
         false
     }
 }

@@ -18,7 +18,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideFileLoggingTree(@ApplicationContext context: Context) = FileLoggingTree(context).also {
+    fun provideFileLoggingTree(@ApplicationContext context: Context) =
+        FileLoggingTree(context).also {
             Timber.plant(it)
         }
 }

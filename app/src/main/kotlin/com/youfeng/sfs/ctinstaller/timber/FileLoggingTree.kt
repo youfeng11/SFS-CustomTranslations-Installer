@@ -34,7 +34,10 @@ class FileLoggingTree @Inject constructor(
         logDir.listFiles()?.forEach { file ->
             if (file.isFile && now - file.lastModified() > maxLogAgeMs) {
                 val deleted = file.delete()
-                Log.i("FileLoggingTree", "自动清理旧日志: ${file.name} ${if (deleted) "成功" else "失败"}")
+                Log.i(
+                    "FileLoggingTree",
+                    "自动清理旧日志: ${file.name} ${if (deleted) "成功" else "失败"}"
+                )
             }
         }
     }

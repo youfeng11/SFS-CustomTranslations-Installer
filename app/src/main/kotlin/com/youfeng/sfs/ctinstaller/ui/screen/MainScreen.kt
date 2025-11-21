@@ -741,7 +741,9 @@ private fun LazyItemScope.InstallCard(
                                 stringResource(R.string.default_text)
                             }",
                             selected = TranslationOptionIndices.DEFAULT_TRANSLATION == selectedOption,
-                            onClick = { selectedOption = TranslationOptionIndices.DEFAULT_TRANSLATION },
+                            onClick = {
+                                selectedOption = TranslationOptionIndices.DEFAULT_TRANSLATION
+                            },
                             normal = true
                         )
                         RadioOptionItem(
@@ -826,7 +828,11 @@ private fun LazyItemScope.InstallCard(
     }) {
         val translationName = when (realOption) {
             TranslationOptionIndices.DEFAULT_TRANSLATION -> stringResource(R.string.default_translation)
-            TranslationOptionIndices.CUSTOM_FILE -> stringResource(R.string.local_translation_name, customTranslationsName.toString())
+            TranslationOptionIndices.CUSTOM_FILE -> stringResource(
+                R.string.local_translation_name,
+                customTranslationsName.toString()
+            )
+
             else -> ctRadio?.getOrNull(realOption)?.title ?: stringResource(R.string.unknown)
         }
         Column {

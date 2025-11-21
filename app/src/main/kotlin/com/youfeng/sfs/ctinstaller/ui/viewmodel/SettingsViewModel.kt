@@ -91,7 +91,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onShareLog() {
         val file = fileLoggingTree.getLatestLogFile()
-        
+
         val uri = FileProvider.getUriForFile(
             context,
             "${context.packageName}.fileprovider",
@@ -101,7 +101,10 @@ class SettingsViewModel @Inject constructor(
         val intent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_STREAM, uri)
-            putExtra(Intent.EXTRA_SUBJECT, "应用日志 - ${SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())}")
+            putExtra(
+                Intent.EXTRA_SUBJECT,
+                "应用日志 - ${SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())}"
+            )
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
