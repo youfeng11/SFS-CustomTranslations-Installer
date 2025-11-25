@@ -112,7 +112,7 @@ import androidx.compose.ui.zIndex
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.Constants
@@ -214,24 +214,30 @@ fun MainScreen(
 // 封装可复用的生命周期观察器
 @Composable
 fun LifecycleAwareHandler(
-    onCreate: () -> Unit,
-    onResume: () -> Unit,
-    onStart: () -> Unit,
-    onDestroy: () -> Unit
+    onCreate: () -> Unit = {},
+    onStart: () -> Unit = {},
+    onResume: () -> Unit = {},
+    onDestroy: () -> Unit = {}
 ) {
-    val lifecycle = LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_CREATE -> onCreate()
-                Lifecycle.Event.ON_RESUME -> onResume()
-                Lifecycle.Event.ON_START -> onStart()
-                Lifecycle.Event.ON_DESTROY -> onDestroy()
-                else -> {}
-            }
+    // 监听 ON_CREATE 事件
+    LifecycleEventEffect(Lifecycle.Event.ON_CREATE) {
+        onCreate()
+    }
+
+    // 监听 ON_START 事件
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        onStart()
+    }
+
+    // 监听 ON_RESUME 事件
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        onResume()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            onDestroy() // <-- 在 Composable 被移除时（即 ON_DESTROY 之前）执行清理
         }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
     }
 }
 
