@@ -194,7 +194,7 @@ class MainViewModel @Inject constructor(
                     _uiState.update { it.copy(updateMessage = "${latestReleaseInfo.name} ($latestVersionCode)") }
                 }
             } catch (e: Exception) {
-                Timber.i(e, "检查更新失败")
+                Timber.w(e, "检查更新失败")
             }
         }
     }
@@ -264,7 +264,8 @@ class MainViewModel @Inject constructor(
     val sfsVersionName: String
         get() = try {
             context.packageManager.getPackageInfo(Constants.SFS_PACKAGE_NAME, 0).versionName!!
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            Timber.w(e, "无法获取SFS版本名")
             context.getString(R.string.failed_to_retrieve)
         }
 
@@ -497,6 +498,7 @@ class MainViewModel @Inject constructor(
                 _uiEvent.send(UiEvent.SaveTo(fileName))
 
             } catch (e: Exception) {
+                Timber.e(e, "汉化保存请求错误")
                 _uiState.update { it.copy(isSavingComplete = true) }
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
@@ -582,7 +584,7 @@ class MainViewModel @Inject constructor(
                 showSnackbar(context.getString(R.string.save_successful))
 
             } catch (e: Exception) {
-                Timber.e(e, "直连保存失败")
+                Timber.e(e, "汉化保存失败")
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
             } finally {
@@ -692,7 +694,8 @@ class MainViewModel @Inject constructor(
                 val customTranslationInfo = json.decodeFromString<CustomTranslationInfo>(result)
 
                 _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion!!) }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.e(e, "获取汉化适用版本失败")
                 _uiState.update { it.copy(forGameVersion = context.getString(R.string.failed_to_retrieve)) }
             }
             try {
@@ -725,7 +728,8 @@ class MainViewModel @Inject constructor(
                     )
                 }
                 _uiState.update { it.copy(ctRadio = optionList) }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Timber.e(e, "获取远程语言包失败")
                 _uiState.update { it.copy(ctRadio = null) }
             }
         }
