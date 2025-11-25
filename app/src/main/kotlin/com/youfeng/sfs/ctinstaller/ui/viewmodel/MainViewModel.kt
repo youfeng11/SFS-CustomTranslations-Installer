@@ -555,7 +555,7 @@ class MainViewModel @Inject constructor(
 
     fun saveToUri(uri: Uri?) {
         val downloadUrl = pendingDownloadUrl ?: run {
-            showSnackbar("Download URL lost, please try again.")
+            showSnackbar(context.getString(R.string.installing_download_url_lost))
             _uiState.update { it.copy(isSavingComplete = true) }
             return
         }
