@@ -53,6 +53,7 @@ import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderDeadListener
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
+import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
 import java.time.ZonedDateTime
@@ -214,20 +215,33 @@ class MainViewModel @Inject constructor(
         Shizuku.removeBinderDeadListener(binderDeadListener)
     }
 
-    private suspend fun hasSu(): Boolean = try {
-        // 检查是否存在 su 二进制文件
-        Timber.d("su二进制检查中")
-        val suCommand = settingsRepository.userSettings.first().customSuCommand
-            .takeIf { it.isNotEmpty() }
-            ?: "su"
-        val process = Runtime.getRuntime().exec(arrayOf("which", suCommand))
-        val output = process.inputStream.bufferedReader().use { it.readText().trim() }
-        process.waitFor()
-        Timber.d("检查命令：$suCommand，输出：$output")
-        process.waitFor() == 0
-    } catch (e: Exception) {
-        Timber.d(e, "su二进制检查出错")
-        false
+    private suspend fun hasSu(): Boolean {
+        var process: Process? = null
+        return try {
+            Timber.d("Root/su 二进制检查中")
+
+            val suCommand = settingsRepository.userSettings.first().customSuCommand
+                .takeIf { it.isNotEmpty() }
+                ?: "su"
+
+            val command = arrayOf("which", suCommand)
+
+            process = Runtime.getRuntime().exec(command)
+
+            val output = process.inputStream.bufferedReader().use(BufferedReader::readText).trim()
+            val error = process.errorStream.bufferedReader().use(BufferedReader::readText).trim()
+
+            val exitCode = process.waitFor()
+
+            Timber.d("检查命令：$suCommand，退出码：$exitCode，输出：'$output'，错误：'$error'")
+
+            exitCode == 0
+        } catch (e: Exception) {
+            Timber.e(e, "su 二进制检查出错")
+            false
+        } finally {
+            process?.destroy()
+        }
     }
 
     private fun checkShizukuPermission(): Boolean =
