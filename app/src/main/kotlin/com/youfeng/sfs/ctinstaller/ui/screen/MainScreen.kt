@@ -154,7 +154,7 @@ fun MainScreen(
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
             filePicker = viewModel::filePicker,
             setRealOption = viewModel::setRealOption,
-            sfsVersionName = viewModel.sfsVersionName,
+            sfsVersionName = uiState.sfsVersionName,
             realOption = uiState.realOption,
             customTranslationsName = uiState.customTranslationsName,
             snackbarHostState = snackbarHostState,
@@ -326,7 +326,7 @@ private fun MainLayout(
     onSaveToButtonClick: (realOption: Int) -> Unit = {},
     filePicker: (uri: Uri?) -> Unit = {},
     setRealOption: (realOption: Int) -> Unit = {},
-    sfsVersionName: String = "",
+    sfsVersionName: String? = null,
     realOption: Int = TranslationOptionIndices.DEFAULT_TRANSLATION,
     customTranslationsName: String? = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
@@ -429,7 +429,7 @@ private fun LazyItemScope.StatusCard(
     onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit,
     permissionRequestCheck: () -> Unit,
     openSfs: () -> Unit,
-    sfsVersionName: String,
+    sfsVersionName: String?,
     grantedType: GrantedType,
     options: List<RadioOption>
 ) {
@@ -519,7 +519,7 @@ private fun LazyItemScope.StatusCard(
                                 is GrantedType.Shizuku -> stringResource(R.string.permissions_shizuku)
                                 is GrantedType.Su -> stringResource(R.string.permissions_root)
                             }
-                            "$type | $sfsVersionName"
+                            "$type | ${sfsVersionName ?: stringResource(R.string.failed_to_retrieve)}"
                         }
                     }
                 )

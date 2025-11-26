@@ -275,12 +275,12 @@ class MainViewModel @Inject constructor(
     private var shizukuBinder: Boolean = false
 
     // SFS 版本名称的计算属性
-    val sfsVersionName: String
+    private val sfsVersionName: String?
         get() = try {
             context.packageManager.getPackageInfo(Constants.SFS_PACKAGE_NAME, 0).versionName!!
         } catch (e: Exception) {
             Timber.w(e, "无法获取SFS版本名")
-            context.getString(R.string.failed_to_retrieve)
+            null
         }
 
     fun permissionRequestCheck() {
@@ -696,7 +696,7 @@ class MainViewModel @Inject constructor(
 
                     else -> AppState.Ungranted
                 }
-                currentState.copy(appState = newAppState, options = options)
+                currentState.copy(appState = newAppState, options = options, sfsVersionName = sfsVersionName)
             }
         }
     }
@@ -854,6 +854,7 @@ data class MainUiState(
             text = "Loading..."
         )
     ),
+    val sfsVersionName: String? = null,
     val customTranslationsName: String? = null,
     val ctRadio: List<CTRadioOption>? = listOf(
         CTRadioOption("Loading...")
