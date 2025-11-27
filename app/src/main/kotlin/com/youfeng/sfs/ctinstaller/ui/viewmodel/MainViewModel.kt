@@ -494,29 +494,19 @@ class MainViewModel @Inject constructor(
                         ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
                 }
 
-                // === 关键修改点 ===
-
-                // 1. 暂存 URL，而不是下载它
-                pendingDownloadUrl = url
-
-                // 2. 计算文件名 (从 URL 截取，或者从 header 猜，这里简单从 URL 截取)
-                // 之前的代码是在 downloadFileToCache 后获取文件名的，现在我们需要提前猜
-                // 如果 URL 很乱，你可能需要保留之前的逻辑先 HEAD 请求一下，或者简单处理：
                 val fileName = try {
                     url.toUri().lastPathSegment ?: "translation.txt"
                 } catch (_: Exception) {
                     "translation.txt"
                 }
 
-                // 3. 直接触发 UI 事件让用户选位置
-                _uiEvent.send(UiEvent.SaveTo(fileName))
+                _uiEvent.send(UiEvent.SaveTo(url, fileName))
 
             } catch (e: Exception) {
                 Timber.e(e, "汉化保存请求错误")
                 _uiState.update { it.copy(isSavingComplete = true) }
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
-                pendingDownloadUrl = null
             }
         }
     }
@@ -567,8 +557,8 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun saveToUri(uri: Uri?) {
-        val downloadUrl = pendingDownloadUrl ?: run {
+    fun saveToUri(uri: Uri?, url: String?) {
+        val downloadUrl = url ?: run {
             showSnackbar(context.getString(R.string.installing_download_url_lost))
             _uiState.update { it.copy(isSavingComplete = true) }
             return
@@ -577,7 +567,6 @@ class MainViewModel @Inject constructor(
         // 1. 处理用户取消的情况
         uri ?: run {
             showSnackbar(context.getString(R.string.save_cancel))
-            pendingDownloadUrl = null
             _uiState.update { it.copy(isSavingComplete = true) }
             return
         }
@@ -602,8 +591,6 @@ class MainViewModel @Inject constructor(
                 val err = e.message ?: context.getString(R.string.unknown_error)
                 showSnackbar(context.getString(R.string.saving_failed, err))
             } finally {
-                // 清理状态
-                pendingDownloadUrl = null
                 _uiState.update { it.copy(isSavingComplete = true) }
             }
         }
@@ -885,7 +872,7 @@ sealed class UiEvent {
         val action: (() -> Unit)? = null
     ) : UiEvent()
 
-    data class SaveTo(val fileName: String) : UiEvent()
+    data class SaveTo(val url: String, val fileName: String) : UiEvent()
 
     data object PermissionRequestCheck : UiEvent()
 

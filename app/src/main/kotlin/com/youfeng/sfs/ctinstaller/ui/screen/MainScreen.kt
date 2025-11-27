@@ -241,10 +241,12 @@ fun UiEventAwareHandler(
 ) {
     val context = LocalContext.current
     val activity = LocalActivity.current
+    var currentSaveUrl by remember { mutableStateOf<String?>(null) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/plain")
     ) { uri ->
-        viewModel.saveToUri(uri)
+        viewModel.saveToUri(uri, currentSaveUrl)
+        currentSaveUrl = null
     }
     val requestPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -279,6 +281,7 @@ fun UiEventAwareHandler(
                 }
 
                 is UiEvent.SaveTo -> {
+                    currentSaveUrl = event.url
                     launcher.launch(event.fileName)
                 }
 
