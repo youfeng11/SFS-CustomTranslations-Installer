@@ -148,21 +148,13 @@ fun MainScreen(
             onNavigatorToDetails = onNavigatorToDetails,
             onRequestPermissionsClicked = viewModel::onRequestPermissionsClicked,
             permissionRequestCheck = viewModel::permissionRequestCheck,
-            uiState = uiState.appState, // 传递 AppState 给 StatusCard
+            uiState = uiState,
             openSfs = viewModel::openSfs,
             onInstallButtonClick = viewModel::onInstallButtonClick,
             onSaveToButtonClick = viewModel::onSaveToButtonClick,
             filePicker = viewModel::filePicker,
             setRealOption = viewModel::setRealOption,
-            sfsVersionName = uiState.sfsVersionName,
-            realOption = uiState.realOption,
-            customTranslationsName = uiState.customTranslationsName,
-            snackbarHostState = snackbarHostState,
-            forGameVersion = uiState.forGameVersion,
-            grantedType = uiState.grantedType,
-            updateMessage = uiState.updateMessage,
-            options = uiState.options,
-            ctRadio = uiState.ctRadio
+            snackbarHostState = snackbarHostState
         )
     }
 
@@ -320,21 +312,13 @@ private fun MainLayout(
     onNavigatorToDetails: () -> Unit = {},
     onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit = {},
     permissionRequestCheck: () -> Unit = {},
-    uiState: AppState = AppState.Uninstalled, // 更改为 AppState
+    uiState: MainUiState = MainUiState(),
     openSfs: () -> Unit = {},
     onInstallButtonClick: (realOption: Int) -> Unit = {},
     onSaveToButtonClick: (realOption: Int) -> Unit = {},
     filePicker: (uri: Uri?) -> Unit = {},
     setRealOption: (realOption: Int) -> Unit = {},
-    sfsVersionName: String? = null,
-    realOption: Int = TranslationOptionIndices.DEFAULT_TRANSLATION,
-    customTranslationsName: String? = "",
     snackbarHostState: SnackbarHostState = SnackbarHostState(),
-    grantedType: GrantedType = GrantedType.Saf,
-    forGameVersion: String = "",
-    updateMessage: String? = null,
-    options: List<RadioOption> = emptyList(),
-    ctRadio: List<CTRadioOption>? = null
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
@@ -388,31 +372,24 @@ private fun MainLayout(
             ) {
             item("states") {
                 StatusCard(
-                    appState = uiState, // 传递 AppState
+                    uiState = uiState, // 传递 AppState
                     onRequestPermissionsClicked = onRequestPermissionsClicked,
                     permissionRequestCheck = permissionRequestCheck,
-                    openSfs = openSfs,
-                    sfsVersionName = sfsVersionName,
-                    grantedType = grantedType,
-                    options = options
+                    openSfs = openSfs
                 )
             }
-            if (updateMessage != null) {
+            if (uiState.updateMessage != null) {
                 item("update") {
-                    UpdateCard(updateMessage)
+                    UpdateCard(uiState.updateMessage)
                 }
             }
             item("install") {
                 InstallCard(
                     onInstallButtonClick = onInstallButtonClick,
                     onSaveToButtonClick = onSaveToButtonClick,
-                    enableInstallButton = uiState is AppState.Granted, // 根据 AppState 判断是否启用
+                    uiState = uiState,
                     filePicker = filePicker,
-                    setRealOption = setRealOption,
-                    forGameVersion = forGameVersion,
-                    realOption = realOption,
-                    customTranslationsName = customTranslationsName,
-                    ctRadio = ctRadio
+                    setRealOption = setRealOption
                 )
             }
             item("donate") {
@@ -425,18 +402,15 @@ private fun MainLayout(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LazyItemScope.StatusCard(
-    appState: AppState, // 更改为 AppState
+    uiState: MainUiState,
     onRequestPermissionsClicked: (selectedOption: GrantedType) -> Unit,
     permissionRequestCheck: () -> Unit,
-    openSfs: () -> Unit,
-    sfsVersionName: String?,
-    grantedType: GrantedType,
-    options: List<RadioOption>
+    openSfs: () -> Unit
 ) {
     var openDialog by remember { mutableStateOf(false) } // 仅用于 SAF 权限说明的对话框
-    var selectedOption by remember { mutableStateOf(options[0]) }
+    var selectedOption by remember { mutableStateOf(uiState.options[0]) }
     val color by animateColorAsState(
-        targetValue = if (appState is AppState.Granted)
+        targetValue = if (uiState.appState is AppState.Granted)
             MaterialTheme.colorScheme.primaryContainer
         else
             MaterialTheme.colorScheme.errorContainer
@@ -444,7 +418,7 @@ private fun LazyItemScope.StatusCard(
     CardWidget(
         title = {
             AnimatedContent(
-                appState,
+                uiState.appState,
                 transitionSpec = {
                     fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
                         animationSpec = tween(
@@ -466,7 +440,7 @@ private fun LazyItemScope.StatusCard(
         },
         icon = {
             AnimatedContent(
-                appState,
+                uiState.appState,
                 transitionSpec = {
                     fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
                         animationSpec = tween(
@@ -490,13 +464,13 @@ private fun LazyItemScope.StatusCard(
         ),
         iconColors = IconButtonDefaults.iconButtonColors(
             containerColor = Color.Transparent,
-            contentColor = if (appState is AppState.Granted) {
+            contentColor = if (uiState.appState is AppState.Granted) {
                 MaterialTheme.colorScheme.onPrimaryContainer
             } else MaterialTheme.colorScheme.onErrorContainer
         ),
         text = {
             AnimatedContent(
-                appState,
+                uiState.appState,
                 transitionSpec = {
                     fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
                         animationSpec = tween(
@@ -512,25 +486,25 @@ private fun LazyItemScope.StatusCard(
                         is AppState.NeverOpened -> stringResource(R.string.state_neveropened_title)
                         is AppState.Ungranted -> stringResource(R.string.state_ungranted_title)
                         is AppState.Granted -> {
-                            val type = when (grantedType) {
+                            val type = when (uiState.grantedType) {
                                 is GrantedType.Saf -> stringResource(R.string.permissions_saf)
                                 is GrantedType.Old -> stringResource(R.string.permissions_old)
                                 is GrantedType.Bug -> stringResource(R.string.permissions_exploit)
                                 is GrantedType.Shizuku -> stringResource(R.string.permissions_shizuku)
                                 is GrantedType.Su -> stringResource(R.string.permissions_root)
                             }
-                            "$type | ${sfsVersionName ?: stringResource(R.string.failed_to_retrieve)}"
+                            "$type | ${uiState.sfsVersionName ?: stringResource(R.string.failed_to_retrieve)}"
                         }
                     }
                 )
             }
         },
         onClick = {
-            when (appState) {
+            when (uiState.appState) {
                 is AppState.NeverOpened -> openSfs()
                 is AppState.Ungranted -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                        selectedOption = options[0]
+                        selectedOption = uiState.options[0]
                         openDialog = true
                     } else {
                         permissionRequestCheck()
@@ -592,9 +566,9 @@ private fun LazyItemScope.StatusCard(
                             .selectableGroup()
                             .verticalScroll(scrollState)
                     ) {
-                        options.forEach { option ->
+                        uiState.options.forEach { option ->
                             RadioOptionItem(
-                                title = if (options[0].id == option.id && options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
+                                title = if (uiState.options[0].id == option.id && uiState.options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
                                 summary = option.disableInfo,
                                 selected = option == selectedOption,
                                 onClick = { selectedOption = option }
@@ -687,15 +661,11 @@ private fun LazyItemScope.InstallCard(
     onSaveToButtonClick: (realOption: Int) -> Unit,
     filePicker: (uri: Uri?) -> Unit,
     setRealOption: (realOption: Int) -> Unit,
-    realOption: Int,
-    enableInstallButton: Boolean,
-    forGameVersion: String,
-    customTranslationsName: String?,
-    ctRadio: List<CTRadioOption>?
+    uiState: MainUiState
 ) {
-    var selectedOption by remember { mutableIntStateOf(realOption) }
-    LaunchedEffect(realOption) {
-        selectedOption = realOption
+    var selectedOption by remember { mutableIntStateOf(uiState.realOption) }
+    LaunchedEffect(uiState.realOption) {
+        selectedOption = uiState.realOption
     }
     var openChooseDialog by remember { mutableStateOf(false) }
     val filePickerLauncher = rememberLauncherForActivityResult(
@@ -712,7 +682,7 @@ private fun LazyItemScope.InstallCard(
         AlertDialog(
             onDismissRequest = {
                 openChooseDialog = false
-                selectedOption = realOption
+                selectedOption = uiState.realOption
             },
             title = {
 
@@ -754,10 +724,10 @@ private fun LazyItemScope.InstallCard(
                         )
                         RadioOptionItem(
                             title = stringResource(R.string.custom_translation_pack),
-                            summary = if (customTranslationsName == null)
+                            summary = if (uiState.customTranslationsName == null)
                                 stringResource(R.string.not_selected)
                             else
-                                stringResource(R.string.local_file, customTranslationsName),
+                                stringResource(R.string.local_file, uiState.customTranslationsName),
                             selected = TranslationOptionIndices.CUSTOM_FILE == selectedOption,
                             onClick = {
                                 filePickerLauncher.launch(arrayOf("text/plain"))
@@ -771,7 +741,7 @@ private fun LazyItemScope.InstallCard(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            ctRadio?.forEachIndexed { index, option ->
+                            uiState.ctRadio?.forEachIndexed { index, option ->
                                 RadioOptionItem(
                                     title = option.title,
                                     summary = option.text,
@@ -817,7 +787,7 @@ private fun LazyItemScope.InstallCard(
             dismissButton = {
                 TextButton(onClick = {
                     openChooseDialog = false
-                    selectedOption = realOption
+                    selectedOption = uiState.realOption
                 }) {
                     Text(stringResource(R.string.cancel))
                 }
@@ -832,22 +802,22 @@ private fun LazyItemScope.InstallCard(
             contentDescription = null
         )
     }) {
-        val translationName = when (realOption) {
+        val translationName = when (uiState.realOption) {
             TranslationOptionIndices.DEFAULT_TRANSLATION -> stringResource(R.string.default_translation)
             TranslationOptionIndices.CUSTOM_FILE -> stringResource(
                 R.string.local_translation_name,
-                customTranslationsName.toString()
+                uiState.customTranslationsName.toString()
             )
 
-            else -> ctRadio?.getOrNull(realOption)?.title ?: stringResource(R.string.unknown)
+            else -> uiState.ctRadio?.getOrNull(uiState.realOption)?.title ?: stringResource(R.string.unknown)
         }
         Column {
             Text(stringResource(R.string.card_item_install_current_choice, translationName))
-            if (realOption == TranslationOptionIndices.DEFAULT_TRANSLATION)
+            if (uiState.realOption == TranslationOptionIndices.DEFAULT_TRANSLATION)
                 Text(
                     stringResource(
                         R.string.card_item_install_supported_version,
-                        forGameVersion
+                        uiState.forGameVersion
                     )
                 )
             Spacer(Modifier.height(12.dp))
@@ -893,7 +863,7 @@ private fun LazyItemScope.InstallCard(
                 ) {
                     TextButton(
                         onClick = {
-                            onSaveToButtonClick(realOption)
+                            onSaveToButtonClick(uiState.realOption)
                         },
                         enabled = selectedOption != TranslationOptionIndices.CUSTOM_FILE
                     ) {
@@ -907,7 +877,7 @@ private fun LazyItemScope.InstallCard(
                         8.dp
                     ),
                     tooltip = {
-                        if (!enableInstallButton) {
+                        if (uiState.appState !is AppState.Granted) {
                             PlainTooltip {
                                 Text(stringResource(R.string.install_button_disabled_tooltip))
                             }
@@ -917,9 +887,9 @@ private fun LazyItemScope.InstallCard(
                 ) {
                     Button(
                         onClick = {
-                            onInstallButtonClick(realOption)
+                            onInstallButtonClick(uiState.realOption)
                         },
-                        enabled = enableInstallButton
+                        enabled = uiState.appState is AppState.Granted
                     ) {
                         Text(stringResource(R.string.card_item_install_button_install))
                     }
@@ -1086,5 +1056,9 @@ private fun MainLayoutPreview() {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 private fun MainLayoutPreview2() {
-    MainLayout(uiState = AppState.Granted)
+    MainLayout(
+        uiState = MainUiState(
+            appState = AppState.Granted
+        )
+    )
 }
