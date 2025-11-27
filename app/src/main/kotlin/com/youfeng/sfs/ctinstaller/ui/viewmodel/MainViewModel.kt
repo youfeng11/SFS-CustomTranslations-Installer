@@ -26,7 +26,6 @@ import com.youfeng.sfs.ctinstaller.data.repository.InstallationRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
 import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
 import com.youfeng.sfs.ctinstaller.data.repository.ShizukuRepository
-import com.youfeng.sfs.ctinstaller.timber.FileLoggingTree
 import com.youfeng.sfs.ctinstaller.utils.DocumentUriUtil
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
 import com.youfeng.sfs.ctinstaller.utils.checkStoragePermission
@@ -56,8 +55,6 @@ import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
-import java.time.ZonedDateTime
-import java.util.TimeZone
 import javax.inject.Inject
 
 @HiltViewModel
@@ -67,7 +64,6 @@ class MainViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
     private val shizukuRepository: ShizukuRepository,
     private val settingsRepository: SettingsRepository,
-    fileLoggingTree: FileLoggingTree,
     private val installationRepository: InstallationRepository
 ) : ViewModel() {
 
@@ -84,9 +80,6 @@ class MainViewModel @Inject constructor(
     // 存储安装或保存任务的 Job，用于取消操作
     private var installSaveJob: Job? = null
 
-    // 用于暂存等待下载的 URL
-    private var pendingDownloadUrl: String? = null
-
     private var customTranslationsUri: Uri? = null
 
     private val optionList = mutableListOf<CTRadioOption>()
@@ -94,40 +87,7 @@ class MainViewModel @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true }
 
     init {
-        Timber.i(fileLoggingTree.getLatestLogFile().absolutePath)
         Timber.i("MainViewModel 初始化")
-        Timber.i("应用版本：${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）")
-        Timber.i("设备信息：${Build.MANUFACTURER} ${Build.BRAND} ${Build.MODEL} ${Build.VERSION.SDK_INT}")
-        Timber.i(
-            "时区：${
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    "${ZonedDateTime.now().zone.id} UTC${ZonedDateTime.now().offset}"
-                } else {
-                    TimeZone.getDefault().id
-                }
-            }"
-        )
-
-        Shell.enableVerboseLogging = BuildConfig.DEBUG
-
-        // 确保 Shell.setDefaultBuilder 只在 init 时设置一次，使用 customSuCommand 的初始值
-        // 移除了对 customSuCommand.collect 的观察
-        viewModelScope.launch {
-            val command =
-                settingsRepository.userSettings.first().customSuCommand // 使用 first() 获取初始值并完成
-            val builder = Shell.Builder.create()
-                .setFlags(Shell.FLAG_MOUNT_MASTER)
-                .setTimeout(10)
-
-            // 使用 .isNotEmpty() 更符合 Kotlin 习惯
-            if (command.isNotEmpty()) {
-                builder.setCommands(command)
-            }
-
-            // 只需要设置一次 libsu 的默认 Builder
-            Timber.d("Shell default builder set once with command: $command")
-            Shell.setDefaultBuilder(builder)
-        }
     }
 
     fun onFolderSelected(uri: Uri?) {

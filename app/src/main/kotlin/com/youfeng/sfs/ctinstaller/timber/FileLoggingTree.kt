@@ -3,6 +3,7 @@ package com.youfeng.sfs.ctinstaller.timber
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -16,7 +17,7 @@ import javax.inject.Singleton
 
 @Singleton
 class FileLoggingTree @Inject constructor(
-    context: Context
+    @ApplicationContext context: Context
 ) : Timber.Tree() {
 
     private val logFile: File
