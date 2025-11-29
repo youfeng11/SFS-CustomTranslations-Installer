@@ -31,8 +31,8 @@ android {
         applicationId = "com.youfeng.sfs.ctinstaller"
         minSdk = 24
         targetSdk = 36
-        versionCode = 9
-        versionName = "0.1.0-beta"
+        versionCode = 337
+        versionName = "0.1.1-beta"
 
         ndk {
             //noinspection ChromeOsAbiSupport
