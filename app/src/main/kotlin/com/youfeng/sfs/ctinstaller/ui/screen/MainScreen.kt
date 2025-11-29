@@ -115,6 +115,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.Constants
+import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
 import com.youfeng.sfs.ctinstaller.ui.component.ErrorCard
 import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
@@ -399,7 +400,6 @@ private fun MainLayout(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun LazyItemScope.StatusCard(
     uiState: MainUiState,
@@ -515,113 +515,18 @@ private fun LazyItemScope.StatusCard(
             }
         }
     )
-
-    val scope = rememberCoroutineScope()
-    val tooltipState = rememberTooltipState(isPersistent = true)
     if (openDialog) {
-        val scrollState = rememberScrollState()
-        AlertDialog(
+        PermissionRequestDialog(
+            uiState = uiState,
+            selectedOption = selectedOption,
+            optionsOnClick = {
+                selectedOption = it
+            },
             onDismissRequest = { openDialog = false },
-            title = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = stringResource(R.string.permission_request_dialog_title))
-
-                    TooltipBox(
-                        positionProvider =
-                            TooltipDefaults.rememberTooltipPositionProvider(
-                                TooltipAnchorPosition.Below,
-                                8.dp
-                            ),
-                        tooltip = {
-                            RichTooltip(
-                                title = { Text(stringResource(R.string.permission_request_dialog_help_title)) },
-                                caretShape = TooltipDefaults.caretShape()
-                            ) { Text(stringResource(R.string.permission_request_dialog_text)) }
-                        },
-                        state = tooltipState,
-                    ) {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    tooltipState.show()
-                                }
-                            }
-                        ) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.HelpOutline,
-                                contentDescription = stringResource(R.string.permission_request_help)
-                            )
-                        }
-                    }
-                }
-            },
-            text = {
-                Box {
-                    Column(
-                        Modifier
-                            .selectableGroup()
-                            .verticalScroll(scrollState)
-                    ) {
-                        uiState.options.forEach { option ->
-                            RadioOptionItem(
-                                title = if (uiState.options[0].id == option.id && uiState.options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
-                                summary = option.disableInfo,
-                                selected = option == selectedOption,
-                                onClick = { selectedOption = option }
-                            )
-                        }
-                        AnimatedVisibility(
-                            visible = selectedOption.id is GrantedType.Saf
-                        ) {
-                            ErrorCard(
-                                text = {
-                                    AnnotatedLinkText(stringResource(R.string.permissions_saf_warning_text))
-                                }
-                            )
-                        }
-                    }
-
-                    // 浮动分割线：不参与布局
-                    if (scrollState.value > 0) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.TopCenter)
-                                .zIndex(1f)
-                        )
-                    }
-                    if (scrollState.value < scrollState.maxValue) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .zIndex(1f)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = selectedOption.disableInfo == null,
-                    onClick = {
-                        openDialog = false
-                        onRequestPermissionsClicked(selectedOption.id)
-                    }
-                ) {
-                    Text(stringResource(R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { openDialog = false }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            },
-            modifier = Modifier.widthIn(max = with(LocalDensity.current) { (LocalWindowInfo.current.containerSize.width * 0.8f).toDp() }),
-            properties = DialogProperties(usePlatformDefaultWidth = false),
+            confirmButtonOnClick = {
+                openDialog = false
+                onRequestPermissionsClicked(selectedOption.id)
+            }
         )
     }
 }
@@ -915,6 +820,120 @@ private fun LazyItemScope.DonateCard() {
     }, onClick = {
         context.openUrlInBrowser("https://afdian.com/a/youfeng")
     })
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PermissionRequestDialog(
+    uiState: MainUiState,
+    selectedOption: RadioOption,
+    optionsOnClick: (option: RadioOption) -> Unit,
+    onDismissRequest: () -> Unit,
+    confirmButtonOnClick: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    val tooltipState = rememberTooltipState(isPersistent = true)
+    val scrollState = rememberScrollState()
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = stringResource(R.string.permission_request_dialog_title))
+
+                TooltipBox(
+                    positionProvider =
+                        TooltipDefaults.rememberTooltipPositionProvider(
+                            TooltipAnchorPosition.Below,
+                            8.dp
+                        ),
+                    tooltip = {
+                        RichTooltip(
+                            title = { Text(stringResource(R.string.permission_request_dialog_help_title)) },
+                            caretShape = TooltipDefaults.caretShape()
+                        ) { Text(stringResource(R.string.permission_request_dialog_text)) }
+                    },
+                    state = tooltipState,
+                ) {
+                    IconButton(
+                        onClick = {
+                            scope.launch {
+                                tooltipState.show()
+                            }
+                        }
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = stringResource(R.string.permission_request_help)
+                        )
+                    }
+                }
+            }
+        },
+        text = {
+            Box {
+                Column(
+                    Modifier
+                        .selectableGroup()
+                        .verticalScroll(scrollState)
+                ) {
+                    uiState.options.forEach { option ->
+                        RadioOptionItem(
+                            title = if (uiState.options[0].id == option.id && uiState.options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
+                            summary = option.disableInfo,
+                            selected = option == selectedOption,
+                            onClick = { optionsOnClick(option) }
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = selectedOption.id is GrantedType.Saf
+                    ) {
+                        ErrorCard(
+                            text = {
+                                AnnotatedLinkText(stringResource(R.string.permissions_saf_warning_text))
+                            }
+                        )
+                    }
+                }
+
+                // 浮动分割线：不参与布局
+                if (scrollState.value > 0) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                            .zIndex(1f)
+                    )
+                }
+                if (scrollState.value < scrollState.maxValue) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .zIndex(1f)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = selectedOption.disableInfo == null,
+                onClick = confirmButtonOnClick
+            ) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismissRequest) {
+                Text(stringResource(R.string.cancel))
+            }
+        },
+        modifier = Modifier.widthIn(max = with(LocalDensity.current) { (LocalWindowInfo.current.containerSize.width * 0.8f).toDp() }),
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    )
 }
 
 @Composable
