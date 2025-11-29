@@ -11,14 +11,14 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map // (关键变更) 只需要 map
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import javax.inject.Inject
-import java.util.Date
-import java.text.SimpleDateFormat
 import timber.log.Timber
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import javax.inject.Inject
 
 // UiState 保持不变
 data class SettingsUiState(

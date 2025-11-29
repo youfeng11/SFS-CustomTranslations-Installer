@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.Settings
-import timber.log.Timber
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -52,6 +51,7 @@ import rikka.shizuku.Shizuku
 import rikka.shizuku.Shizuku.OnBinderDeadListener
 import rikka.shizuku.Shizuku.OnBinderReceivedListener
 import rikka.shizuku.Shizuku.OnRequestPermissionResultListener
+import timber.log.Timber
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -643,7 +643,11 @@ class MainViewModel @Inject constructor(
 
                     else -> AppState.Ungranted
                 }
-                currentState.copy(appState = newAppState, options = options, sfsVersionName = sfsVersionName)
+                currentState.copy(
+                    appState = newAppState,
+                    options = options,
+                    sfsVersionName = sfsVersionName
+                )
             }
         }
     }

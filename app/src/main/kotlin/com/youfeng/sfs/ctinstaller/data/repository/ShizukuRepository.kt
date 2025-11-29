@@ -4,7 +4,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.ServiceConnection
 import android.os.IBinder
-import timber.log.Timber
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.service.IShizukuFileService
@@ -17,10 +16,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import rikka.shizuku.Shizuku
+import timber.log.Timber
 import java.io.IOException
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.util.concurrent.TimeoutException
 
 @Singleton
 class ShizukuRepository @Inject constructor(

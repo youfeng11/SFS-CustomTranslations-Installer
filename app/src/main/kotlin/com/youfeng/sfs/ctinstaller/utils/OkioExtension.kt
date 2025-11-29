@@ -1,8 +1,8 @@
 package com.youfeng.sfs.ctinstaller.utils
 
-import timber.log.Timber
 import okio.FileSystem
 import okio.Path
+import timber.log.Timber
 import java.io.IOException
 
 fun Path.isDirectoryExists(): Boolean {

@@ -1,8 +1,8 @@
 package com.youfeng.sfs.ctinstaller.service
 
-import timber.log.Timber
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import timber.log.Timber
 import kotlin.system.exitProcess
 
 class ShizukuFileService : IShizukuFileService.Stub() {

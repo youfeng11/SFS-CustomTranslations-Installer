@@ -113,11 +113,8 @@ import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.Constants
-import com.youfeng.sfs.ctinstaller.data.model.CTRadioOption
-import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.ui.component.AnnotatedLinkText
 import com.youfeng.sfs.ctinstaller.ui.component.ErrorCard
 import com.youfeng.sfs.ctinstaller.ui.component.OverflowMenu
@@ -812,7 +809,8 @@ private fun LazyItemScope.InstallCard(
                 uiState.customTranslationsName.toString()
             )
 
-            else -> uiState.ctRadio?.getOrNull(uiState.realOption)?.title ?: stringResource(R.string.unknown)
+            else -> uiState.ctRadio?.getOrNull(uiState.realOption)?.title
+                ?: stringResource(R.string.unknown)
         }
         Column {
             Text(stringResource(R.string.card_item_install_current_choice, translationName))
