@@ -43,7 +43,7 @@ class App : Application() {
         }
 
         // 🎯 步骤 2: 迁移所有初始化日志记录
-        Timber.plant(FileLoggingTree(this))
+        Timber.plant(fileLoggingTree)
         Timber.i("应用初始化完成") // 更改日志名称以反映其生命周期
         Timber.i("应用版本：${BuildConfig.VERSION_NAME}（${BuildConfig.VERSION_CODE}）")
         Timber.i("设备信息：${Build.MANUFACTURER} ${Build.BRAND} ${Build.MODEL} ${Build.VERSION.SDK_INT}")
