@@ -25,5 +25,5 @@ object Constants {
     const val LATEST_RELEASE_URL =
         "https://github.com/youfeng11/SFS-CustomTranslations-Installer/releases/latset"
 
-    const val DOWNLOAD_ACCELERATOR_URL = "https://get.2sb.org/"
+    const val DOWNLOAD_ACCELERATOR_URL = "https://gh-proxy.com/"
 }
