@@ -575,130 +575,17 @@ private fun LazyItemScope.InstallCard(
         selectedOption = uiState.realOption
     }
     var openChooseDialog by remember { mutableStateOf(false) }
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        filePicker(uri)
-        uri?.let {
-            selectedOption = TranslationOptionIndices.CUSTOM_FILE
-        }
-    }
-    val context = LocalContext.current
+
     if (openChooseDialog) {
-        val scrollState = rememberScrollState()
-        AlertDialog(
-            onDismissRequest = {
-                openChooseDialog = false
-                selectedOption = uiState.realOption
+        ChooseDialog(
+            dismissChooseDialog = { openChooseDialog = false },
+            selectedOption = selectedOption,
+            setSelectedOption = {
+                selectedOption = it
             },
-            title = {
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(stringResource(R.string.select_translation_dialog_title))
-                    IconButton(onClick = {
-                        context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer/blob/main/INTEGRATE.md")
-                    }) {
-                        Icon(
-                            Icons.AutoMirrored.Default.OpenInNew,
-                            contentDescription = null,
-                        )
-                    }
-                }
-            },
-            text = {
-                Box {
-                    // 内容滚动区
-                    Column(
-                        Modifier
-                            .selectableGroup()
-                            .verticalScroll(scrollState)
-                            .animateContentSize()
-                    ) {
-                        RadioOptionItem(
-                            title = stringResource(R.string.default_translation),
-                            summary = "${stringResource(R.string.language_simplified_chinese)} | ${
-                                stringResource(R.string.default_text)
-                            }",
-                            selected = TranslationOptionIndices.DEFAULT_TRANSLATION == selectedOption,
-                            onClick = {
-                                selectedOption = TranslationOptionIndices.DEFAULT_TRANSLATION
-                            },
-                            normal = true
-                        )
-                        RadioOptionItem(
-                            title = stringResource(R.string.custom_translation_pack),
-                            summary = if (uiState.customTranslationsName == null)
-                                stringResource(R.string.not_selected)
-                            else
-                                stringResource(R.string.local_file, uiState.customTranslationsName),
-                            selected = TranslationOptionIndices.CUSTOM_FILE == selectedOption,
-                            onClick = {
-                                filePickerLauncher.launch(arrayOf("text/plain"))
-                            },
-                            normal = true
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(12.dp))
-
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            uiState.ctRadio?.forEachIndexed { index, option ->
-                                RadioOptionItem(
-                                    title = option.title,
-                                    summary = option.text,
-                                    selected = index == selectedOption,
-                                    onClick = { selectedOption = index },
-                                    normal = true
-                                )
-                            } ?: run {
-                                selectedOption = TranslationOptionIndices.DEFAULT_TRANSLATION
-                                setRealOption(TranslationOptionIndices.DEFAULT_TRANSLATION)
-                                Text(stringResource(R.string.loading_failed))
-                            }
-                        }
-                    }
-
-                    // 浮动分割线：不参与布局
-                    if (scrollState.value > 0) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.TopCenter)
-                                .zIndex(1f)
-                        )
-                    }
-                    if (scrollState.value < scrollState.maxValue) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .zIndex(1f)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    setRealOption(selectedOption)
-                    openChooseDialog = false
-                }) {
-                    Text(stringResource(R.string.ok))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    openChooseDialog = false
-                    selectedOption = uiState.realOption
-                }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
+            uiState = uiState,
+            filePicker = filePicker,
+            setRealOption = setRealOption
         )
     }
     CardWidget({
@@ -808,6 +695,141 @@ private fun LazyItemScope.InstallCard(
 }
 
 @Composable
+private fun ChooseDialog(
+    dismissChooseDialog: () -> Unit,
+    selectedOption: Int,
+    setSelectedOption: (Int) -> Unit,
+    uiState: MainUiState,
+    filePicker: (uri: Uri?) -> Unit,
+    setRealOption: (Int) -> Unit
+) {
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        filePicker(uri)
+        uri?.let {
+            setSelectedOption(TranslationOptionIndices.CUSTOM_FILE)
+        }
+    }
+    val scrollState = rememberScrollState()
+    val context = LocalContext.current
+    AlertDialog(
+        onDismissRequest = {
+            dismissChooseDialog()
+            setSelectedOption(uiState.realOption)
+        },
+        title = {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(stringResource(R.string.select_translation_dialog_title))
+                IconButton(onClick = {
+                    context.openUrlInBrowser("https://github.com/youfeng11/SFS-CustomTranslations-Installer/blob/main/INTEGRATE.md")
+                }) {
+                    Icon(
+                        Icons.AutoMirrored.Default.OpenInNew,
+                        contentDescription = null,
+                    )
+                }
+            }
+        },
+        text = {
+            Box {
+                // 内容滚动区
+                Column(
+                    Modifier
+                        .selectableGroup()
+                        .verticalScroll(scrollState)
+                        .animateContentSize()
+                ) {
+                    RadioOptionItem(
+                        title = stringResource(R.string.default_translation),
+                        summary = "${stringResource(R.string.language_simplified_chinese)} | ${
+                            stringResource(R.string.default_text)
+                        }",
+                        selected = TranslationOptionIndices.DEFAULT_TRANSLATION == selectedOption,
+                        onClick = {
+                            setSelectedOption(TranslationOptionIndices.DEFAULT_TRANSLATION)
+                        },
+                        normal = true
+                    )
+                    RadioOptionItem(
+                        title = stringResource(R.string.custom_translation_pack),
+                        summary = if (uiState.customTranslationsName == null)
+                            stringResource(R.string.not_selected)
+                        else
+                            stringResource(R.string.local_file, uiState.customTranslationsName),
+                        selected = TranslationOptionIndices.CUSTOM_FILE == selectedOption,
+                        onClick = {
+                            filePickerLauncher.launch(arrayOf("text/plain"))
+                        },
+                        normal = true
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(12.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        uiState.ctRadio?.forEachIndexed { index, option ->
+                            RadioOptionItem(
+                                title = option.title,
+                                summary = option.text,
+                                selected = index == selectedOption,
+                                onClick = { setSelectedOption(index) },
+                                normal = true
+                            )
+                        } ?: run {
+                            setSelectedOption(TranslationOptionIndices.DEFAULT_TRANSLATION)
+                            setRealOption(TranslationOptionIndices.DEFAULT_TRANSLATION)
+                            Text(stringResource(R.string.loading_failed))
+                        }
+                    }
+                }
+
+                // 浮动分割线：不参与布局
+                if (scrollState.value > 0) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                            .zIndex(1f)
+                    )
+                }
+                if (scrollState.value < scrollState.maxValue) {
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.BottomCenter)
+                            .zIndex(1f)
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                setRealOption(selectedOption)
+                dismissChooseDialog()
+            }) {
+                Text(stringResource(R.string.ok))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = {
+                dismissChooseDialog()
+                setSelectedOption(uiState.realOption)
+            }) {
+                Text(stringResource(R.string.cancel))
+            }
+        }
+    )
+}
+
+@Composable
 private fun LazyItemScope.DonateCard() {
     val context = LocalContext.current
     CardWidget({
@@ -892,8 +914,12 @@ private fun PermissionRequestDialog(
                     }
                     AnimatedVisibility(
                         visible = selectedOption.id is GrantedType.Saf,
-                        enter = fadeIn(animationSpec = tween(durationMillis = 200)) + expandVertically(animationSpec = tween(durationMillis = 200)),
-                        exit = fadeOut(animationSpec = tween(durationMillis = 200)) + shrinkVertically(animationSpec = tween(durationMillis = 200))
+                        enter = fadeIn(animationSpec = tween(durationMillis = 200)) + expandVertically(
+                            animationSpec = tween(durationMillis = 200)
+                        ),
+                        exit = fadeOut(animationSpec = tween(durationMillis = 200)) + shrinkVertically(
+                            animationSpec = tween(durationMillis = 200)
+                        )
                     ) {
                         ErrorCard(
                             text = {
