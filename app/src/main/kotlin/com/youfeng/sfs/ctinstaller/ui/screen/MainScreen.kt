@@ -92,6 +92,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -712,6 +713,12 @@ private fun ChooseDialog(
         }
     }
     val scrollState = rememberScrollState()
+    val showTopDivider by remember {
+        derivedStateOf { scrollState.value > 0 }
+    }
+    val showBottomDivider by remember {
+        derivedStateOf { scrollState.value < scrollState.maxValue }
+    }
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = {
@@ -792,7 +799,7 @@ private fun ChooseDialog(
                 }
 
                 // 浮动分割线：不参与布局
-                if (scrollState.value > 0) {
+                if (showTopDivider) {
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -800,7 +807,7 @@ private fun ChooseDialog(
                             .zIndex(1f)
                     )
                 }
-                if (scrollState.value < scrollState.maxValue) {
+                if (showBottomDivider) {
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -858,6 +865,12 @@ private fun PermissionRequestDialog(
     val scope = rememberCoroutineScope()
     val tooltipState = rememberTooltipState(isPersistent = true)
     val scrollState = rememberScrollState()
+    val showTopDivider by remember {
+        derivedStateOf { scrollState.value > 0 }
+    }
+    val showBottomDivider by remember {
+        derivedStateOf { scrollState.value < scrollState.maxValue }
+    }
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
@@ -930,7 +943,7 @@ private fun PermissionRequestDialog(
                 }
 
                 // 浮动分割线：不参与布局
-                if (scrollState.value > 0) {
+                if (showTopDivider) {
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -938,7 +951,7 @@ private fun PermissionRequestDialog(
                             .zIndex(1f)
                     )
                 }
-                if (scrollState.value < scrollState.maxValue) {
+                if (showBottomDivider) {
                     HorizontalDivider(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -973,6 +986,12 @@ fun InstallingDialog(
     cancelCurrentTask: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    val showTopDivider by remember {
+        derivedStateOf { scrollState.value > 0 }
+    }
+    val showBottomDivider by remember {
+        derivedStateOf { scrollState.value < scrollState.maxValue }
+    }
     AlertDialog(
         onDismissRequest = {
             if (uiState.isInstallComplete) setInstallingDialogVisible(
@@ -1003,7 +1022,7 @@ fun InstallingDialog(
                     }
 
                     // 浮动分割线：不参与布局
-                    if (scrollState.value > 0) {
+                    if (showTopDivider) {
                         HorizontalDivider(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1011,7 +1030,7 @@ fun InstallingDialog(
                                 .zIndex(1f)
                         )
                     }
-                    if (scrollState.value < scrollState.maxValue) {
+                    if (showBottomDivider) {
                         HorizontalDivider(
                             modifier = Modifier
                                 .fillMaxWidth()
