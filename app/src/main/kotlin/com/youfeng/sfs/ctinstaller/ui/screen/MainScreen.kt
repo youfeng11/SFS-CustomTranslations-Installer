@@ -18,6 +18,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -1011,35 +1012,7 @@ fun InstallingDialog(
             }
         },
         text = {
-            Column {
-                if (!uiState.isInstallComplete)
-                    LinearProgressIndicator(Modifier.wrapContentWidth())
-                Box {
-                    Box(
-                        modifier = Modifier.verticalScroll(scrollState)
-                    ) {
-                        Text(uiState.installationProgressText, Modifier.animateContentSize())
-                    }
-
-                    // 浮动分割线：不参与布局
-                    if (showTopDivider) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.TopCenter)
-                                .zIndex(1f)
-                        )
-                    }
-                    if (showBottomDivider) {
-                        HorizontalDivider(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .align(Alignment.BottomCenter)
-                                .zIndex(1f)
-                        )
-                    }
-                }
-            }
+            InstallationProgressContent(uiState, scrollState, showTopDivider, showBottomDivider)
         },
         confirmButton = {
             TextButton(onClick = {
@@ -1054,6 +1027,44 @@ fun InstallingDialog(
             }
         }
     )
+}
+
+@Composable
+private fun InstallationProgressContent(
+    uiState: MainUiState,
+    scrollState: ScrollState,
+    showTopDivider: Boolean,
+    showBottomDivider: Boolean
+) {
+    Column {
+        if (!uiState.isInstallComplete)
+            LinearProgressIndicator(Modifier.wrapContentWidth())
+        Box {
+            Box(
+                modifier = Modifier.verticalScroll(scrollState)
+            ) {
+                Text(uiState.installationProgressText, Modifier.animateContentSize())
+            }
+
+            // 浮动分割线：不参与布局
+            if (showTopDivider) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .zIndex(1f)
+                )
+            }
+            if (showBottomDivider) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .zIndex(1f)
+                )
+            }
+        }
+    }
 }
 
 @Composable

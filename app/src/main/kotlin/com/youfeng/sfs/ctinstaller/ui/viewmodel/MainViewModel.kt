@@ -39,6 +39,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -86,8 +87,43 @@ class MainViewModel @Inject constructor(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    private val progressLogChannel = Channel<String>(Channel.UNLIMITED)
+
     init {
         Timber.i("MainViewModel 初始化")
+        setupProgressLogConsumer()
+    }
+
+    private fun setupProgressLogConsumer() {
+        viewModelScope.launch(Dispatchers.Default) {
+            // for 循环会挂起等待，直到 Channel 收到第一条消息
+            for (firstMsg in progressLogChannel) {
+                val buffer = StringBuilder(firstMsg)
+
+                // 收到消息后，稍作延迟（节流窗口），例如 200ms
+                // 这允许我们在一次 UI 更新中合并这 200ms 内产生的所有后续消息
+                delay(200)
+
+                // 尝试取出 Channel 中积压的所有其他消息
+                var nextMsg = progressLogChannel.tryReceive().getOrNull()
+                while (nextMsg != null) {
+                    buffer.append("\n").append(nextMsg)
+                    nextMsg = progressLogChannel.tryReceive().getOrNull()
+                }
+
+                // 此时 buffer 包含了这 200ms 内的所有日志
+                // 执行一次 UI 更新
+                val textToAppend = buffer.toString()
+                _uiState.update { currentState ->
+                    val newText = if (currentState.installationProgressText.isNotEmpty()) {
+                        "${currentState.installationProgressText}\n$textToAppend"
+                    } else {
+                        textToAppend
+                    }
+                    currentState.copy(installationProgressText = newText)
+                }
+            }
+        }
     }
 
     fun onFolderSelected(uri: Uri?) {
@@ -290,7 +326,15 @@ class MainViewModel @Inject constructor(
      */
     fun cancelCurrentTask() {
         installSaveJob?.cancel()
+        drainProgressChannel()
         _uiState.update { it.copy(isInstallComplete = true) }
+    }
+
+    private fun drainProgressChannel() {
+        // 循环尝试接收，直到通道为空 (返回 null)
+        while (progressLogChannel.tryReceive().getOrNull() != null) {
+            // 仅仅是为了取出并丢弃，不做任何处理
+        }
     }
 
     /**
@@ -298,6 +342,8 @@ class MainViewModel @Inject constructor(
      */
     fun onInstallButtonClick(realOption: Int) {
         if (_uiState.value.showInstallingDialog) return
+
+        drainProgressChannel()
         _uiState.update {
             it.copy(
                 isInstallComplete = false,
@@ -569,16 +615,7 @@ class MainViewModel @Inject constructor(
      */
     fun updateInstallationProgress(text: String) {
         Timber.d("安装进度：$text")
-        _uiState.update { currentState ->
-            val updatedText = if (currentState.installationProgressText.isNotEmpty()) {
-                "${currentState.installationProgressText}\n$text"
-            } else {
-                text
-            }
-            currentState.copy(
-                installationProgressText = updatedText
-            )
-        }
+        progressLogChannel.trySend(text)
     }
 
     private val isSfsDataDirectoryExists: Boolean
