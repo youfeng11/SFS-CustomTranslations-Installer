@@ -38,6 +38,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -87,7 +88,10 @@ class MainViewModel @Inject constructor(
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    private val progressLogChannel = Channel<String>(Channel.UNLIMITED)
+    private val progressLogChannel = Channel<String>(
+        capacity = 20, // 设置一个合理的上限，防止 OOM
+        onBufferOverflow = BufferOverflow.DROP_OLDEST // 当缓冲区满时，丢弃最旧的消息
+    )
 
     init {
         Timber.i("MainViewModel 初始化")
@@ -96,23 +100,24 @@ class MainViewModel @Inject constructor(
 
     private fun setupProgressLogConsumer() {
         viewModelScope.launch(Dispatchers.Default) {
-            // for 循环会挂起等待，直到 Channel 收到第一条消息
-            for (firstMsg in progressLogChannel) {
+            // 使用 while(true) 循环持续等待 Channel 中的新消息
+            while (true) {
+                // 1. 挂起等待接收第一条消息
+                val firstMsg = progressLogChannel.receiveCatching().getOrNull() ?: continue
+                
                 val buffer = StringBuilder(firstMsg)
 
-                // 收到消息后，稍作延迟（节流窗口），例如 200ms
-                // 这允许我们在一次 UI 更新中合并这 200ms 内产生的所有后续消息
+                // 2. 稍作延迟（节流窗口）
                 delay(200)
 
-                // 尝试取出 Channel 中积压的所有其他消息
+                // 3. 尝试取出 Channel 中积压的所有其他消息
                 var nextMsg = progressLogChannel.tryReceive().getOrNull()
                 while (nextMsg != null) {
                     buffer.append("\n").append(nextMsg)
                     nextMsg = progressLogChannel.tryReceive().getOrNull()
                 }
 
-                // 此时 buffer 包含了这 200ms 内的所有日志
-                // 执行一次 UI 更新
+                // 4. 执行一次 UI 更新
                 val textToAppend = buffer.toString()
                 _uiState.update { currentState ->
                     val newText = if (currentState.installationProgressText.isNotEmpty()) {
