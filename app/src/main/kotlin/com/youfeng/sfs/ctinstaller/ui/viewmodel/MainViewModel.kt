@@ -219,28 +219,33 @@ class MainViewModel @Inject constructor(
     private suspend fun hasSu(): Boolean {
         var process: Process? = null
         return try {
-            Timber.d("Root/su 二进制检查中")
+            Timber.i("Root/SU 二进制检查开始")
 
             val suCommand = settingsRepository.userSettings.first().customSuCommand
                 .takeIf { it.isNotEmpty() }
                 ?: "su"
 
-            val command = arrayOf("which", suCommand)
+            // 使用 ProcessBuilder
+            val command = listOf("which", suCommand)
 
-            process = Runtime.getRuntime().exec(command)
+            process = ProcessBuilder(command)
+                .redirectErrorStream(true) // 将错误流合并到标准输出流，简化读取
+                .start() // 启动进程
 
+            // 读取合并后的输出（包含标准输出和错误输出）
             val output = process.inputStream.bufferedReader().use(BufferedReader::readText).trim()
-            val error = process.errorStream.bufferedReader().use(BufferedReader::readText).trim()
 
             val exitCode = process.waitFor()
 
-            Timber.d("检查命令：$suCommand，退出码：$exitCode，输出：'$output'，错误：'$error'")
+            Timber.i("检查命令：$suCommand，退出码：$exitCode，输出：'$output'")
 
+            // 检查退出码。成功找到可执行文件时，退出码应为 0。
             exitCode == 0
         } catch (e: Exception) {
-            Timber.e(e, "su 二进制检查出错")
+            Timber.e(e, "Root/SU 二进制检查错误")
             false
         } finally {
+            Timber.i("Root/SU 二进制检查结束")
             process?.destroy()
         }
     }
