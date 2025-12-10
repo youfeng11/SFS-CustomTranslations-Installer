@@ -17,6 +17,7 @@ import java.io.InputStream
 import java.net.URLDecoder
 import javax.inject.Inject
 import javax.inject.Singleton
+import timber.log.Timber
 
 @Singleton
 class NetworkRepository @Inject constructor(
@@ -30,6 +31,7 @@ class NetworkRepository @Inject constructor(
      */
     suspend fun fetchContentFromUrl(url: String): Pair<String, String> =
         withContext(Dispatchers.IO) {
+            Timber.v("fetchContentFromUrl网络请求：$url")
             val request = Request.Builder().url(url).build()
 
             client.newCall(request).execute().use { response ->
@@ -60,6 +62,7 @@ class NetworkRepository @Inject constructor(
      * 下载文件到缓存目录，自动解析文件名。
      */
     suspend fun downloadFileToCache(url: String): String = withContext(Dispatchers.IO) {
+        Timber.v("downloadFileToCache下载：$url")
         val request = Request.Builder().url(url).build()
 
         client.newCall(request).execute().use { response ->
@@ -101,6 +104,7 @@ class NetworkRepository @Inject constructor(
 
     // 在 NetworkRepository 中
     fun openDownloadStream(url: String): InputStream {
+        Timber.v("openDownloadStream网络请求：$url")
         val request = Request.Builder().url(url).build()
         val response = client.newCall(request).execute() // 注意：这里同步执行，需在 IO 线程调用
         if (!response.isSuccessful) throw IOException(
