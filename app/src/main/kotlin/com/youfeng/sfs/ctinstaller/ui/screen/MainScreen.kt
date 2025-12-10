@@ -126,6 +126,7 @@ import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainUiState
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.TranslationOptionIndices
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.UiEvent
+import com.youfeng.sfs.ctinstaller.utils.UiText
 import com.youfeng.sfs.ctinstaller.utils.openUrlInBrowser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -287,11 +288,11 @@ fun UiEventAwareHandler(
                     coroutineScope.launch {
                         snackbarHostState.currentSnackbarData?.dismiss()
                         val result = if (event.actionLabel == null) {
-                            snackbarHostState.showSnackbar(message = event.text)
+                            snackbarHostState.showSnackbar(message = event.text.asString(context))
                         } else {
                             snackbarHostState.showSnackbar(
-                                message = event.text,
-                                actionLabel = event.actionLabel,
+                                message = event.text.asString(context),
+                                actionLabel = event.actionLabel.asString(context),
                                 withDismissAction = true,
                                 duration = SnackbarDuration.Long
                             )
@@ -601,7 +602,7 @@ private fun LazyItemScope.InstallCard(
                 uiState.customTranslationsName.toString()
             )
 
-            else -> uiState.ctRadio?.getOrNull(uiState.realOption)?.title
+            else -> uiState.ctRadio?.getOrNull(uiState.realOption)?.title?.asString()
                 ?: stringResource(R.string.unknown)
         }
         Column {
@@ -610,7 +611,7 @@ private fun LazyItemScope.InstallCard(
                 Text(
                     stringResource(
                         R.string.card_item_install_supported_version,
-                        uiState.forGameVersion
+                        uiState.forGameVersion.asString()
                     )
                 )
             Spacer(Modifier.height(12.dp))
@@ -781,8 +782,8 @@ private fun ChooseDialog(
                     ) {
                         uiState.ctRadio?.forEachIndexed { index, option ->
                             RadioOptionItem(
-                                title = option.title,
-                                summary = option.text,
+                                title = option.title.asString(),
+                                summary = option.text?.asString(),
                                 selected = index == selectedOption,
                                 onClick = { setSelectedOption(index) },
                                 normal = true
@@ -916,8 +917,8 @@ private fun PermissionRequestDialog(
                 ) {
                     uiState.options.forEach { option ->
                         RadioOptionItem(
-                            title = if (uiState.options[0].id == option.id && uiState.options[0].disableInfo == null) "${option.text}（推荐）" else option.text,
-                            summary = option.disableInfo,
+                            title = if (uiState.options[0].id == option.id && uiState.options[0].disableInfo == null) "${option.text.asString()}（推荐）" else option.text.asString(),
+                            summary = option.disableInfo?.asString(),
                             selected = option == selectedOption,
                             onClick = { optionsOnClick(option) }
                         )

@@ -20,6 +20,7 @@ import com.youfeng.sfs.ctinstaller.data.model.CustomTranslationInfo
 import com.youfeng.sfs.ctinstaller.data.model.LatestReleaseApi
 import com.youfeng.sfs.ctinstaller.data.model.RadioOption
 import com.youfeng.sfs.ctinstaller.data.model.TranslationsApi
+import com.youfeng.sfs.ctinstaller.data.repository.ContextRepository
 import com.youfeng.sfs.ctinstaller.data.repository.FolderRepository
 import com.youfeng.sfs.ctinstaller.data.repository.InstallationRepository
 import com.youfeng.sfs.ctinstaller.data.repository.NetworkRepository
@@ -27,10 +28,12 @@ import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
 import com.youfeng.sfs.ctinstaller.data.repository.ShizukuRepository
 import com.youfeng.sfs.ctinstaller.utils.DocumentUriUtil
 import com.youfeng.sfs.ctinstaller.utils.ExploitFileUtil
+import com.youfeng.sfs.ctinstaller.utils.UiText
 import com.youfeng.sfs.ctinstaller.utils.checkStoragePermission
 import com.youfeng.sfs.ctinstaller.utils.isAppInstalled
 import com.youfeng.sfs.ctinstaller.utils.isDirectoryExists
 import com.youfeng.sfs.ctinstaller.utils.isValidJson
+import com.youfeng.sfs.ctinstaller.utils.md5
 import com.youfeng.sfs.ctinstaller.utils.openApp
 import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -66,7 +69,8 @@ class MainViewModel @Inject constructor(
     private val folderRepository: FolderRepository,
     private val shizukuRepository: ShizukuRepository,
     private val settingsRepository: SettingsRepository,
-    private val installationRepository: InstallationRepository
+    private val installationRepository: InstallationRepository,
+    private val contextRepository: ContextRepository
 ) : ViewModel() {
 
     private val requestCodeInit = (1..0xFFFF).random()
@@ -140,13 +144,13 @@ class MainViewModel @Inject constructor(
                 && DocumentsContract.isTreeUri(uri)
                 && uri == DocumentUriUtil.buildAndroidData(Constants.SFS_PACKAGE_NAME)
             ) {
-                showSnackbar(context.getString(R.string.permissions_granted))
+                showSnackbar(UiText.StringResource(R.string.permissions_granted))
                 updateMainState()
                 folderRepository.persistFolderUri(uri)
             } else {
                 showSnackbar(
-                    context.getString(R.string.no_permissions_granted),
-                    context.getString(R.string.retry)
+                    UiText.StringResource(R.string.no_permissions_granted),
+                    UiText.StringResource(R.string.retry)
                 ) {
                     onRequestPermissionsClicked(GrantedType.Saf)
                 }
@@ -163,7 +167,7 @@ class MainViewModel @Inject constructor(
         if (grantResult == PackageManager.PERMISSION_GRANTED) {
             updateMainState()
             shizukuRepository.startUserService()
-        } else showSnackbar(context.getString(R.string.no_permissions_granted))
+        } else showSnackbar(UiText.StringResource(R.string.no_permissions_granted))
         // Do stuff based on the result and the request code
     }
 
@@ -254,7 +258,7 @@ class MainViewModel @Inject constructor(
         when {
             Shizuku.isPreV11() -> {
                 // Pre-v11 is unsupported
-                showSnackbar(context.getString(R.string.outdated_shizuku))
+                showSnackbar(UiText.StringResource(R.string.outdated_shizuku))
                 false
             }
 
@@ -266,7 +270,7 @@ class MainViewModel @Inject constructor(
 
             Shizuku.shouldShowRequestPermissionRationale() -> {
                 // Users choose "Deny and don't ask again"
-                showSnackbar(context.getString(R.string.permanently_deny_permissions))
+                showSnackbar(UiText.StringResource(R.string.permanently_deny_permissions))
                 false
             }
 
@@ -302,14 +306,14 @@ class MainViewModel @Inject constructor(
         shouldShowRationale ?: return
         if (isGranted) {
             updateMainState()
-            showSnackbar(context.getString(R.string.permissions_granted))
+            showSnackbar(UiText.StringResource(R.string.permissions_granted))
         } else {
             if (shouldShowRationale) {
                 showSnackbar(
-                    context.getString(
+                    UiText.StringResource(
                         R.string.permission_request_denied,
-                        context.getString(R.string.permission_storage)
-                    ), context.getString(R.string.retry)
+                        UiText.StringResource(R.string.permission_storage)
+                    ), UiText.StringResource(R.string.retry)
                 ) {
                     permissionRequestCheck()
                 }
@@ -366,12 +370,10 @@ class MainViewModel @Inject constructor(
             try {
                 // 1. 准备源文件 (依然保留在 VM 中，因为它涉及 NetworkRepo 和 UI 选项逻辑)
                 // 如果你想更彻底，也可以把这个搬到 Repository，但目前这样已经很好了
-                val sourceFileResult = prepareSourceFile(realOption)
-                val sourcePath = sourceFileResult.first
-                val fileName = sourceFileResult.second
+                val (sourcePath, fileName) = prepareSourceFile(realOption)
 
                 // 2. 调用 Repository 执行安装
-                updateInstallationProgress(context.getString(R.string.installing_process_installing))
+                updateInstallationProgress(UiText.StringResource(R.string.installing_process_installing))
 
                 // ✨ 核心变化：一行代码调用 Repository，通过 lambda 更新进度
                 installationRepository.installPackage(
@@ -385,12 +387,12 @@ class MainViewModel @Inject constructor(
             } catch (_: CancellationException) {
                 return@launch
             } catch (e: Exception) {
-                val err = e.message ?: context.getString(R.string.unknown_error)
+                val err = if (e.message != null) UiText.DynamicString(e.message.toString()) else UiText.StringResource(R.string.unknown_error)
                 Timber.e(e, "安装汉化错误")
-                updateInstallationProgress(context.getString(R.string.installing_error, err))
+                updateInstallationProgress(UiText.StringResource(R.string.installing_error, err))
             }
             _uiState.update { it.copy(isInstallComplete = true) }
-            updateInstallationProgress(context.getString(R.string.installing_installation_complete))
+            updateInstallationProgress(UiText.StringResource(R.string.installing_installation_complete))
         }
     }
 
@@ -401,9 +403,10 @@ class MainViewModel @Inject constructor(
     private suspend fun prepareSourceFile(realOption: Int): Pair<String, String> {
         // 情况 1: 本地文件 (Custom Translations Uri)
         if (realOption == TranslationOptionIndices.CUSTOM_FILE) {
-            updateInstallationProgress(context.getString(R.string.installing_process_cached))
+            updateInstallationProgress(UiText.StringResource(R.string.installing_process_cached))
             val fileName = customTranslationsUri?.lastPathSegment?.substringAfterLast('/')
-                ?: (context.getString(R.string.unnamed_translation_file_name) + ".txt")
+                ?: customTranslationsUri.toString().md5() + ".txt"
+            Timber.v("安装本地汉化：${customTranslationsUri.toString()}")
 
             val cacheFile = File(context.externalCacheDir, fileName)
 
@@ -415,15 +418,17 @@ class MainViewModel @Inject constructor(
             return Pair(cacheFile.absolutePath, fileName)
         }
 
-        val title = optionList.getOrNull(realOption)?.title
+        val title = optionList.getOrNull(realOption)?.title?.let {
+            contextRepository.getString(it)
+        }
         val downloadUrl: String
 
         // 情况 2: 从 API 获取通用下载链接
         if (title == null) {
-            updateInstallationProgress(context.getString(R.string.installing_process_api_retrieving))
+            updateInstallationProgress(UiText.StringResource(R.string.installing_process_api_retrieving))
             val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
 
-            updateInstallationProgress(context.getString(R.string.installing_process_api_parsing))
+            updateInstallationProgress(UiText.StringResource(R.string.installing_process_api_parsing))
             if (!result.isValidJson()) {
                 throw IllegalArgumentException(context.getString(R.string.installing_api_parsing_failed))
             }
@@ -436,14 +441,14 @@ class MainViewModel @Inject constructor(
         }
         // 情况 3: 从特定翻译列表获取下载链接
         else {
-            updateInstallationProgress(context.getString(R.string.installing_process_api_retrieving))
+            updateInstallationProgress(UiText.StringResource(R.string.installing_process_api_retrieving))
             val (result, _) = try {
                 networkRepository.fetchContentFromUrl(Constants.TRANSLATIONS_API_URL)
             } catch (_: Exception) {
                 networkRepository.fetchContentFromUrl(Constants.DOWNLOAD_ACCELERATOR_URL + Constants.TRANSLATIONS_API_URL)
             }
 
-            updateInstallationProgress(context.getString(R.string.installing_process_api_parsing))
+            updateInstallationProgress(UiText.StringResource(R.string.installing_process_api_parsing))
             val apiMap = json.decodeFromString<Map<String, TranslationsApi>>(result)
             val info = apiMap[title]
                 ?: throw IllegalArgumentException(context.getString(R.string.installing_api_illegal))
@@ -455,7 +460,7 @@ class MainViewModel @Inject constructor(
         }
 
         // 执行下载
-        updateInstallationProgress(context.getString(R.string.installing_process_downloading))
+        updateInstallationProgress(UiText.StringResource(R.string.installing_process_downloading))
         val downloadedPath = try {
             networkRepository.downloadFileToCache(downloadUrl)
         } catch (_: Exception) {
@@ -472,15 +477,17 @@ class MainViewModel @Inject constructor(
     fun onSaveToButtonClick(realOption: Int) {
         // 如果正在保存中（虽然这里不再预下载，但防止重复点击仍有必要），可以保留状态检查
         if (!_uiState.value.isSavingComplete) {
-            showSnackbar(context.getString(R.string.saving_in_progress))
+            showSnackbar(UiText.StringResource(R.string.saving_in_progress))
             return
         }
 
-        showSnackbar(context.getString(R.string.installing_process_saving))
+        showSnackbar(UiText.StringResource(R.string.installing_process_saving))
 
         _uiState.update { it.copy(isSavingComplete = false) }
 
-        val title = optionList.getOrNull(realOption)?.title
+        val title = optionList.getOrNull(realOption)?.title?.let {
+            contextRepository.getString(it)
+        }
 
         // 使用 viewModelScope 仅仅为了解析 API 获取 URL
         viewModelScope.launch(Dispatchers.IO) {
@@ -521,8 +528,8 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "汉化保存请求错误")
                 _uiState.update { it.copy(isSavingComplete = true) }
-                val err = e.message ?: context.getString(R.string.unknown_error)
-                showSnackbar(context.getString(R.string.saving_failed, err))
+                val err = if (e.message != null) UiText.DynamicString(e.message.toString()) else UiText.StringResource(R.string.unknown_error)
+                showSnackbar(UiText.StringResource(R.string.saving_failed, err))
             }
         }
     }
@@ -558,7 +565,7 @@ class MainViewModel @Inject constructor(
                         Shell.getShell { shell ->
                             if (!shell.isRoot)
                                 showSnackbar(
-                                    context.getString(
+                                    UiText.StringResource(
                                         R.string.permission_request_denied,
                                         "ROOT"
                                     )
@@ -575,19 +582,19 @@ class MainViewModel @Inject constructor(
 
     fun saveToUri(uri: Uri?, url: String?) {
         val downloadUrl = url ?: run {
-            showSnackbar(context.getString(R.string.installing_download_url_lost))
+            showSnackbar(UiText.StringResource(R.string.installing_download_url_lost))
             _uiState.update { it.copy(isSavingComplete = true) }
             return
         }
 
         // 1. 处理用户取消的情况
         uri ?: run {
-            showSnackbar(context.getString(R.string.save_cancel))
+            showSnackbar(UiText.StringResource(R.string.save_cancel))
             _uiState.update { it.copy(isSavingComplete = true) }
             return
         }
 
-        showSnackbar(context.getString(R.string.installing_process_downloading))
+        showSnackbar(UiText.StringResource(R.string.installing_process_downloading))
 
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -600,12 +607,12 @@ class MainViewModel @Inject constructor(
                     }
                 }
 
-                showSnackbar(context.getString(R.string.save_successful))
+                showSnackbar(UiText.StringResource(R.string.save_successful))
 
             } catch (e: Exception) {
                 Timber.e(e, "汉化保存失败")
-                val err = e.message ?: context.getString(R.string.unknown_error)
-                showSnackbar(context.getString(R.string.saving_failed, err))
+                val err = if (e.message != null) UiText.DynamicString(e.message.toString()) else UiText.StringResource(R.string.unknown_error)
+                showSnackbar(UiText.StringResource(R.string.saving_failed, err))
             } finally {
                 _uiState.update { it.copy(isSavingComplete = true) }
             }
@@ -623,9 +630,9 @@ class MainViewModel @Inject constructor(
      * 更新安装进度文本和安装完成状态。
      * @param text 要追加的进度文本。
      */
-    fun updateInstallationProgress(text: String) {
-        Timber.d("安装进度：$text")
-        progressLogChannel.trySend(text)
+    fun updateInstallationProgress(text: UiText) {
+        Timber.d("安装进度：${contextRepository.getString(text)}")
+        progressLogChannel.trySend(contextRepository.getString(text))
     }
 
     private val isSfsDataDirectoryExists: Boolean
@@ -652,28 +659,28 @@ class MainViewModel @Inject constructor(
             val optionList = listOf(
                 RadioOption(
                     GrantedType.Shizuku,
-                    context.getString(R.string.permissions_shizuku),
+                    UiText.StringResource(R.string.permissions_shizuku),
                     if (!shizukuBinder)
-                        context.getString(R.string.permissions_shizuku_not_available)
+                        UiText.StringResource(R.string.permissions_shizuku_not_available)
                     else null
                 ),
                 RadioOption(
                     GrantedType.Bug,
-                    context.getString(R.string.permissions_exploit),
-                    if (!ExploitFileUtil.isExploitable) context.getString(R.string.permissions_unavailable) else null
+                    UiText.StringResource(R.string.permissions_exploit),
+                    if (!ExploitFileUtil.isExploitable) UiText.StringResource(R.string.permissions_unavailable) else null
                 ),
                 RadioOption(
                     GrantedType.Saf,
-                    context.getString(R.string.permissions_saf),
+                    UiText.StringResource(R.string.permissions_saf),
                     null
                 ),
                 RadioOption(
                     GrantedType.Su,
-                    context.getString(R.string.permissions_root),
-                    if (!isSu) context.getString(R.string.permissions_su_not_available) else null
+                    UiText.StringResource(R.string.permissions_root),
+                    if (!isSu) UiText.StringResource(R.string.permissions_su_not_available) else null
                 )
             )
-            val options = optionList.sortedByDescending { it.disableInfo.isNullOrEmpty() }
+            val options = optionList.sortedByDescending { it.disableInfo == null }
             val isInstalled = context.isAppInstalled(Constants.SFS_PACKAGE_NAME)
 
             val grantedType = hasStorageAccess(isSu)
@@ -705,10 +712,10 @@ class MainViewModel @Inject constructor(
                 val (result, _) = networkRepository.fetchContentFromUrl(Constants.API_URL)
                 val customTranslationInfo = json.decodeFromString<CustomTranslationInfo>(result)
 
-                _uiState.update { it.copy(forGameVersion = customTranslationInfo.compatibleVersion!!) }
+                _uiState.update { it.copy(forGameVersion = UiText.DynamicString(customTranslationInfo.compatibleVersion!!)) }
             } catch (e: Exception) {
                 Timber.e(e, "获取汉化适用版本失败")
-                _uiState.update { it.copy(forGameVersion = context.getString(R.string.failed_to_retrieve)) }
+                _uiState.update { it.copy(forGameVersion = UiText.StringResource(R.string.failed_to_retrieve)) }
             }
             try {
                 val (result, _) = try {
@@ -724,14 +731,14 @@ class MainViewModel @Inject constructor(
                     translationInfo.lang ?: throw IllegalArgumentException()
                     translationInfo.author ?: throw IllegalArgumentException()
                     val lang = when (translationInfo.lang) {
-                        "zh_CN" -> context.getString(R.string.language_simplified_chinese)
-                        "zh_TW" -> context.getString(R.string.language_traditional_chinese)
-                        else -> translationInfo.lang
+                        "zh_CN" -> UiText.StringResource(R.string.language_simplified_chinese)
+                        "zh_TW" -> UiText.StringResource(R.string.language_traditional_chinese)
+                        else -> UiText.DynamicString(translationInfo.lang)
                     }
                     optionList.add(
                         CTRadioOption(
-                            name,
-                            context.getString(
+                            UiText.DynamicString(name),
+                            UiText.StringResource(
                                 R.string.language_pack_info,
                                 lang,
                                 translationInfo.author
@@ -774,8 +781,8 @@ class MainViewModel @Inject constructor(
      * @param actionLabel Snackbar 动作的标签。
      * @param action Snackbar 动作被点击时执行的回调。
      */
-    fun showSnackbar(text: String, actionLabel: String? = null, action: (() -> Unit)? = null) {
-        Timber.d("Snackbar：$text")
+    fun showSnackbar(text: UiText, actionLabel: UiText? = null, action: (() -> Unit)? = null) {
+        Timber.d("Snackbar：${contextRepository.getString(text)}")
         _uiEvent.trySend(UiEvent.ShowSnackbar(text, actionLabel, action))
     }
 
@@ -845,17 +852,17 @@ data class MainUiState(
     val isInstallComplete: Boolean = false,
     val isSavingComplete: Boolean = true,
     val grantedType: GrantedType = GrantedType.Saf,
-    val forGameVersion: String = "Loading...",
+    val forGameVersion: UiText = UiText.StringResource(R.string.loading),
     val options: List<RadioOption> = listOf(
         RadioOption(
             id = GrantedType.Old,
-            text = "Loading..."
+            text = UiText.StringResource(R.string.loading)
         )
     ),
     val sfsVersionName: String? = null,
     val customTranslationsName: String? = null,
     val ctRadio: List<CTRadioOption>? = listOf(
-        CTRadioOption("Loading...")
+        CTRadioOption(UiText.StringResource(R.string.loading))
     ),
     val updateMessage: String? = null
 )
@@ -878,8 +885,8 @@ sealed class UiEvent {
     data class RequestSafPermissions(val sfsDataUri: Uri?) : UiEvent()
 
     data class ShowSnackbar(
-        val text: String,
-        val actionLabel: String? = null,
+        val text: UiText,
+        val actionLabel: UiText? = null,
         val action: (() -> Unit)? = null
     ) : UiEvent()
 

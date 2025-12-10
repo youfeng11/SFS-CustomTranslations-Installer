@@ -7,6 +7,7 @@ import com.topjohnwu.superuser.Shell
 import com.youfeng.sfs.ctinstaller.R
 import com.youfeng.sfs.ctinstaller.core.Constants
 import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
+import com.youfeng.sfs.ctinstaller.utils.UiText
 import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -36,7 +37,7 @@ class InstallationRepository @Inject constructor(
         sourcePath: String,
         fileName: String,
         grantedType: GrantedType,
-        onProgress: (String) -> Unit
+        onProgress: (UiText) -> Unit
     ) = withContext(Dispatchers.IO) {
         val targetDir = "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
 
@@ -55,30 +56,30 @@ class InstallationRepository @Inject constructor(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (String) -> Unit
+        onProgress: (UiText) -> Unit
     ) {
-        onProgress(context.getString(R.string.installing_process_verification))
+        onProgress(UiText.StringResource(R.string.installing_process_verification))
         if (shizukuRepository.connectionStatus.value is ShizukuRepository.ConnectionStatus.Connecting) {
-            onProgress(context.getString(R.string.installing_process_shizuku_waiting))
+            onProgress(UiText.StringResource(R.string.installing_process_shizuku_waiting))
         }
-        onProgress(context.getString(R.string.installing_process_preparing))
+        onProgress(UiText.StringResource(R.string.installing_process_preparing))
         shizukuRepository.mkdirs(targetDir)
 
-        onProgress(context.getString(R.string.installing_process_copying))
+        onProgress(UiText.StringResource(R.string.installing_process_copying))
         shizukuRepository.copyFile(source, "$targetDir/$fileName")
-        onProgress(context.getString(R.string.installing_copy_successful))
+        onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
     private fun installWithSu(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (String) -> Unit
+        onProgress: (UiText) -> Unit
     ) {
-        onProgress(context.getString(R.string.installing_process_preparing))
+        onProgress(UiText.StringResource(R.string.installing_process_preparing))
         Shell.cmd("mkdir -p \"$targetDir\"").exec()
 
-        onProgress(context.getString(R.string.installing_process_copying))
+        onProgress(UiText.StringResource(R.string.installing_process_copying))
         val shellResult = Shell.cmd("cp -f \"$source\" \"$targetDir/$fileName\"").exec()
 
         if (!shellResult.isSuccess) {
@@ -89,54 +90,54 @@ class InstallationRepository @Inject constructor(
                 )
             )
         }
-        onProgress(context.getString(R.string.installing_copy_successful))
+        onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
     private fun installWithExploit(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (String) -> Unit
+        onProgress: (UiText) -> Unit
     ) {
-        onProgress(context.getString(R.string.installing_process_preparing))
+        onProgress(UiText.StringResource(R.string.installing_process_preparing))
         val targetDirPath = targetDir.toPathWithZwsp()
         val targetFile = targetDirPath / fileName
 
         FileSystem.SYSTEM.createDirectories(targetDirPath)
 
-        onProgress(context.getString(R.string.installing_process_copying))
+        onProgress(UiText.StringResource(R.string.installing_process_copying))
         FileSystem.SYSTEM.delete(targetFile, mustExist = false)
         FileSystem.SYSTEM.copy(source.toPath(), targetFile)
-        onProgress(context.getString(R.string.installing_copy_successful))
+        onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
     private fun installWithLegacyStorage(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (String) -> Unit
+        onProgress: (UiText) -> Unit
     ) {
-        onProgress(context.getString(R.string.installing_process_preparing))
+        onProgress(UiText.StringResource(R.string.installing_process_preparing))
         FileSystem.SYSTEM.createDirectories(targetDir.toPath())
 
-        onProgress(context.getString(R.string.installing_process_copying))
+        onProgress(UiText.StringResource(R.string.installing_process_copying))
         FileSystem.SYSTEM.copy(source.toPath(), "$targetDir/$fileName".toPath())
-        onProgress(context.getString(R.string.installing_copy_successful))
+        onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
     private suspend fun installWithSaf(
         sourcePath: String,
         fileName: String,
-        onProgress: (String) -> Unit
+        onProgress: (UiText) -> Unit
     ) {
-        onProgress(context.getString(R.string.installing_process_verification))
+        onProgress(UiText.StringResource(R.string.installing_process_verification))
         val sfsDataDirUri = folderRepository.getPersistedFolderUri()
             ?: throw IllegalArgumentException(context.getString(R.string.installing_get_persistent_uri_failed))
 
         val rootDir = DocumentFile.fromTreeUri(context, sfsDataDirUri)
             ?: throw IllegalArgumentException(context.getString(R.string.installing_get_persistent_documentfile_failed))
 
-        onProgress(context.getString(R.string.installing_process_preparing))
+        onProgress(UiText.StringResource(R.string.installing_process_preparing))
 
         val filesDir = rootDir.findFile("files")?.takeIf { it.isDirectory }
             ?: run {
@@ -164,11 +165,11 @@ class InstallationRepository @Inject constructor(
                 }
 
         customTranslationsDir.findFile(fileName)?.let {
-            onProgress(context.getString(R.string.installing_process_deleting_conflicting_files))
+            onProgress(UiText.StringResource(R.string.installing_process_deleting_conflicting_files))
             it.delete()
         }
 
-        onProgress(context.getString(R.string.installing_process_starting))
+        onProgress(UiText.StringResource(R.string.installing_process_starting))
         val newFile = customTranslationsDir.createFile("text/plain", fileName)
             ?: throw IllegalArgumentException(context.getString(R.string.installing_create_file_failed))
 
@@ -178,6 +179,6 @@ class InstallationRepository @Inject constructor(
             }
         }
 
-        onProgress(context.getString(R.string.installing_copy_successful))
+        onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 }
