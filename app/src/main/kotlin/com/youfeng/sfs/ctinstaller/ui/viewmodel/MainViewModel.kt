@@ -39,11 +39,13 @@ import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -384,10 +386,11 @@ class MainViewModel @Inject constructor(
                     // Repository 回调这里的代码来更新 UI
                     updateInstallationProgress(progressText)
                 }
-            } catch (_: CancellationException) {
-                return@launch
+            } catch (e: CancellationException) {
+                Timber.d("安装任务已取消")
+                throw e
             } catch (e: Exception) {
-                val err = if (e.message != null) UiText.DynamicString(e.message.toString()) else UiText.StringResource(R.string.unknown_error)
+                val err = e.message?.let { UiText.DynamicString(it.toString()) } ?: UiText.StringResource(R.string.unknown_error)
                 Timber.e(e, "安装汉化错误")
                 updateInstallationProgress(UiText.StringResource(R.string.installing_error, err))
             }
@@ -528,7 +531,7 @@ class MainViewModel @Inject constructor(
             } catch (e: Exception) {
                 Timber.e(e, "汉化保存请求错误")
                 _uiState.update { it.copy(isSavingComplete = true) }
-                val err = if (e.message != null) UiText.DynamicString(e.message.toString()) else UiText.StringResource(R.string.unknown_error)
+                val err = e.message?.let { UiText.DynamicString(it.toString()) } ?: UiText.StringResource(R.string.unknown_error)
                 showSnackbar(UiText.StringResource(R.string.saving_failed, err))
             }
         }
@@ -611,7 +614,7 @@ class MainViewModel @Inject constructor(
 
             } catch (e: Exception) {
                 Timber.e(e, "汉化保存失败")
-                val err = if (e.message != null) UiText.DynamicString(e.message.toString()) else UiText.StringResource(R.string.unknown_error)
+                val err = e.message?.let { UiText.DynamicString(it.toString()) } ?: UiText.StringResource(R.string.unknown_error)
                 showSnackbar(UiText.StringResource(R.string.saving_failed, err))
             } finally {
                 _uiState.update { it.copy(isSavingComplete = true) }
@@ -630,9 +633,10 @@ class MainViewModel @Inject constructor(
      * 更新安装进度文本和安装完成状态。
      * @param text 要追加的进度文本。
      */
-    fun updateInstallationProgress(text: UiText) {
+    private suspend fun updateInstallationProgress(text: UiText) {
         Timber.d("安装进度：${contextRepository.getString(text)}")
-        progressLogChannel.trySend(contextRepository.getString(text))
+        progressLogChannel.send(contextRepository.getString(text))
+        coroutineContext.ensureActive()
     }
 
     private val isSfsDataDirectoryExists: Boolean

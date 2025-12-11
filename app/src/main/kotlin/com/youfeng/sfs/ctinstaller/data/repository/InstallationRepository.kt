@@ -37,7 +37,7 @@ class InstallationRepository @Inject constructor(
         sourcePath: String,
         fileName: String,
         grantedType: GrantedType,
-        onProgress: (UiText) -> Unit
+        onProgress: suspend (UiText) -> Unit
     ) = withContext(Dispatchers.IO) {
         val targetDir = "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
 
@@ -56,7 +56,7 @@ class InstallationRepository @Inject constructor(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (UiText) -> Unit
+        onProgress: suspend (UiText) -> Unit
     ) {
         onProgress(UiText.StringResource(R.string.installing_process_verification))
         if (shizukuRepository.connectionStatus.value is ShizukuRepository.ConnectionStatus.Connecting) {
@@ -70,11 +70,11 @@ class InstallationRepository @Inject constructor(
         onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
-    private fun installWithSu(
+    private suspend fun installWithSu(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (UiText) -> Unit
+        onProgress: suspend (UiText) -> Unit
     ) {
         onProgress(UiText.StringResource(R.string.installing_process_preparing))
         Shell.cmd("mkdir -p \"$targetDir\"").exec()
@@ -93,11 +93,11 @@ class InstallationRepository @Inject constructor(
         onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
-    private fun installWithExploit(
+    private suspend fun installWithExploit(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (UiText) -> Unit
+        onProgress: suspend (UiText) -> Unit
     ) {
         onProgress(UiText.StringResource(R.string.installing_process_preparing))
         val targetDirPath = targetDir.toPathWithZwsp()
@@ -111,11 +111,11 @@ class InstallationRepository @Inject constructor(
         onProgress(UiText.StringResource(R.string.installing_copy_successful))
     }
 
-    private fun installWithLegacyStorage(
+    private suspend fun installWithLegacyStorage(
         source: String,
         targetDir: String,
         fileName: String,
-        onProgress: (UiText) -> Unit
+        onProgress: suspend (UiText) -> Unit
     ) {
         onProgress(UiText.StringResource(R.string.installing_process_preparing))
         FileSystem.SYSTEM.createDirectories(targetDir.toPath())
@@ -128,7 +128,7 @@ class InstallationRepository @Inject constructor(
     private suspend fun installWithSaf(
         sourcePath: String,
         fileName: String,
-        onProgress: (UiText) -> Unit
+        onProgress: suspend (UiText) -> Unit
     ) {
         onProgress(UiText.StringResource(R.string.installing_process_verification))
         val sfsDataDirUri = folderRepository.getPersistedFolderUri()
