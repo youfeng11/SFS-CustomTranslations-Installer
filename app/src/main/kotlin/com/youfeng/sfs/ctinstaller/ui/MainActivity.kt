@@ -16,9 +16,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.youfeng.sfs.ctinstaller.ui.theme.MainTheme
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
+import com.youfeng.sfs.ctinstaller.ui.common.theme.MainTheme
+import com.youfeng.sfs.ctinstaller.ui.main.MainViewModel
+import com.youfeng.sfs.ctinstaller.ui.settings.SettingsViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

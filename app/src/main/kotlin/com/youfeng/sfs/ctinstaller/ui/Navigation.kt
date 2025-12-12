@@ -21,10 +21,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.youfeng.sfs.ctinstaller.BuildConfig
 import com.youfeng.sfs.ctinstaller.R
-import com.youfeng.sfs.ctinstaller.ui.screen.MainScreen
-import com.youfeng.sfs.ctinstaller.ui.screen.SettingsScreen
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.MainViewModel
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.SettingsViewModel
+import com.youfeng.sfs.ctinstaller.ui.main.MainScreen
+import com.youfeng.sfs.ctinstaller.ui.main.MainViewModel
+import com.youfeng.sfs.ctinstaller.ui.settings.SettingsScreen
+import com.youfeng.sfs.ctinstaller.ui.settings.SettingsViewModel
 
 @Composable
 fun MainNavigation(

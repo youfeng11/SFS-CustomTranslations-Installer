@@ -3,8 +3,8 @@ package com.youfeng.sfs.ctinstaller
 import android.app.Application
 import android.os.Build
 import com.topjohnwu.superuser.Shell
+import com.youfeng.sfs.ctinstaller.common.logging.FileLoggingTree
 import com.youfeng.sfs.ctinstaller.data.repository.SettingsRepository
-import com.youfeng.sfs.ctinstaller.timber.FileLoggingTree
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking

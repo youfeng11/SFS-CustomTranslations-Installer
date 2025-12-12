@@ -5,10 +5,10 @@ import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import com.topjohnwu.superuser.Shell
 import com.youfeng.sfs.ctinstaller.R
-import com.youfeng.sfs.ctinstaller.core.Constants
-import com.youfeng.sfs.ctinstaller.ui.viewmodel.GrantedType
-import com.youfeng.sfs.ctinstaller.utils.UiText
-import com.youfeng.sfs.ctinstaller.utils.toPathWithZwsp
+import com.youfeng.sfs.ctinstaller.data.local.SfsFileConfig
+import com.youfeng.sfs.ctinstaller.ui.main.GrantedType
+import com.youfeng.sfs.ctinstaller.util.UiText
+import com.youfeng.sfs.ctinstaller.util.toPathWithZwsp
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,12 +19,21 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface InstallationRepository {
+    suspend fun installPackage(
+        sourcePath: String,
+        fileName: String,
+        grantedType: GrantedType,
+        onProgress: suspend (UiText) -> Unit
+    )
+}
+
 @Singleton
-class InstallationRepository @Inject constructor(
+class InstallationRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context,
     private val shizukuRepository: ShizukuRepository,
     private val folderRepository: FolderRepository
-) {
+) : InstallationRepository {
 
     /**
      * 执行安装的核心方法
@@ -33,13 +42,13 @@ class InstallationRepository @Inject constructor(
      * @param grantedType 授权类型
      * @param onProgress 进度回调函数
      */
-    suspend fun installPackage(
+    override suspend fun installPackage(
         sourcePath: String,
         fileName: String,
         grantedType: GrantedType,
         onProgress: suspend (UiText) -> Unit
     ) = withContext(Dispatchers.IO) {
-        val targetDir = "${Constants.externalStorage}/${Constants.SFS_CUSTOM_TRANSLATION_DIRECTORY}"
+        val targetDir = SfsFileConfig.customTranslationDirectoryPath
 
         Timber.i("Repository: 开始安装，授权方式：$grantedType")
 

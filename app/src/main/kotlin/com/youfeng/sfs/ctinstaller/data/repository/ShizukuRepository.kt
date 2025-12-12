@@ -22,10 +22,7 @@ import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import javax.inject.Singleton
 
-@Singleton
-class ShizukuRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context
-) {
+interface ShizukuRepository {
     // 定义服务连接状态，使用密封类来清晰地表示不同状态
     sealed class ConnectionStatus {
         object Disconnected : ConnectionStatus()
@@ -34,24 +31,39 @@ class ShizukuRepository @Inject constructor(
         data class Error(val throwable: Throwable) : ConnectionStatus()
     }
 
+    val connectionStatus: StateFlow<ConnectionStatus>
+
+    fun startUserService()
+
+    fun cleanup()
+
+    suspend fun copyFile(srcPath: String, destPath: String)
+
+    suspend fun mkdirs(path: String)
+}
+
+@Singleton
+class ShizukuRepositoryImpl @Inject constructor(
+    @param:ApplicationContext private val context: Context
+) : ShizukuRepository {
     private var fileService: IShizukuFileService? = null
 
     // 使用 StateFlow 向 ViewModel 暴露连接状态
     private val _connectionStatus =
-        MutableStateFlow<ConnectionStatus>(ConnectionStatus.Disconnected)
-    val connectionStatus: StateFlow<ConnectionStatus> = _connectionStatus
+        MutableStateFlow<ShizukuRepository.ConnectionStatus>(ShizukuRepository.ConnectionStatus.Disconnected)
+    override val connectionStatus: StateFlow<ShizukuRepository.ConnectionStatus> = _connectionStatus
 
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             Timber.d("Service connected")
             fileService = IShizukuFileService.Stub.asInterface(service)
-            _connectionStatus.value = ConnectionStatus.Connected
+            _connectionStatus.value = ShizukuRepository.ConnectionStatus.Connected
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
             Timber.d("Service disconnected")
             fileService = null
-            _connectionStatus.value = ConnectionStatus.Disconnected
+            _connectionStatus.value = ShizukuRepository.ConnectionStatus.Disconnected
         }
     }
 
@@ -66,26 +78,26 @@ class ShizukuRepository @Inject constructor(
     }
 
     // 启动服务，仅在未连接时执行
-    fun startUserService() {
-        if (_connectionStatus.value is ConnectionStatus.Connected || _connectionStatus.value is ConnectionStatus.Connecting) {
+    override fun startUserService() {
+        if (_connectionStatus.value is ShizukuRepository.ConnectionStatus.Connected || _connectionStatus.value is ShizukuRepository.ConnectionStatus.Connecting) {
             return
         }
 
-        _connectionStatus.value = ConnectionStatus.Connecting
+        _connectionStatus.value = ShizukuRepository.ConnectionStatus.Connecting
         try {
             Shizuku.bindUserService(args, serviceConnection)
         } catch (e: Exception) {
             Timber.e(e, "Failed to bind UserService")
-            _connectionStatus.value = ConnectionStatus.Error(e)
+            _connectionStatus.value = ShizukuRepository.ConnectionStatus.Error(e)
         }
     }
 
     // 释放服务连接
-    fun cleanup() {
+    override fun cleanup() {
         Timber.d("Cleaning up UserService")
         Shizuku.unbindUserService(args, serviceConnection, true)
         fileService = null
-        _connectionStatus.value = ConnectionStatus.Disconnected
+        _connectionStatus.value = ShizukuRepository.ConnectionStatus.Disconnected
     }
 
     /**
@@ -99,7 +111,7 @@ class ShizukuRepository @Inject constructor(
         // 使用 withTimeoutOrNull 包装等待逻辑
         val result = withTimeoutOrNull(10000L) {
             // 只有在连接中时才进行等待循环
-            while (_connectionStatus.value is ConnectionStatus.Connecting) {
+            while (_connectionStatus.value is ShizukuRepository.ConnectionStatus.Connecting) {
                 delay(100) // 等待一小段时间
             }
             // 当状态改变后，返回当前状态
@@ -112,10 +124,10 @@ class ShizukuRepository @Inject constructor(
                 throw TimeoutException(context.getString(R.string.installing_shizuku_timeout))
             }
 
-            is ConnectionStatus.Connected -> fileService
+            is ShizukuRepository.ConnectionStatus.Connected -> fileService
                 ?: throw IllegalStateException("Service is connected but fileService is null")
 
-            is ConnectionStatus.Error -> throw IOException(
+            is ShizukuRepository.ConnectionStatus.Error -> throw IOException(
                 "Shizuku service connection failed: ${result.throwable.message}",
                 result.throwable
             )
@@ -127,7 +139,7 @@ class ShizukuRepository @Inject constructor(
     /**
      * 复制文件。
      */
-    suspend fun copyFile(srcPath: String, destPath: String) {
+    override suspend fun copyFile(srcPath: String, destPath: String) {
         val service = waitForService()
         service.copyFile(srcPath, destPath)
     }
@@ -135,7 +147,7 @@ class ShizukuRepository @Inject constructor(
     /**
      * 创建目录。
      */
-    suspend fun mkdirs(path: String) {
+    override suspend fun mkdirs(path: String) {
         val service = waitForService()
         service.mkdirs(path)
     }

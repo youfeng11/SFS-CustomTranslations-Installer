@@ -2,7 +2,7 @@ package com.youfeng.sfs.ctinstaller.data.repository
 
 import android.content.Context
 import com.youfeng.sfs.ctinstaller.R
-import com.youfeng.sfs.ctinstaller.utils.md5
+import com.youfeng.sfs.ctinstaller.util.md5
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -11,25 +11,33 @@ import okhttp3.Request
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import okio.buffer
+import timber.log.Timber
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.net.URLDecoder
 import javax.inject.Inject
 import javax.inject.Singleton
-import timber.log.Timber
+
+interface NetworkRepository {
+    suspend fun fetchContentFromUrl(url: String): Pair<String, String>
+
+    suspend fun downloadFileToCache(url: String): String
+
+    fun openDownloadStream(url: String): InputStream
+}
 
 @Singleton
-class NetworkRepository @Inject constructor(
+class NetworkRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context
-) {
+) : NetworkRepository {
 
     private val client = OkHttpClient()
 
     /**
      * 从 URL 获取内容和 UTF-8 解码后的文件名。
      */
-    suspend fun fetchContentFromUrl(url: String): Pair<String, String> =
+    override suspend fun fetchContentFromUrl(url: String): Pair<String, String> =
         withContext(Dispatchers.IO) {
             Timber.v("fetchContentFromUrl网络请求：$url")
             val request = Request.Builder().url(url).build()
@@ -61,7 +69,7 @@ class NetworkRepository @Inject constructor(
     /**
      * 下载文件到缓存目录，自动解析文件名。
      */
-    suspend fun downloadFileToCache(url: String): String = withContext(Dispatchers.IO) {
+    override suspend fun downloadFileToCache(url: String): String = withContext(Dispatchers.IO) {
         Timber.v("downloadFileToCache下载：$url")
         val request = Request.Builder().url(url).build()
 
@@ -103,7 +111,7 @@ class NetworkRepository @Inject constructor(
     }
 
     // 在 NetworkRepository 中
-    fun openDownloadStream(url: String): InputStream {
+    override fun openDownloadStream(url: String): InputStream {
         Timber.v("openDownloadStream网络请求：$url")
         val request = Request.Builder().url(url).build()
         val response = client.newCall(request).execute() // 注意：这里同步执行，需在 IO 线程调用

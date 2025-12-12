@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.youfeng.sfs.ctinstaller.R
+import com.youfeng.sfs.ctinstaller.ui.common.component.adaptiveIconPainterResource
 
 @Composable
 fun OverflowMenu(onNavigatorToDetails: () -> Unit) {

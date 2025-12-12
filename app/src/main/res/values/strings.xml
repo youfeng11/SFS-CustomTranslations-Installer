@@ -100,7 +100,7 @@
     <string name="select_translation_dialog_title">选择要安装的汉化</string>
     <string name="custom_translation_pack">自定义语言包</string>
     <string name="local_file">本地文件: %s</string>
-    <string name="not_selected">未选择</string>
+    <string name="not_selected_text">未选择</string>
     <string name="loading_failed">加载失败</string>
     <string name="unknown">未知</string>
     <string name="card_item_install_title">安装汉化</string>

@@ -1,16 +1,19 @@
 package com.youfeng.sfs.ctinstaller.data.repository
 
 import android.content.Context
-import com.youfeng.sfs.ctinstaller.utils.UiText
+import com.youfeng.sfs.ctinstaller.util.UiText
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 
+interface ContextRepository {
+    fun getString(uiText: UiText): String
+}
+
 @Singleton
-class ContextRepository @Inject constructor(
+class ContextRepositoryImpl @Inject constructor(
     @param:ApplicationContext private val context: Context
-) {
-    fun getString(uiText: UiText): String {
-        return uiText.asString(context)
-    }
+) : ContextRepository {
+    override fun getString(uiText: UiText): String =
+        uiText.asString(context)
 }
