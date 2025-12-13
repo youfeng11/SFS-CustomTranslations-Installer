@@ -85,8 +85,8 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState
 
-    // 存储安装或保存任务的 Job，用于取消操作
-    private var installSaveJob: Job? = null
+    // 存储安装任务的 Job，用于取消操作
+    private var installJob: Job? = null
 
     private var customTranslationsUri: Uri? = null
 
@@ -338,12 +338,12 @@ class MainViewModel @Inject constructor(
     }
 
     /**
-     * 取消当前的安装或保存任务。
+     * 取消当前的安装任务。
      */
-    fun cancelCurrentTask() {
-        installSaveJob?.cancel()
+    fun cancelinstallationTask() {
+        setInstallingDialogVisible(false)
+        installJob?.cancel()
         drainProgressChannel()
-        _uiState.update { it.copy(isInstallComplete = true) }
     }
 
     private fun drainProgressChannel() {
@@ -368,7 +368,7 @@ class MainViewModel @Inject constructor(
             )
         }
 
-        installSaveJob = viewModelScope.launch(Dispatchers.IO) {
+        installJob = viewModelScope.launch(Dispatchers.IO) {
             try {
                 // 1. 准备源文件 (依然保留在 VM 中，因为它涉及 NetworkRepo 和 UI 选项逻辑)
                 // 如果你想更彻底，也可以把这个搬到 Repository，但目前这样已经很好了
@@ -396,9 +396,10 @@ class MainViewModel @Inject constructor(
                     )
                 Timber.e(e, "安装汉化错误")
                 updateInstallationProgress(UiText.StringResource(R.string.installing_error, err))
+            } finally {
+                updateInstallationProgress(UiText.StringResource(R.string.installing_installation_complete))
+                _uiState.update { it.copy(isInstallComplete = true) }
             }
-            _uiState.update { it.copy(isInstallComplete = true) }
-            updateInstallationProgress(UiText.StringResource(R.string.installing_installation_complete))
         }
     }
 

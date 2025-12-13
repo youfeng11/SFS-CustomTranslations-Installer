@@ -189,7 +189,7 @@ fun MainScreen(
         InstallingDialog(
             uiState,
             viewModel::setInstallingDialogVisible,
-            viewModel::cancelCurrentTask
+            viewModel::cancelinstallationTask
         )
     }
 }
@@ -971,7 +971,7 @@ private fun PermissionRequestDialog(
 fun InstallingDialog(
     uiState: MainUiState,
     setInstallingDialogVisible: (Boolean) -> Unit,
-    cancelCurrentTask: () -> Unit
+    cancelinstallationTask: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val showTopDivider by remember {
@@ -1002,10 +1002,7 @@ fun InstallingDialog(
             InstallationProgressContent(uiState, scrollState, showTopDivider, showBottomDivider)
         },
         confirmButton = {
-            TextButton(onClick = {
-                setInstallingDialogVisible(false)
-                cancelCurrentTask() // 取消安装任务
-            }) {
+            TextButton(onClick = cancelinstallationTask) {
                 Text(
                     if (uiState.isInstallComplete) stringResource(R.string.installing_dialog_button_done) else stringResource(
                         R.string.cancel
