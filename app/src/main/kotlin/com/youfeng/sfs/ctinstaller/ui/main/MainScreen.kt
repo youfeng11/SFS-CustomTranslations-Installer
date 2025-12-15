@@ -21,6 +21,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -37,6 +38,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -702,13 +704,6 @@ private fun ChooseDialog(
             setSelectedOption(TranslationOptionIndices.CUSTOM_FILE)
         }
     }
-    val scrollState = rememberScrollState()
-    val showTopDivider by remember {
-        derivedStateOf { scrollState.value > 0 }
-    }
-    val showBottomDivider by remember {
-        derivedStateOf { scrollState.value < scrollState.maxValue }
-    }
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = {
@@ -734,6 +729,13 @@ private fun ChooseDialog(
             }
         },
         text = {
+            val scrollState = rememberScrollState()
+            val showTopDivider by remember {
+                derivedStateOf { scrollState.value > 0 }
+            }
+            val showBottomDivider by remember {
+                derivedStateOf { scrollState.value < scrollState.maxValue }
+            }
             Box {
                 // 内容滚动区
                 Column(
@@ -854,13 +856,6 @@ private fun PermissionRequestDialog(
 ) {
     val scope = rememberCoroutineScope()
     val tooltipState = rememberTooltipState(isPersistent = true)
-    val scrollState = rememberScrollState()
-    val showTopDivider by remember {
-        derivedStateOf { scrollState.value > 0 }
-    }
-    val showBottomDivider by remember {
-        derivedStateOf { scrollState.value < scrollState.maxValue }
-    }
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
@@ -901,6 +896,13 @@ private fun PermissionRequestDialog(
             }
         },
         text = {
+            val scrollState = rememberScrollState()
+            val showTopDivider by remember {
+                derivedStateOf { scrollState.value > 0 }
+            }
+            val showBottomDivider by remember {
+                derivedStateOf { scrollState.value < scrollState.maxValue }
+            }
             Box {
                 Column(
                     Modifier
@@ -973,38 +975,38 @@ fun InstallingDialog(
     setInstallingDialogVisible: (Boolean) -> Unit,
     cancelinstallationTask: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-    val showTopDivider by remember {
-        derivedStateOf { scrollState.value > 0 }
-    }
-    val showBottomDivider by remember {
-        derivedStateOf { scrollState.value < scrollState.maxValue }
-    }
     AlertDialog(
         onDismissRequest = {
-            if (uiState.isInstallComplete) setInstallingDialogVisible(
+            if (uiState.installState is InstallState.Done) setInstallingDialogVisible(
                 false
             )
         },
         title = {
             AnimatedContent(
-                targetState = uiState.isInstallComplete,
+                targetState = uiState.installState,
                 label = "DialogTitleAnimation" // 可选的标签，用于调试
-            ) { isComplete ->
+            ) { state ->
                 Text(
-                    if (isComplete) stringResource(R.string.installing_dialog_end) else stringResource(
-                        R.string.installing_dialog_installing
+                    stringResource(
+                        if (state is InstallState.Done) {
+                            if (state.isSuccess)
+                                R.string.installing_dialog_success
+                            else
+                                R.string.installing_dialog_failure
+                        } else {
+                            R.string.installing_dialog_installing
+                        }
                     )
                 )
             }
         },
         text = {
-            InstallationProgressContent(uiState, scrollState, showTopDivider, showBottomDivider)
+            InstallationProgressContent(uiState)
         },
         confirmButton = {
             TextButton(onClick = cancelinstallationTask) {
                 Text(
-                    if (uiState.isInstallComplete) stringResource(R.string.installing_dialog_button_done) else stringResource(
+                    if (uiState.installState is InstallState.Done) stringResource(R.string.installing_dialog_button_done) else stringResource(
                         R.string.cancel
                     )
                 )
@@ -1015,14 +1017,22 @@ fun InstallingDialog(
 
 @Composable
 private fun InstallationProgressContent(
-    uiState: MainUiState,
-    scrollState: ScrollState,
-    showTopDivider: Boolean,
-    showBottomDivider: Boolean
+    uiState: MainUiState
 ) {
+    val scrollState = rememberScrollState()
+    val showTopDivider by remember {
+        derivedStateOf { scrollState.value > 0 }
+    }
+    val showBottomDivider by remember {
+        derivedStateOf { scrollState.value < scrollState.maxValue }
+    }
     Column {
-        LinearProgressIndicator(Modifier.alpha(if (uiState.isInstallComplete) 0f else 1f))
-        Box {
+        LinearProgressIndicator(
+             modifier = Modifier
+                .fillMaxWidth()
+                .alpha(if (uiState.installState is InstallState.Done) 0f else 1f)
+        )
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier.verticalScroll(scrollState)
             ) {
@@ -1033,7 +1043,6 @@ private fun InstallationProgressContent(
             if (showTopDivider) {
                 HorizontalDivider(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .align(Alignment.TopCenter)
                         .zIndex(1f)
                 )
@@ -1041,7 +1050,6 @@ private fun InstallationProgressContent(
             if (showBottomDivider) {
                 HorizontalDivider(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .align(Alignment.BottomCenter)
                         .zIndex(1f)
                 )

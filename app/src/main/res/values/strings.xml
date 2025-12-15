@@ -113,7 +113,8 @@
     <string name="card_item_install_button_install">安装</string>
     <string name="card_item_donate_title">支持开发</string>
     <string name="card_item_donate_text">SFS汉化安装器 将保持免费开源，向开发者捐赠以表示支持。</string>
-    <string name="installing_dialog_end">安装结束</string>
+    <string name="installing_dialog_success">安装成功</string>
+    <string name="installing_dialog_failure">安装失败</string>
     <string name="installing_dialog_installing">安装汉化中</string>
     <string name="installing_dialog_button_done">完成</string>
     <string name="default_translation" translatable="false">SFS简体中文语言包</string>

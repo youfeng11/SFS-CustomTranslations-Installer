@@ -362,13 +362,14 @@ class MainViewModel @Inject constructor(
         drainProgressChannel()
         _uiState.update {
             it.copy(
-                isInstallComplete = false,
+                installState = InstallState.Installing,
                 installationProgressText = "",
                 showInstallingDialog = true
             )
         }
 
         installJob = viewModelScope.launch(Dispatchers.IO) {
+            var caught = false
             try {
                 // 1. 准备源文件 (依然保留在 VM 中，因为它涉及 NetworkRepo 和 UI 选项逻辑)
                 // 如果你想更彻底，也可以把这个搬到 Repository，但目前这样已经很好了
@@ -390,6 +391,7 @@ class MainViewModel @Inject constructor(
                 Timber.d("安装任务已取消")
                 throw e
             } catch (e: Exception) {
+                caught = true
                 val err =
                     e.message?.let { UiText.DynamicString(it) } ?: UiText.StringResource(
                         R.string.unknown_error
@@ -398,7 +400,7 @@ class MainViewModel @Inject constructor(
                 updateInstallationProgress(UiText.StringResource(R.string.installing_error, err))
             } finally {
                 updateInstallationProgress(UiText.StringResource(R.string.installing_installation_complete))
-                _uiState.update { it.copy(isInstallComplete = true) }
+                _uiState.update { it.copy(installState = InstallState.Done(!caught)) }
             }
         }
     }

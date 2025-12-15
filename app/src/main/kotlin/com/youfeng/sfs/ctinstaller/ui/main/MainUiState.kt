@@ -13,7 +13,7 @@ data class MainUiState(
     val showInstallingDialog: Boolean = false,
     val showSettingsRedirectDialog: Boolean = false,
     val installationProgressText: String = "",
-    val isInstallComplete: Boolean = false,
+    val installState: InstallState = InstallState.Done(),
     val isSavingComplete: Boolean = true,
     val grantedType: GrantedType = GrantedType.Saf,
     val forGameVersion: UiText = UiText.StringResource(R.string.loading),
@@ -40,4 +40,9 @@ sealed class AppState {
     data object NeverOpened : AppState()
     data object Ungranted : AppState()
     data object Granted : AppState()
+}
+
+sealed class InstallState {
+    data object Installing : InstallState()
+    data class Done(val isSuccess: Boolean = true) : InstallState()
 }
