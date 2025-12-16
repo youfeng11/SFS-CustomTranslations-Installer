@@ -1027,12 +1027,9 @@ private fun InstallationProgressContent(
         derivedStateOf { scrollState.value < scrollState.maxValue }
     }
     Column {
-        LinearProgressIndicator(
-             modifier = Modifier
-                .fillMaxWidth()
-                .alpha(if (uiState.installState is InstallState.Done) 0f else 1f)
-        )
-        BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (uiState.installState is InstallState.Installing)
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+        Box(Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier.verticalScroll(scrollState)
             ) {
